@@ -2,9 +2,6 @@ import { StandardResponse, StatusCode } from "./response";
 
 export interface InstanceStateDiskUsage {
   usage?: number;
-  usage_peak?: number;
-  read?: number;
-  write?: number;
   total?: number;
 }
 
