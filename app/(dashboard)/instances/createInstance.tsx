@@ -152,11 +152,11 @@ export default function CreateInstance({ className }: { className?: string }) {
               </Button>
             </DialogTrigger>
             <DialogContent
-              className={` ${
+              className={`${
                 selectingImage
-                  ? "max-h-screen min-w-screen"
+                  ? "max-h-screen w-full sm:max-w-5xl"
                   : "min-w-xs min-h-0"
-              } transition-all duration-200 max-w-screen`}
+              } transition-all duration-200`}
             >
               <DialogHeader>
                 <DialogTitle>Create Instance</DialogTitle>
