@@ -32,19 +32,32 @@ import { use, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
-import ImageSelector from "./imageSelector";
+import ImageSelector, { SelectableImage } from "./imageSelector";
 
 const sourceSchema = z
   .object({
     type: z.enum(["image", "none"]),
-    protocol: z.enum(["simplestreams", "oci"]).optional(),
+    fingerprint: z.string().optional(),
+    alias: z.string().optional(),
     server: z.string().optional(),
+    mode: z.literal("pull").optional(),
+    protocol: z.enum(["simplestreams", "oci"]).optional(),
   })
-  .refine((data) => {
-    if (data.protocol) {
-      return data.server !== undefined;
+  .refine(
+    (data) => {
+      if (data.type === "none") {
+        return true;
+      }
+      if (data.fingerprint) {
+        return true;
+      }
+      return Boolean(data.mode && data.server && data.alias && data.protocol);
+    },
+    {
+      message: "Select an image to continue",
+      path: ["alias"],
     }
-  });
+  );
 
 const formSchema = z.object({
   // only letters, numbers, and ashes. cannot start with digit or dash. name must not end with dash
@@ -70,6 +83,11 @@ export default function CreateInstance({ className }: { className?: string }) {
       ephemeral: undefined,
       source: {
         type: "image",
+        fingerprint: undefined,
+        alias: undefined,
+        server: undefined,
+        mode: undefined,
+        protocol: undefined,
       },
     },
   });
@@ -80,6 +98,43 @@ export default function CreateInstance({ className }: { className?: string }) {
     name: "source.type",
   });
   const selectingImage = sourceType === "image" && currentTab === "source";
+  const [selectedImage, setSelectedImage] = useState<SelectableImage | null>(
+    null
+  );
+
+  const resetSourceFields = () => {
+    form.setValue("source.fingerprint", undefined, { shouldDirty: true });
+    form.setValue("source.mode", undefined, { shouldDirty: true });
+    form.setValue("source.server", undefined, { shouldDirty: true });
+    form.setValue("source.alias", undefined, { shouldDirty: true });
+    form.setValue("source.protocol", undefined, { shouldDirty: true });
+  };
+
+  const handleImageSelect = (image: SelectableImage) => {
+    setSelectedImage(image);
+    resetSourceFields();
+    if (image.local && image.fingerprint) {
+      form.setValue("source.fingerprint", image.fingerprint, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    } else if (image.remote) {
+      form.setValue("source.mode", "pull", { shouldDirty: true });
+      form.setValue("source.server", image.remote.server, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      form.setValue("source.alias", image.remote.alias, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      form.setValue("source.protocol", image.remote.protocol, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+    form.trigger("source");
+  };
   console.log(data?.configs);
   return (
     <div className={className}>
@@ -163,7 +218,13 @@ export default function CreateInstance({ className }: { className?: string }) {
                           <FormLabel>Source Type</FormLabel>
                           <FormControl>
                             <Select
-                              onValueChange={field.onChange}
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                if (value === "none") {
+                                  setSelectedImage(null);
+                                  resetSourceFields();
+                                }
+                              }}
                               value={field.value}
                             >
                               <SelectTrigger className="w-full">
@@ -179,7 +240,12 @@ export default function CreateInstance({ className }: { className?: string }) {
                         </FormItem>
                       )}
                     />
-                    {selectingImage ? <ImageSelector /> : null}
+                    {selectingImage ? (
+                      <ImageSelector
+                        selectedImage={selectedImage}
+                        onSelect={handleImageSelect}
+                      />
+                    ) : null}
                   </TabsContent>
                 </Tabs>
               </div>
