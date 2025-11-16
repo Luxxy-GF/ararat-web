@@ -12,6 +12,13 @@ import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 type IncusOperation = {
   id: string;
@@ -88,40 +95,6 @@ function formatDateTime(value?: string) {
   }).format(date);
 }
 
-function ChangesPreview({ metadata }: { metadata: unknown }) {
-  if (!metadata || metadata === "—") {
-    return <span className="text-sm text-muted-foreground">—</span>;
-  }
-  if (typeof metadata === "string") {
-    return (
-      <span className="text-sm text-muted-foreground break-words">
-        {metadata}
-      </span>
-    );
-  }
-  if (typeof metadata === "object") {
-    return (
-      <div className="space-y-1 text-xs text-zinc-300">
-        {Object.entries(metadata as Record<string, unknown>).map(
-          ([key, value]) => (
-            <div key={key} className="flex gap-2">
-              <span className="text-muted-foreground">{key}</span>
-              <span className="break-words">
-                {typeof value === "string"
-                  ? value
-                  : Array.isArray(value)
-                  ? value.join(", ")
-                  : JSON.stringify(value)}
-              </span>
-            </div>
-          )
-        )}
-      </div>
-    );
-  }
-  return <span className="text-sm text-muted-foreground">{String(metadata)}</span>;
-}
-
 export default function OperationsPage() {
   const [operations, setOperations] = useState<IncusOperation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -132,6 +105,9 @@ export default function OperationsPage() {
   );
   const [actionError, setActionError] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [inspectorOperation, setInspectorOperation] =
+    useState<IncusOperation | null>(null);
+  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const { toast } = useToast();
 
   const resolveOperations = useCallback(
@@ -288,14 +264,6 @@ useEffect(() => {
           );
         },
       },
-      {
-        header: "Changes",
-        id: "changes",
-        cell: ({ row }: { row: Row<object> }) => {
-          const operation = row.original as IncusOperation;
-          return <ChangesPreview metadata={operation.metadata} />;
-        },
-      },
     ],
     []
   );
@@ -394,6 +362,10 @@ useEffect(() => {
               return next;
             });
           }}
+          onRowClick={(row) => {
+            setInspectorOperation(row.original as IncusOperation);
+            setIsInspectorOpen(true);
+          }}
         />
       ) : (
         <div className="flex h-48 items-center justify-center rounded-md border border-white/5">
@@ -402,6 +374,119 @@ useEffect(() => {
           </p>
         </div>
       )}
+      <Sheet
+        open={isInspectorOpen}
+        onOpenChange={(open) => {
+          setIsInspectorOpen(open);
+          if (!open) setInspectorOperation(null);
+        }}
+      >
+        <SheetContent side="right" className="sm:max-w-md">
+          {inspectorOperation ? (
+            <OperationInspector operation={inspectorOperation} />
+          ) : (
+            <div className="p-4 text-sm text-muted-foreground">
+              Select an operation to view details.
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
+}
+
+function OperationInspector({ operation }: { operation: IncusOperation }) {
+  return (
+    <>
+      <SheetHeader className="px-4 pt-4">
+        <SheetTitle>{operation.description ?? operation.id}</SheetTitle>
+        <SheetDescription>
+          {operation.class ?? "Operation"} · {operation.status}
+        </SheetDescription>
+      </SheetHeader>
+      <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-4">
+        <MetadataSection title="Metadata" metadata={operation.metadata} />
+      </div>
+    </>
+  );
+}
+
+function MetadataSection({
+  title,
+  metadata,
+}: {
+  title: string;
+  metadata: unknown;
+}) {
+  if (!metadata || (typeof metadata === "object" && metadata !== null && !Object.keys(metadata as object).length)) {
+    return null;
+  }
+
+  const entries = (
+    typeof metadata === "object" && metadata !== null
+      ? Object.entries(metadata as Record<string, unknown>)
+      : [["value", metadata]]
+  ) as [string, unknown][];
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium uppercase text-muted-foreground">
+        {title}
+      </p>
+      <div className="space-y-2 rounded-md border border-white/10 bg-black/30 p-3 text-sm">
+        {entries.map(([key, value]) => (
+          <KeyValueCard key={`${title}-${key}`} label={key}>
+            {renderValue(value)}
+          </KeyValueCard>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function KeyValueCard({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1 rounded-md border border-white/5 bg-zinc-900/70 px-3 py-2">
+      <p className="text-[10px] font-medium uppercase text-muted-foreground tracking-wide">
+        {label}
+      </p>
+      <div className="text-xs text-white break-words">{children}</div>
+    </div>
+  );
+}
+
+function renderValue(value: unknown): React.ReactNode {
+  if (value === null || typeof value === "undefined") return "—";
+  if (typeof value === "string" || typeof value === "number")
+    return value.toString();
+  if (Array.isArray(value)) {
+    if (!value.length) return "[]";
+    return (
+      <ul className="list-disc pl-4 space-y-1">
+        {value.map((item, idx) => (
+          <li key={idx} className="break-words">
+            {renderValue(item)}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  if (typeof value === "object") {
+    return (
+      <div className="space-y-2 pl-1">
+        {Object.entries(value as Record<string, unknown>).map(([k, v]) => (
+          <KeyValueCard key={`nested-${k}`} label={k}>
+            {renderValue(v)}
+          </KeyValueCard>
+        ))}
+      </div>
+    );
+  }
+  return <span>{String(value)}</span>;
 }
