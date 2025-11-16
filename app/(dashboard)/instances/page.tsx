@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
 import { ProjectContext } from "@/components/context/projects";
+import { Progress } from "@/components/ui/progress";
 
 type InstanceAction = "start" | "stop" | "restart" | "freeze";
 
@@ -39,6 +40,42 @@ const instanceActionDetails: Record<
   restart: { label: "Restart", Icon: RotateCcwIcon },
   freeze: { label: "Freeze", Icon: SnowflakeIcon },
 };
+
+async function performInstanceAction({
+  action,
+  instance,
+  project,
+}: {
+  action: InstanceAction;
+  instance: Instance;
+  project: string | null;
+}) {
+  const instanceProject = project ?? instance.project ?? null;
+  const projectSuffix = instanceProject
+    ? `?project=${encodeURIComponent(instanceProject)}`
+    : "";
+  const res = await fetch(
+    `/1.0/instances/${encodeURIComponent(instance.name)}/state${projectSuffix}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action,
+        timeout: 30,
+        force: false,
+        stateful: false,
+      }),
+    }
+  );
+  if (!res.ok) {
+    const payload = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(
+      payload?.error || `Unable to ${action} instance ${instance.name}`
+    );
+  }
+}
 
 export default function Instances() {
   const { currentProject } = use(ProjectContext);
@@ -55,7 +92,7 @@ export default function Instances() {
     React.useState<Instance | null>(null);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
 
-  const columns = React.useMemo(() => {
+const columns = React.useMemo(() => {
     const baseColumns = [
       {
         header: "Instance Name",
@@ -111,26 +148,44 @@ export default function Instances() {
         },
       },
       {
-        header: "Instance Memory",
-        id: "memory",
+        header: "Usage",
+        id: "usage",
         cell: ({ row }: { row: Row<object> }) => {
           const instance = row.original as Instance;
+          const memoryUsage = instance.state?.memory?.usage ?? 0;
+         const diskUsage = getRootDiskUsage(instance.state) ?? 0;
+         const memoryPercent = calcUsagePercent(
+           memoryUsage,
+           instance.state?.memory?.total ?? instance.state?.memory?.usage_peak
+         );
+         const diskPercent = calcUsagePercent(
+           diskUsage,
+           instance.state?.disk?.root?.total ??
+             instance.state?.disk?.root?.usage_peak
+         );
           return (
-            <span className="font-mono text-sm">
-              {formatBytes(instance.state?.memory?.usage)}
-            </span>
-          );
-        },
-      },
-      {
-        header: "Instance Root Disk Usage",
-        id: "disk",
-        cell: ({ row }: { row: Row<object> }) => {
-          const instance = row.original as Instance;
-          return (
-            <span className="font-mono text-sm">
-              {formatBytes(getRootDiskUsage(instance.state))}
-            </span>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Memory</span>
+                <span>
+                  {formatBytes(memoryUsage)}
+                  {instance.state?.memory?.total
+                    ? ` / ${formatBytes(instance.state.memory.total)}`
+                    : ""}
+                </span>
+              </div>
+              <Progress value={memoryPercent} className="h-1.5" />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Disk</span>
+                <span>
+                  {formatBytes(diskUsage)}
+                  {instance.state?.disk?.root?.total
+                    ? ` / ${formatBytes(instance.state.disk.root.total)}`
+                    : ""}
+                </span>
+              </div>
+              <Progress value={diskPercent} className="h-1.5 bg-muted" />
+            </div>
           );
         },
       },
@@ -159,41 +214,16 @@ export default function Instances() {
         setActionError(null);
         setActionInFlight(action);
         await Promise.all(
-          selectedInstances.map(async (instance) => {
-            const instanceProject =
-              currentProject === "all"
-                ? instance.project ?? null
-                : currentProject ?? instance.project ?? null;
-            const projectSuffix = instanceProject
-              ? `?project=${encodeURIComponent(instanceProject)}`
-              : "";
-            const res = await fetch(
-              `/1.0/instances/${encodeURIComponent(
-                instance.name
-              )}/state${projectSuffix}`,
-              {
-                method: "PUT",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  action,
-                  timeout: 30,
-                  force: false,
-                  stateful: false,
-                }),
-              }
-            );
-            if (!res.ok) {
-              const payload = await res
-                .json()
-                .catch(() => ({ error: res.statusText }));
-              throw new Error(
-                payload?.error ||
-                  `Unable to ${action} instance ${instance.name}`
-              );
-            }
-          })
+          selectedInstances.map((instance) =>
+            performInstanceAction({
+              action,
+              instance,
+              project:
+                currentProject === "all"
+                  ? instance.project ?? null
+                  : currentProject ?? instance.project ?? null,
+            })
+          )
         );
         await mutate();
       } catch (err) {
@@ -249,29 +279,31 @@ export default function Instances() {
                 } selected`
               : "Select instances to run mass actions"}
           </p>
-          <div className="flex flex-wrap items-center gap-2 ml-auto">
-            {(
-              Object.entries(instanceActionDetails) as [
-                InstanceAction,
-                { label: string; Icon: React.ComponentType<{ className?: string }> }
-              ][]
-            ).map(([action, { label, Icon }]) => (
-              <Button
-                key={action}
-                variant="outline"
-                size="sm"
-                disabled={!hasSelection || actionInFlight !== null}
-                onClick={() => handleMassAction(action)}
-              >
-                {actionInFlight === action ? (
-                  <Spinner className="mr-2 size-3" />
-                ) : (
-                  <Icon className="mr-2 size-3" />
-                )}
-                {label}
-              </Button>
-            ))}
-          </div>
+          {hasSelection ? (
+            <div className="flex flex-wrap items-center gap-2 ml-auto">
+              {(
+                Object.entries(instanceActionDetails) as [
+                  InstanceAction,
+                  { label: string; Icon: React.ComponentType<{ className?: string }> }
+                ][]
+              ).map(([action, { label, Icon }]) => (
+                <Button
+                  key={action}
+                  variant="outline"
+                  size="sm"
+                  disabled={actionInFlight !== null}
+                  onClick={() => handleMassAction(action)}
+                >
+                  {actionInFlight === action ? (
+                    <Spinner className="mr-2 size-3" />
+                  ) : (
+                    <Icon className="mr-2 size-3" />
+                  )}
+                  {label}
+                </Button>
+              ))}
+            </div>
+          ) : null}
         </div>
         {actionError ? (
           <Alert variant="destructive">
@@ -629,4 +661,11 @@ function getBaseImage(instance: Instance) {
 function getRootDiskPool(instance: Instance) {
   const rootDisk = instance.expanded_devices?.root || instance.devices?.root;
   return rootDisk?.pool ?? null;
+}
+
+function calcUsagePercent(current?: number, peak?: number) {
+  if (!peak || peak <= 0) {
+    return 0;
+  }
+  return Math.min(100, Math.max(0, ((current ?? 0) / peak) * 100));
 }
