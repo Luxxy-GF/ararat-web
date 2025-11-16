@@ -6,6 +6,16 @@ const fetcher = (...args: Parameters<typeof fetch>) =>
     .then((res) => res.json())
     .then((data) => (data as ImagesResponse).metadata);
 
-export function useImages() {
-  return useSWR("/1.0/images?recursion=1", fetcher);
+const buildImagesPath = (project?: string | null) => {
+  const params = new URLSearchParams({ recursion: "1" });
+  if (project === "all") {
+    params.set("all-projects", "true");
+  } else if (project) {
+    params.set("project", project);
+  }
+  return `/1.0/images?${params.toString()}`;
+};
+
+export function useImages(project?: string | null) {
+  return useSWR(buildImagesPath(project), fetcher);
 }
