@@ -11,6 +11,7 @@ export interface InstanceStateDiskUsage {
 export interface InstanceStateMemory {
   usage?: number;
   usage_peak?: number;
+  total?: number;
   swap_usage?: number;
   swap_usage_peak?: number;
 }
