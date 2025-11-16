@@ -1,0 +1,197 @@
+"use client";
+
+import { ServerConfigMetadataContext } from "@/components/context/serverConfigMetadata";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { use, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import z from "zod";
+import ImageSelector from "./imageSelector";
+
+const sourceSchema = z
+  .object({
+    type: z.enum(["image", "none"]),
+    protocol: z.enum(["simplestreams", "oci"]).optional(),
+    server: z.string().optional(),
+  })
+  .refine((data) => {
+    if (data.protocol) {
+      return data.server !== undefined;
+    }
+  });
+
+const formSchema = z.object({
+  // only letters, numbers, and ashes. cannot start with digit or dash. name must not end with dash
+  name: z
+    .string()
+    .min(3, "Instance name must be at least 3 characters long")
+    .max(50, "Instance name must be at most 50 characters long")
+    .regex(
+      /^[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]$/,
+      "Instance name must start with a letter and can only contain letters, numbers, and dashes. It cannot end with a dash."
+    ),
+  description: z.string().optional(),
+  ephemeral: z.boolean().optional(),
+  source: sourceSchema,
+});
+export default function CreateInstance({ className }: { className?: string }) {
+  const { data } = use(ServerConfigMetadataContext);
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      description: undefined,
+      ephemeral: undefined,
+      source: {
+        type: "image",
+      },
+    },
+  });
+
+  const [currentTab, setCurrentTab] = useState("properties");
+  const sourceType = useWatch({
+    control: form.control,
+    name: "source.type",
+  });
+  const selectingImage = sourceType === "image" && currentTab === "source";
+  console.log(data?.configs);
+  return (
+    <div className={className}>
+      <Dialog>
+        <Form {...form}>
+          <form>
+            <DialogTrigger asChild>
+              <Button
+                className={className}
+                onClick={() => {
+                  console.log(data);
+                }}
+              >
+                Create Instance
+              </Button>
+            </DialogTrigger>
+            <DialogContent
+              className={` ${
+                selectingImage
+                  ? "max-h-screen min-w-screen"
+                  : "min-w-xs min-h-0"
+              } transition-all duration-200 max-w-screen`}
+            >
+              <DialogHeader>
+                <DialogTitle>Create Instance</DialogTitle>
+                <DialogDescription>Create a new instance</DialogDescription>
+              </DialogHeader>
+              <div className="flex">
+                <Tabs
+                  className="w-full mb-auto"
+                  value={currentTab}
+                  onValueChange={setCurrentTab}
+                >
+                  <TabsList className="w-full" defaultValue="properties">
+                    <TabsTrigger value="properties">Properties</TabsTrigger>
+                    <TabsTrigger value="source">Source</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="properties">
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Instance Name</FormLabel>
+                            <FormControl>
+                              <Input
+                                required={true}
+                                placeholder="example-instance"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Instance Description</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="My incredible instance"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="source" className="max-w-screen">
+                    <FormField
+                      control={form.control}
+                      name="source.type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Source Type</FormLabel>
+                          <FormControl>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select source type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="image">Image</SelectItem>
+                                <SelectItem value="none">None</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {selectingImage ? <ImageSelector /> : null}
+                  </TabsContent>
+                </Tabs>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={true}>
+                  Create Instance
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </form>
+        </Form>
+      </Dialog>
+    </div>
+  );
+}
