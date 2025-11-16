@@ -3,6 +3,7 @@
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Row } from "@tanstack/react-table";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import DataTable from "@/components/ui/data-table";
 import {
@@ -103,7 +104,7 @@ export default function ImageSelector({
     return localImagesData.map((image) => ({
       id: `local-${image.fingerprint}`,
       local: true,
-      label: image.aliases?.[0]?.name ?? image.fingerprint,
+      label: image.aliases?.[0]?.name ?? image.properties.os ?? image.fingerprint,
       os: image.properties.os,
       release: image.properties.release,
       variant: image.properties.variant,
@@ -217,34 +218,30 @@ export default function ImageSelector({
         cell: ({ row }: { row: Row<object> }) => {
           const image = row.original as SelectableImage;
           return (
-            <div className="flex flex-col">
-              <span className="font-medium break-all whitespace-normal">
-                {image.label}
+            <div className="flex max-w-[280px] flex-col gap-0.5">
+              <div className="flex items-center gap-2">
+                <span className="font-medium truncate" title={image.label}>
+                  {image.label}
+                </span>
+                <Badge
+                  variant={image.local ? "secondary" : "outline"}
+                  className="text-[10px] uppercase"
+                >
+                  {image.local ? "Local Cache" : "Remote"}
+                </Badge>
+              </div>
+              <span className="text-xs text-muted-foreground truncate">
+                {image.os ?? "Unknown OS"}
+                {image.release ? ` · ${image.release}` : ""}
               </span>
-              <span className="text-xs text-muted-foreground">
-                {image.local
-                  ? "Local image"
-                  : `Remote: ${formatSource(image.remote?.server)}`}
-              </span>
+              {!image.local && image.remote?.server ? (
+                <span className="text-[10px] text-muted-foreground truncate">
+                  {formatSource(image.remote.server)}
+                </span>
+              ) : null}
             </div>
           );
         },
-      },
-      {
-        header: "OS",
-        accessorKey: "os",
-      },
-      {
-        header: "Release",
-        accessorKey: "release",
-      },
-      {
-        header: "Variant",
-        accessorKey: "variant",
-      },
-      {
-        header: "Architecture",
-        accessorKey: "arch",
       },
       {
         header: "Type",
@@ -259,6 +256,10 @@ export default function ImageSelector({
                 .join(", ")
             : "—";
         },
+      },
+      {
+        header: "Arch",
+        accessorKey: "arch",
       },
       {
         header: "",
@@ -289,93 +290,101 @@ export default function ImageSelector({
       {isLoading ? <Spinner className="mx-auto my-6" /> : null}
       {!isLoading ? (
         <>
-          <div className="flex flex-wrap gap-2">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <div>
               <p className="font-medium text-md my-auto">Available Images</p>
-              <span className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {currentProject === "all"
-                  ? "All Projects"
-                  : `Project: ${currentProject}`}
-              </span>
+                  ? "All projects"
+                  : `Project · ${currentProject}`}
+              </p>
             </div>
-            <Input
-              placeholder="Search images..."
-              value={stringFilter}
-              onChange={(event) => setStringFilter(event.currentTarget.value)}
-              className="h-auto w-full flex-1 min-w-48 sm:w-64"
-            />
-            <Dialog open={addingRemote} onOpenChange={setAddingRemote}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="my-auto">
-                  Add Remote
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add Remote</DialogTitle>
-                  <DialogDescription>
-                    Add a Simplestreams server or OCI image to pull from.
-                  </DialogDescription>
-                </DialogHeader>
-                <Label htmlFor="remoteProtocol">Remote Type</Label>
-                <div className="flex gap-2 -mt-2" id="remoteProtocol">
-                  <Select
-                    value={remoteProtocol}
-                    onValueChange={(value) =>
-                      setRemoteProtocol(value as "simplestreams" | "oci")
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Remote Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="simplestreams">
-                        Simplestreams
-                      </SelectItem>
-                      <SelectItem value="oci">OCI</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    placeholder="https://images.example.com"
-                    value={remoteURL}
-                    onChange={(event) => setRemoteURL(event.target.value)}
-                  />
-                </div>
-                {remoteProtocol === "oci" ? (
-                  <>
-                    <Label htmlFor="ociImage">OCI Image</Label>
-                    <Input
-                      id="ociImage"
-                      value={ociImage}
-                      onChange={(event) => setOciImage(event.target.value)}
-                      placeholder="library/ubuntu:latest"
-                      className="-mt-2"
-                    />
-                  </>
-                ) : null}
-                <DialogFooter>
-                  <Button
-                    disabled={
-                      !remoteURL ||
-                      (remoteProtocol === "oci" && !ociImage.trim().length)
-                    }
-                    onClick={handleAddRemote}
-                  >
-                    {remoteProtocol === "oci"
-                      ? "Add OCI Image"
-                      : "Add Remote Server"}
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <Input
+                placeholder="Search images..."
+                value={stringFilter}
+                onChange={(event) => setStringFilter(event.currentTarget.value)}
+                className="h-9 w-full min-w-48 sm:w-64"
+              />
+              <Dialog open={addingRemote} onOpenChange={setAddingRemote}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="my-auto">
+                    Add Remote
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Remote</DialogTitle>
+                    <DialogDescription>
+                      Add a Simplestreams server or OCI image to pull from.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Label htmlFor="remoteProtocol">Remote Type</Label>
+                  <div className="flex gap-2 -mt-2" id="remoteProtocol">
+                    <Select
+                      value={remoteProtocol}
+                      onValueChange={(value) =>
+                        setRemoteProtocol(value as "simplestreams" | "oci")
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Remote Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="simplestreams">
+                          Simplestreams
+                        </SelectItem>
+                        <SelectItem value="oci">OCI</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      placeholder="https://images.example.com"
+                      value={remoteURL}
+                      onChange={(event) => setRemoteURL(event.target.value)}
+                    />
+                  </div>
+                  {remoteProtocol === "oci" ? (
+                    <>
+                      <Label htmlFor="ociImage">OCI Image</Label>
+                      <Input
+                        id="ociImage"
+                        value={ociImage}
+                        onChange={(event) => setOciImage(event.target.value)}
+                        placeholder="library/ubuntu:latest"
+                        className="-mt-2"
+                      />
+                    </>
+                  ) : null}
+                  <DialogFooter>
+                    <Button
+                      disabled={
+                        !remoteURL ||
+                        (remoteProtocol === "oci" && !ociImage.trim().length)
+                      }
+                      onClick={handleAddRemote}
+                    >
+                      {remoteProtocol === "oci"
+                        ? "Add OCI Image"
+                        : "Add Remote Server"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
           <div className="rounded-md border bg-muted/30 p-3 text-sm">
             {selectedImage ? (
               <>
                 <p className="font-medium">{selectedImage.label}</p>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
+                  {selectedImage.os ?? "Unknown OS"}
+                  {selectedImage.release ? ` · ${selectedImage.release}` : ""}
+                </p>
+                <p className="text-xs text-muted-foreground">
                   {selectedImage.remote
-                    ? `Remote ${selectedImage.remote.protocol.toUpperCase()} source`
+                    ? `${selectedImage.remote.protocol.toUpperCase()} · ${formatSource(
+                        selectedImage.remote.server
+                      )}`
                     : "Local cached image"}
                 </p>
               </>
