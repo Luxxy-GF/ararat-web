@@ -203,7 +203,10 @@ export default function ImageSelector({
       });
     } else if (remoteProtocol === "oci" && ociImage) {
       const ociEntry = buildOciImage(normalized, ociImage);
-      setRemoteImages((prev) => mergeImageLists(prev, [ociEntry]));
+      setRemoteImages((prev) => [
+        ociEntry,
+        ...prev.filter((image) => image.id !== ociEntry.id),
+      ]);
     }
     setRemoteURL("");
     setOciImage("");
@@ -220,19 +223,19 @@ export default function ImageSelector({
           return (
             <div className="flex max-w-[280px] flex-col gap-0.5">
               <div className="flex items-center gap-2">
-                <span className="font-medium truncate" title={image.label}>
-                  {image.label}
+                <span className="font-semibold truncate" title={image.os}>
+                  {image.os ?? "Unknown OS"}
+                  {image.release ? ` ${image.release}` : ""}
                 </span>
                 <Badge
                   variant={image.local ? "secondary" : "outline"}
                   className="text-[10px] uppercase"
                 >
-                  {image.local ? "Local Cache" : "Remote"}
+                  {image.local ? "Local" : "Remote"}
                 </Badge>
               </div>
               <span className="text-xs text-muted-foreground truncate">
-                {image.os ?? "Unknown OS"}
-                {image.release ? ` · ${image.release}` : ""}
+                {image.label}
               </span>
               {!image.local && image.remote?.server ? (
                 <span className="text-[10px] text-muted-foreground truncate">
@@ -261,28 +264,8 @@ export default function ImageSelector({
         header: "Arch",
         accessorKey: "arch",
       },
-      {
-        header: "",
-        id: "actions",
-        cell: ({ row }: { row: Row<object> }) => {
-          const image = row.original as SelectableImage;
-          const isSelected = selectedImageId === image.id;
-          return (
-            <Button
-              size="sm"
-              variant={isSelected ? "default" : "outline"}
-              onClick={(event) => {
-                event.stopPropagation();
-                handleSelect(image);
-              }}
-            >
-              {isSelected ? "Selected" : "Use"}
-            </Button>
-          );
-        },
-      },
     ],
-    [handleSelect, selectedImageId]
+    []
   );
 
   return (
@@ -290,6 +273,30 @@ export default function ImageSelector({
       {isLoading ? <Spinner className="mx-auto my-6" /> : null}
       {!isLoading ? (
         <>
+          <div className="rounded-md border bg-muted/30 p-3 text-sm">
+            {selectedImage ? (
+              <>
+                <p className="font-medium">
+                  {selectedImage.os ?? "Unknown OS"}
+                  {selectedImage.release ? ` · ${selectedImage.release}` : ""}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  {selectedImage.label}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedImage.remote
+                    ? `${formatProtocol(selectedImage.remote.protocol)} · ${formatSource(
+                        selectedImage.remote.server
+                      )}`
+                    : "Local image"}
+                </p>
+              </>
+            ) : (
+              <p className="text-muted-foreground">
+                Select an image to define the instance base.
+              </p>
+            )}
+          </div>
           <div className="flex flex-wrap items-center gap-3">
             <div>
               <p className="font-medium text-md my-auto">Available Images</p>
@@ -350,7 +357,7 @@ export default function ImageSelector({
                         id="ociImage"
                         value={ociImage}
                         onChange={(event) => setOciImage(event.target.value)}
-                        placeholder="library/ubuntu:latest"
+                        placeholder="alias"
                         className="-mt-2"
                       />
                     </>
@@ -372,28 +379,6 @@ export default function ImageSelector({
               </Dialog>
             </div>
           </div>
-          <div className="rounded-md border bg-muted/30 p-3 text-sm">
-            {selectedImage ? (
-              <>
-                <p className="font-medium">{selectedImage.label}</p>
-                <p className="text-muted-foreground text-sm">
-                  {selectedImage.os ?? "Unknown OS"}
-                  {selectedImage.release ? ` · ${selectedImage.release}` : ""}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {selectedImage.remote
-                    ? `${selectedImage.remote.protocol.toUpperCase()} · ${formatSource(
-                        selectedImage.remote.server
-                      )}`
-                    : "Local cached image"}
-                </p>
-              </>
-            ) : (
-              <p className="text-muted-foreground">
-                Select an image to define the instance base.
-              </p>
-            )}
-          </div>
           <DataTable
             className={`mt-2 max-h-[60vh] overflow-auto ${
               isValidating || loadingRemotes ? "animate-pulse" : ""
@@ -402,6 +387,11 @@ export default function ImageSelector({
             cols={columns}
             data={images}
             onRowClick={handleRowClick}
+            getRowClassName={(row) =>
+              (row.original as SelectableImage).id === selectedImageId
+                ? "bg-muted/30"
+                : ""
+            }
           />
         </>
       ) : null}
@@ -517,13 +507,17 @@ function buildOciImage(server: string, alias: string): SelectableImage {
     local: false,
     label: trimmedAlias,
     os: trimmedAlias,
-    types: ["virtual-machine"],
+    types: ["container", "virtual-machine"],
     remote: {
       server,
       alias: trimmedAlias,
       protocol: "oci",
     },
   };
+}
+
+function formatProtocol(protocol: "simplestreams" | "oci") {
+  return protocol === "simplestreams" ? "Simplestreams" : "OCI";
 }
 
 function formatSource(server?: string) {
