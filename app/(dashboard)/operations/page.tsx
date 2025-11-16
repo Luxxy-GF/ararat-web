@@ -69,6 +69,15 @@ const STATUS_STYLES: Record<
   },
 };
 
+async function cancelOperation(id: string) {
+  const res = await fetch(`/1.0/operations/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    throw new Error(`Unable to cancel ${id}: ${res.status}`);
+  }
+}
+
 function formatDateTime(value?: string) {
   if (!value) return "—";
   const date = new Date(value);
@@ -79,17 +88,38 @@ function formatDateTime(value?: string) {
   }).format(date);
 }
 
-function formatMetadata(metadata: unknown) {
-  if (metadata === null || typeof metadata === "undefined") {
-    return "—";
+function ChangesPreview({ metadata }: { metadata: unknown }) {
+  if (!metadata || metadata === "—") {
+    return <span className="text-sm text-muted-foreground">—</span>;
   }
-  if (typeof metadata === "string") return metadata;
-  try {
-    const formatted = JSON.stringify(metadata, null, 2);
-    return formatted === "{}" ? "—" : formatted;
-  } catch {
-    return String(metadata);
+  if (typeof metadata === "string") {
+    return (
+      <span className="text-sm text-muted-foreground break-words">
+        {metadata}
+      </span>
+    );
   }
+  if (typeof metadata === "object") {
+    return (
+      <div className="space-y-1 text-xs text-zinc-300">
+        {Object.entries(metadata as Record<string, unknown>).map(
+          ([key, value]) => (
+            <div key={key} className="flex gap-2">
+              <span className="text-muted-foreground">{key}</span>
+              <span className="break-words">
+                {typeof value === "string"
+                  ? value
+                  : Array.isArray(value)
+                  ? value.join(", ")
+                  : JSON.stringify(value)}
+              </span>
+            </div>
+          )
+        )}
+      </div>
+    );
+  }
+  return <span className="text-sm text-muted-foreground">{String(metadata)}</span>;
 }
 
 export default function OperationsPage() {
@@ -263,11 +293,7 @@ useEffect(() => {
         id: "changes",
         cell: ({ row }: { row: Row<object> }) => {
           const operation = row.original as IncusOperation;
-          return (
-            <pre className="max-w-xl whitespace-pre-wrap break-words text-xs text-zinc-300">
-              {formatMetadata(operation.metadata)}
-            </pre>
-          );
+          return <ChangesPreview metadata={operation.metadata} />;
         },
       },
     ],
@@ -319,15 +345,7 @@ useEffect(() => {
               try {
                 await Promise.all(
                   selectedOperations.map((operation) =>
-                    fetch(`/1.0/operations/${operation.id}`, {
-                      method: "DELETE",
-                    }).then((res) => {
-                      if (!res.ok) {
-                        throw new Error(
-                          `Unable to cancel ${operation.id}: ${res.status}`
-                        );
-                      }
-                    })
+                    cancelOperation(operation.id)
                   )
                 );
                 await fetchOperations();
