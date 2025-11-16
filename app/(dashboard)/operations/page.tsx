@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { cancelOperation, fetchOperationsList } from "@/lib/incus/operations";
 import {
   Sheet,
   SheetContent,
@@ -19,33 +20,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-
-type IncusOperation = {
-  id: string;
-  class?: string;
-  description?: string;
-  status: string;
-  status_code?: number;
-  created_at?: string;
-  updated_at?: string;
-  metadata?: unknown;
-};
-
-type OperationListMetadata = {
-  running?: string[];
-  pending?: string[];
-  success?: string[];
-  failure?: string[];
-  cancelling?: string[];
-};
-
-type OperationsResponse = {
-  metadata: IncusOperation[] | OperationListMetadata | IncusOperation;
-};
-
-type OperationDetailResponse = {
-  metadata: IncusOperation;
-};
 
 const STATUS_STYLES: Record<
   string,
@@ -76,15 +50,6 @@ const STATUS_STYLES: Record<
   },
 };
 
-async function cancelOperation(id: string) {
-  const res = await fetch(`/1.0/operations/${id}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) {
-    throw new Error(`Unable to cancel ${id}: ${res.status}`);
-  }
-}
-
 function formatDateTime(value?: string) {
   if (!value) return "—";
   const date = new Date(value);
@@ -110,69 +75,10 @@ export default function OperationsPage() {
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const { toast } = useToast();
 
-  const resolveOperations = useCallback(
-    async (payload: OperationsResponse): Promise<IncusOperation[]> => {
-      const raw = payload?.metadata;
-      if (Array.isArray(raw)) {
-        return raw as IncusOperation[];
-      }
-      if (raw && typeof raw === "object") {
-        if ("id" in raw && "status" in raw) {
-          return [raw as IncusOperation];
-        }
-        const list = raw as OperationListMetadata;
-        const buckets = [
-          ...(list.running ?? []),
-          ...(list.pending ?? []),
-          ...(list.success ?? []),
-          ...(list.failure ?? []),
-          ...(list.cancelling ?? []),
-        ] as (string | IncusOperation)[];
-        const flattenedObjects = buckets.filter(
-          (entry): entry is IncusOperation =>
-            typeof entry === "object" &&
-            entry !== null &&
-            "status" in entry &&
-            "id" in entry
-        );
-        if (flattenedObjects.length) {
-          return flattenedObjects;
-        }
-        const stringPaths = buckets.filter(
-          (entry): entry is string => typeof entry === "string"
-        );
-        const uniquePaths = Array.from(new Set(stringPaths));
-        if (!uniquePaths.length) return [];
-        const details = await Promise.all(
-          uniquePaths.map(async (path) => {
-            const detailRes = await fetch(path, { cache: "no-store" });
-            if (!detailRes.ok) {
-              throw new Error(
-                `Unable to fetch operation ${path}: ${detailRes.status}`
-              );
-            }
-            const detailJson =
-              (await detailRes.json()) as OperationDetailResponse;
-            return detailJson.metadata;
-          })
-        );
-        return details;
-      }
-      return [];
-    },
-    []
-  );
   const fetchOperations = useCallback(async () => {
     setIsUpdating(true);
     try {
-      const response = await fetch("/1.0/operations?recursion=1", {
-        cache: "no-store",
-      });
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
-      }
-      const json = (await response.json()) as OperationsResponse;
-      const parsed = await resolveOperations(json);
+      const parsed = await fetchOperationsList();
       setOperations(
         parsed.sort((a, b) => {
           const dateA = new Date(a.created_at ?? a.updated_at ?? 0).getTime();
@@ -191,17 +97,11 @@ export default function OperationsPage() {
       setIsLoading(false);
       window.setTimeout(() => setIsUpdating(false), 800);
     }
-  }, [resolveOperations, toast]);
+  }, [toast]);
 
   useEffect(() => {
     fetchOperations();
-    const interval = window.setInterval(fetchOperations, 5000);
-    return () => window.clearInterval(interval);
   }, [fetchOperations]);
-
-useEffect(() => {
-  setSelectedOperations((prev) => (prev.length ? [] : prev));
-}, [operations]);
 
   const columns = useMemo<ColumnDef<object, unknown>[]>(
     () => [
@@ -210,7 +110,11 @@ useEffect(() => {
         accessorKey: "id",
         cell: ({ row }: { row: Row<object> }) => {
           const operation = row.original as IncusOperation;
-          return <div className="font-mono text-xs">{operation.id}</div>;
+          return (
+            <div className="font-mono text-xs truncate max-w-[200px]">
+              {operation.id}
+            </div>
+          );
         },
       },
       {
@@ -287,52 +191,44 @@ useEffect(() => {
           >
             {isUpdating ? "Updating…" : "Live"}
           </Badge>
-          <Input
-            placeholder="Search operations…"
-            value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-            className="w-full sm:w-64"
-          />
-        </div>
-      </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <p className="text-sm text-muted-foreground">
-          {selectedOperations.length
-            ? `${selectedOperations.length} selected`
-            : "Select operations to manage them"}
-        </p>
-        <div className="ml-auto flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!selectedOperations.length || isCancelling}
-            onClick={async () => {
-              if (!selectedOperations.length) return;
-              setActionError(null);
-              setIsCancelling(true);
-              try {
-                await Promise.all(
-                  selectedOperations.map((operation) =>
-                    cancelOperation(operation.id)
-                  )
-                );
-                await fetchOperations();
-              } catch (error) {
-                setActionError(
-                  error instanceof Error
-                    ? error.message
-                    : "Unable to cancel operations."
-                );
-              } finally {
-                setIsCancelling(false);
-              }
-            }}
-          >
-            {isCancelling ? (
-              <Spinner className="mr-2 size-3" />
-            ) : null}
-            Cancel
-          </Button>
+          {selectedOperations.length ? (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isCancelling}
+              onClick={async () => {
+                if (!selectedOperations.length) return;
+                setActionError(null);
+                setIsCancelling(true);
+                try {
+                  await Promise.all(
+                    selectedOperations.map((operation) =>
+                      cancelOperation(operation.id)
+                    )
+                  );
+                  await fetchOperations();
+                } catch (error) {
+                  setActionError(
+                    error instanceof Error
+                      ? error.message
+                      : "Unable to cancel operations."
+                  );
+                } finally {
+                  setIsCancelling(false);
+                }
+              }}
+            >
+              {isCancelling ? <Spinner className="mr-2 size-3" /> : null}
+              Cancel Selected
+            </Button>
+          ) : (
+            <Input
+              placeholder="Search operations…"
+              value={filter}
+              onChange={(event) => setFilter(event.target.value)}
+              className="w-full sm:w-64"
+            />
+          )}
         </div>
       </div>
       {actionError ? (
