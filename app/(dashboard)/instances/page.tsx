@@ -102,7 +102,7 @@ const columns = React.useMemo(() => {
           return (
             <button
               type="button"
-              className="text-left font-medium text-primary hover:underline focus:outline-none"
+              className="text-left font-medium text-primary underline focus:outline-none"
               onClick={(event) => event.stopPropagation()}
             >
               {instance.name}
@@ -258,52 +258,46 @@ const columns = React.useMemo(() => {
         <div className="flex flex-wrap items-center gap-3">
           <p className="text-2xl font-semibold">Instances</p>
           <div className="flex flex-1 flex-wrap items-center gap-3 justify-end">
-            {!isBusy ? (
-              <Input
-                placeholder="Search instances..."
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                className="w-full sm:w-64"
-              />
+            {!hasSelection ? (
+              !isBusy ? (
+                <Input
+                  placeholder="Search instances..."
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className="w-full sm:w-64"
+                />
+              ) : (
+                <Skeleton className="h-10 w-full sm:w-64" />
+              )
+            ) : null}
+            {hasSelection ? (
+              <div className="flex flex-wrap items-center gap-2 ml-auto">
+                {(
+                  Object.entries(instanceActionDetails) as [
+                    InstanceAction,
+                    { label: string; Icon: React.ComponentType<{ className?: string }> }
+                  ][]
+                ).map(([action, { label, Icon }]) => (
+                  <Button
+                    key={action}
+                    variant="outline"
+                    size="sm"
+                    disabled={actionInFlight !== null}
+                    onClick={() => handleMassAction(action)}
+                  >
+                    {actionInFlight === action ? (
+                      <Spinner className="mr-2 size-3" />
+                    ) : (
+                      <Icon className="mr-2 size-3" />
+                    )}
+                    {label}
+                  </Button>
+                ))}
+              </div>
             ) : (
-              <Skeleton className="h-10 w-full sm:w-64" />
+              <CreateInstance className="w-full sm:w-auto" />
             )}
-            <CreateInstance className="w-full sm:w-auto" />
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <p className="text-sm text-muted-foreground">
-            {hasSelection
-              ? `${selectedInstances.length} instance${
-                  selectedInstances.length > 1 ? "s" : ""
-                } selected`
-              : "Select instances to run mass actions"}
-          </p>
-          {hasSelection ? (
-            <div className="flex flex-wrap items-center gap-2 ml-auto">
-              {(
-                Object.entries(instanceActionDetails) as [
-                  InstanceAction,
-                  { label: string; Icon: React.ComponentType<{ className?: string }> }
-                ][]
-              ).map(([action, { label, Icon }]) => (
-                <Button
-                  key={action}
-                  variant="outline"
-                  size="sm"
-                  disabled={actionInFlight !== null}
-                  onClick={() => handleMassAction(action)}
-                >
-                  {actionInFlight === action ? (
-                    <Spinner className="mr-2 size-3" />
-                  ) : (
-                    <Icon className="mr-2 size-3" />
-                  )}
-                  {label}
-                </Button>
-              ))}
-            </div>
-          ) : null}
         </div>
         {actionError ? (
           <Alert variant="destructive">
@@ -393,7 +387,13 @@ function InstanceDetails({ instance }: { instance: Instance }) {
         <Section title="Overview">
           <DetailRow
             label="Instance Memory"
-            value={formatBytes(memoryUsage)}
+            value={
+              instance.state?.memory?.total
+                ? `${formatBytes(memoryUsage)} / ${formatBytes(
+                    instance.state.memory.total
+                  )}`
+                : formatBytes(memoryUsage)
+            }
             hidden={!hasStateData || typeof memoryUsage !== "number"}
           />
           <DetailRow
