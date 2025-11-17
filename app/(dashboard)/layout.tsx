@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar";
+import ProjectsProvider from "@/components/context/projects";
 import UserProvider from "@/components/context/user";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -35,8 +36,10 @@ export default function DashboardLayout({
           </>
         ) : (
           <SidebarInset>
-            <SiteHeader />
-            <div className="p-4  lg:px-6">{children}</div>
+            <ProjectsProvider>
+              <SiteHeader />
+              <div className="p-4  lg:px-6">{children}</div>
+            </ProjectsProvider>
           </SidebarInset>
         )}
       </SidebarProvider>
