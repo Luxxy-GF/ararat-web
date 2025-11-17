@@ -479,7 +479,7 @@ async function fetchSimplestreamImages(remote: RemoteServer) {
       os: product.os,
       release: product.release,
       variant: product.variant,
-      arch: product.arch == "amd64" ? "x86_64" : product.arch,
+      arch: product.arch === "amd64" ? "x86_64" : product.arch,
       types,
       remote: {
         server: base,
