@@ -2,11 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Poppins } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/context/theme";
-import ServerConfigProvider from "@/components/context/serverConfig";
 import SwrProvider from "@/components/context/swr";
 import AuthenticationProvider from "@/components/context/authentication";
 import Router from "./router";
-import ProjectProvider from "@/components/context/projects";
+import { ServerConfigurationProvider } from "@/components/context/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,15 +39,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} antialiased`}
       >
         <SwrProvider>
-          <ServerConfigProvider>
-            <ThemeProvider>
+          <ThemeProvider>
+            <ServerConfigurationProvider>
               <AuthenticationProvider>
-                <ProjectProvider>
-                  <Router>{children}</Router>
-                </ProjectProvider>
+                <Router>{children}</Router>
               </AuthenticationProvider>
-            </ThemeProvider>
-          </ServerConfigProvider>
+            </ServerConfigurationProvider>
+          </ThemeProvider>
         </SwrProvider>
       </body>
     </html>
