@@ -275,11 +275,11 @@ export default function ImageSelector({
   );
 
   return (
-    <div className="mt-2 space-y-4">
+    <div className="mt-2 space-y-4 flex flex-col min-h-0">
       {isLoading ? <Spinner className="mx-auto my-6" /> : null}
       {!isLoading ? (
         <>
-          <div className="rounded-md border bg-muted/30 p-3 text-sm">
+          <div className="rounded-md border bg-muted/30 p-3 text-sm flex-shrink-0">
             {selectedImage ? (
               <>
                 <p className="font-medium">
@@ -303,7 +303,7 @@ export default function ImageSelector({
               </p>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 flex-shrink-0">
             <div>
               <p className="font-medium text-md my-auto">Available Images</p>
               <p className="text-xs text-muted-foreground">
@@ -312,16 +312,16 @@ export default function ImageSelector({
                   : `Project · ${currentProject}`}
               </p>
             </div>
-            <div className="ml-auto flex flex-wrap items-center gap-2">
+            <div className="sm:ml-auto flex flex-wrap items-center gap-2 w-full sm:w-fit">
               <Input
                 placeholder="Search images..."
                 value={stringFilter}
                 onChange={(event) => setStringFilter(event.currentTarget.value)}
-                className="h-9 w-full min-w-48 sm:w-64"
+                className="h-9 w-40  sm:w-64"
               />
               <Dialog open={addingRemote} onOpenChange={setAddingRemote}>
                 <DialogTrigger asChild>
-                  <Button className="h-fit">Add Remote</Button>
+                  <Button className="ml-auto h-fit">Add Remote</Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -383,20 +383,24 @@ export default function ImageSelector({
               </Dialog>
             </div>
           </div>
-          <DataTable
-            className={`mt-2 max-h-[60vh] overflow-auto ${
+          <div
+            className={`mt-2 flex-1 min-h-0 overflow-hidden ${
               isValidating || loadingRemotes ? "animate-pulse" : ""
             }`}
-            stringFilter={stringFilter}
-            cols={columns}
-            data={images}
-            onRowClick={handleRowClick}
-            getRowClassName={(row) =>
-              (row.original as SelectableImage).id === selectedImageId
-                ? "bg-muted/30"
-                : ""
-            }
-          />
+          >
+            <DataTable
+              className="h-full [&>div]:h-full [&>div]:overflow-auto"
+              stringFilter={stringFilter}
+              cols={columns}
+              data={images}
+              onRowClick={handleRowClick}
+              getRowClassName={(row) =>
+                (row.original as SelectableImage).id === selectedImageId
+                  ? "bg-muted/30"
+                  : ""
+              }
+            />
+          </div>
         </>
       ) : null}
     </div>

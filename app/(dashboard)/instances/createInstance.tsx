@@ -154,25 +154,31 @@ export default function CreateInstance({ className }: { className?: string }) {
             <DialogContent
               className={`${
                 selectingImage
-                  ? "max-h-screen w-full sm:max-w-5xl"
+                  ? "max-h-screen w-full sm:max-w-5xl flex flex-col"
                   : "min-w-xs min-h-0"
               } transition-all duration-200`}
             >
-              <DialogHeader>
+              <DialogHeader className="flex-shrink-0">
                 <DialogTitle>Create Instance</DialogTitle>
                 <DialogDescription>Create a new instance</DialogDescription>
               </DialogHeader>
-              <div className="flex">
+              <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
                 <Tabs
-                  className="w-full mb-auto"
+                  className="w-full flex flex-col flex-1 min-h-0"
                   value={currentTab}
                   onValueChange={setCurrentTab}
                 >
-                  <TabsList className="w-full" defaultValue="properties">
+                  <TabsList
+                    className="w-full flex-shrink-0"
+                    defaultValue="properties"
+                  >
                     <TabsTrigger value="properties">Properties</TabsTrigger>
                     <TabsTrigger value="source">Source</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="properties">
+                  <TabsContent
+                    value="properties"
+                    className="overflow-auto flex-1 min-h-0"
+                  >
                     <div className="space-y-4">
                       <FormField
                         control={form.control}
@@ -209,7 +215,10 @@ export default function CreateInstance({ className }: { className?: string }) {
                       />
                     </div>
                   </TabsContent>
-                  <TabsContent value="source" className="max-w-screen">
+                  <TabsContent
+                    value="source"
+                    className="overflow-auto flex-1 min-h-0"
+                  >
                     <FormField
                       control={form.control}
                       name="source.type"
@@ -249,7 +258,7 @@ export default function CreateInstance({ className }: { className?: string }) {
                   </TabsContent>
                 </Tabs>
               </div>
-              <DialogFooter>
+              <DialogFooter className="flex-shrink-0">
                 <Button type="submit" disabled={true}>
                   Create Instance
                 </Button>
