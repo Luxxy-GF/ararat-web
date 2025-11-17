@@ -13,11 +13,11 @@ import {
   SelectValue,
 } from "./ui/select";
 import { use } from "react";
-import { ProjectContext } from "@/components/context/projects";
+import { ProjectsContext } from "@/components/context/projects";
 
 export function SiteHeader() {
   const { projects, currentProject, setProject, isLoading } =
-    use(ProjectContext);
+    use(ProjectsContext);
 
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
