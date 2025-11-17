@@ -1,5 +1,3 @@
-import { StandardResponse } from "./response";
-
 export interface Server {
   config: ServerConfig;
   api_extensions: string[];
@@ -11,7 +9,6 @@ export interface Server {
   public: boolean;
   auth_methods: string[];
 }
-export type ServerResponse = StandardResponse<Server>;
 
 export interface ServerConfig {
   "user.ui.theme"?: string;
@@ -19,7 +16,7 @@ export interface ServerConfig {
   [key: string]: unknown;
 }
 
-export interface ServerConfigurationMetadata {
+export interface ConfigurableOptions {
   configs: {
     cluster: object;
     cluster_group: object;
@@ -62,6 +59,3 @@ export interface ServerConfigurationMetadata {
     storage_zfs: object;
   };
 }
-
-export type ServerConfigurationMetadataResponse =
-  StandardResponse<ServerConfigurationMetadata>;

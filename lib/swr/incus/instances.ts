@@ -1,4 +1,4 @@
-import { InstancesResponse } from "@/types/incus/instances";
+import { InstancesResponse } from "@/lib/incus/types/instances";
 import useSWR from "swr";
 
 const fetcher = (...args: Parameters<typeof fetch>) =>

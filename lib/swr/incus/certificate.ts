@@ -1,4 +1,4 @@
-import { CertificateResponse } from "@/types/incus/certificate";
+import { CertificateResponse } from "@/lib/incus/types/certificate";
 import useSWR from "swr";
 
 const fetcher = (...args: Parameters<typeof fetch>) =>

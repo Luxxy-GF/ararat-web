@@ -1,8 +1,8 @@
 import {
   AddCertificateBody,
   AddCertificateBodyPublic,
-} from "@/types/incus/certificate";
-import { ErrorResponse, StandardResponse } from "@/types/incus/response";
+} from "./types/certificate";
+import { ErrorResponse, StandardResponse } from "@/lib/incus/types/response";
 
 export async function addCertificate(
   token: string,

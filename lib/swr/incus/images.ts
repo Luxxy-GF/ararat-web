@@ -1,4 +1,4 @@
-import { ImagesResponse } from "@/types/incus/images";
+import { ImagesResponse } from "@/lib/incus/types/images";
 import useSWR from "swr";
 
 const fetcher = (...args: Parameters<typeof fetch>) =>
