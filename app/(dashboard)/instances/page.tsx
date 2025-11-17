@@ -95,7 +95,7 @@ export default function Instances() {
   const columns = React.useMemo(() => {
     const baseColumns = [
       {
-        header: "Instance Name",
+        header: "Name",
         accessorKey: "name",
         cell: ({ row }: { row: Row<object> }) => {
           const instance = row.original as Instance;
@@ -111,7 +111,7 @@ export default function Instances() {
         },
       },
       {
-        header: "Instance Description",
+        header: "Description",
         accessorKey: "description",
         cell: ({ row }: { row: Row<object> }) => {
           const instance = row.original as Instance;
