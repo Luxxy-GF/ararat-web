@@ -1,5 +1,9 @@
 "use client";
 
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Row } from "@tanstack/react-table";
+
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import DataTable from "@/components/ui/data-table";
 import {
@@ -22,235 +26,538 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { useImages } from "@/lib/swr/incus/images";
-import { useEffect, useMemo, useState } from "react";
+import { ProjectContext } from "@/components/context/projects";
+
+type RemoteProtocol = "simplestreams";
 
 type RemoteServer = {
   server: string;
-  protocol?: string;
+  protocol: RemoteProtocol;
 };
 
-type Image = {
-  local: boolean;
-  identifier: string;
+type ImageKind = "container" | "virtual-machine";
+
+type SimplestreamItem = {
+  ftype?: string;
+  path?: string;
+};
+
+type SimplestreamProduct = {
+  aliases?: string | { name: string }[];
   arch?: string;
   os?: string;
   release?: string;
   variant?: string;
+  versions?: Record<
+    string,
+    {
+      items?: Record<string, SimplestreamItem>;
+    }
+  >;
 };
 
-export default function ImageSelector() {
-  const { data: localImagesData, isLoading, isValidating } = useImages();
+export type SelectableImage = {
+  id: string;
+  local: boolean;
+  label: string;
+  os?: string;
+  release?: string;
+  variant?: string;
+  arch?: string;
+  types: ImageKind[];
+  fingerprint?: string;
+  remote?: {
+    server: string;
+    alias: string;
+    protocol: "simplestreams" | "oci";
+  };
+};
+
+export default function ImageSelector({
+  selectedImage,
+  onSelect,
+}: {
+  selectedImage: SelectableImage | null;
+  onSelect: (image: SelectableImage) => void;
+}) {
+  const { currentProject } = use(ProjectContext);
+  const {
+    data: localImagesData,
+    isLoading,
+    isValidating,
+  } = useImages(currentProject);
   const [userAddedRemoteServers, setUserAddedRemoteServers] = useState<
     RemoteServer[]
   >([]);
-  const [addingRemote, setAddingRemote] = useState<boolean>(false);
-  const [remoteProtocol, setRemoteProtocol] = useState<string>("simplestreams");
-  const [remoteURL, setRemoteURL] = useState<string>("");
-  const [ociImage, setOciImage] = useState<string>("");
-  const [loadingRemotes, setLoadingRemotes] = useState<boolean>(false);
-  const [remoteImages, setRemoteImages] = useState<Image[]>([]);
-  const [stringFilter, setStringFilter] = useState<string>("");
+  const [remoteImages, setRemoteImages] = useState<SelectableImage[]>([]);
+  const [loadingRemotes, setLoadingRemotes] = useState(false);
+  const [addingRemote, setAddingRemote] = useState(false);
+  const [remoteProtocol, setRemoteProtocol] = useState<"simplestreams" | "oci">(
+    "simplestreams"
+  );
+  const [remoteURL, setRemoteURL] = useState("");
+  const [ociImage, setOciImage] = useState("");
+  const [stringFilter, setStringFilter] = useState("");
+  const fetchedRemotesRef = useRef(new Set<string>());
 
-  const localImages = useMemo(() => {
+  const localImages = useMemo<SelectableImage[]>(() => {
     if (!localImagesData) return [];
     return localImagesData.map((image) => ({
+      id: `local-${image.fingerprint}`,
       local: true,
-      identifier: image.fingerprint,
-      arch: image.architecture,
+      label:
+        image.aliases?.[0]?.name ?? image.properties.os ?? image.fingerprint,
       os: image.properties.os,
       release: image.properties.release,
       variant: image.properties.variant,
+      arch: image.architecture,
+      types: image.type ? [image.type as ImageKind] : [],
+      fingerprint: image.fingerprint,
     }));
   }, [localImagesData]);
 
-  const derivedRemoteServers = useMemo(() => {
+  const derivedRemoteServers = useMemo<RemoteServer[]>(() => {
     if (!localImagesData) return [];
-    return localImagesData.reduce<RemoteServer[]>((acc, image) => {
-      if (image.update_source && image.update_source.server) {
-        const exists = acc.some(
-          (item) => item.server === image.update_source?.server
-        );
-        if (!exists) {
-          acc.push({
-            server: image.update_source.server,
-            protocol: image.update_source.protocol,
-          });
-        }
-      }
-      return acc;
-    }, []);
+    const map = new Map<string, RemoteServer>();
+    localImagesData.forEach((image) => {
+      const server = image.update_source?.server;
+      if (!server) return;
+      const normalized = normalizeRemoteURL(server);
+      if (!normalized || map.has(normalized)) return;
+      map.set(normalized, {
+        server: normalized,
+        protocol: "simplestreams",
+      });
+    });
+    return Array.from(map.values());
   }, [localImagesData]);
 
   const remoteServers = useMemo(() => {
-    return [...derivedRemoteServers, ...userAddedRemoteServers];
+    const map = new Map<string, RemoteServer>();
+    [...derivedRemoteServers, ...userAddedRemoteServers].forEach((remote) => {
+      const normalized = normalizeRemoteURL(remote.server);
+      if (!normalized || map.has(normalized)) return;
+      map.set(normalized, { server: normalized, protocol: "simplestreams" });
+    });
+    return Array.from(map.values());
   }, [derivedRemoteServers, userAddedRemoteServers]);
 
-  const images = [...localImages, ...remoteImages];
   useEffect(() => {
-    remoteServers.forEach(async (remote) => {
+    const serversToFetch = remoteServers.filter(
+      (remote) => !fetchedRemotesRef.current.has(remote.server)
+    );
+    if (!serversToFetch.length) return;
+    let cancelled = false;
+    const fetchRemotes = async () => {
       setLoadingRemotes(true);
-      if (remote.protocol == "simplestreams") {
-        try {
-          const res = await fetch(remote.server + "/streams/v1/index.json");
-          const data = await res.json();
-          const imagesPath = data.index.images.path;
-          const imagesRes = await fetch(remote.server + "/" + imagesPath);
-          const imagesData = await imagesRes.json();
-          const theseImages = imagesData.products;
-          Object.keys(theseImages).map((key) => {
-            console.log(key, theseImages[key]);
-            const image = {
-              local: false,
-              identifier:
-                theseImages[key].aliases.split(",")[0] ||
-                theseImages[key].aliases,
-              arch: theseImages[key].arch,
-              os: theseImages[key].os,
-              release: theseImages[key].release,
-              variant: theseImages[key].variant,
-            };
-            setRemoteImages((prevImages) => [...prevImages, image]);
-          });
-        } catch {}
+      try {
+        for (const remote of serversToFetch) {
+          try {
+            const remoteImagesForServer = await fetchSimplestreamImages(remote);
+            if (cancelled) return;
+            fetchedRemotesRef.current.add(remote.server);
+            setRemoteImages((prev) =>
+              mergeImageLists(prev, remoteImagesForServer)
+            );
+          } catch (error) {
+            console.error(
+              "Unable to fetch remote images",
+              remote.server,
+              error
+            );
+          }
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingRemotes(false);
+        }
       }
-      setLoadingRemotes(false);
-    });
+    };
+    fetchRemotes();
+    return () => {
+      cancelled = true;
+    };
   }, [remoteServers]);
-  return (
-    <div className="mt-2">
-      {isLoading && <Spinner />}
-      {!isLoading && images ? (
-        <>
-          <div className="flex">
-            <p className="font-medium text-md my-auto">Image</p>
-            <Input
-              placeholder="Search images..."
-              value={stringFilter}
-              onChange={(e) => setStringFilter(e.currentTarget.value)}
-              className="h-auto  ml-auto w-64 mr-4"
-            />
-            <Dialog open={addingRemote} onOpenChange={setAddingRemote}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="my-auto">
-                  Add Remote{" "}
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add Remote</DialogTitle>
-                  <DialogDescription>
-                    Add a remote server to fetch images or an OCI image
-                  </DialogDescription>
-                </DialogHeader>
-                <Label htmlFor="protocol">Remote Server</Label>
 
-                <div className="flex gap-2 -mt-2" id="protocol">
-                  <Select
-                    value={remoteProtocol}
-                    onValueChange={setRemoteProtocol}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Remote Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="simplestreams">
-                        Simplestreams
-                      </SelectItem>
-                      <SelectItem value="oci">OCI</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    placeholder="Remote URL"
-                    value={remoteURL}
-                    onChange={(e) => setRemoteURL(e.target.value)}
-                  />
-                </div>
-                {remoteProtocol == "oci" ? (
-                  <>
-                    <Label htmlFor="ociImage">OCI Image</Label>
-                    <Input
-                      value={ociImage}
-                      onChange={(e) => setOciImage(e.target.value)}
-                      className="-mt-2"
-                      id="ociImage"
-                      placeholder="OCI Image"
-                    />
-                  </>
-                ) : null}
-                <DialogFooter>
-                  <Button
-                    disabled={remoteProtocol === "oci" ? !ociImage : !remoteURL}
-                    onClick={() => {
-                      if (
-                        remoteProtocol === "simplestreams" ||
-                        remoteProtocol === "incus"
-                      ) {
-                        setUserAddedRemoteServers((prev) => [
-                          ...prev,
-                          { server: remoteURL, protocol: remoteProtocol },
-                        ]);
-                      } else if (remoteProtocol === "oci") {
-                        setRemoteImages((prev) => [
-                          {
-                            local: false,
-                            identifier: ociImage,
-                            os: ociImage,
-                          },
-                          ...prev,
-                        ]);
-                      }
-                      setAddingRemote(false);
-                    }}
-                  >
-                    {remoteProtocol === "oci"
-                      ? "Add OCI Image"
-                      : "Add Remote Server"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+  const images = useMemo(
+    () => [...localImages, ...remoteImages],
+    [localImages, remoteImages]
+  );
+  const selectedImageId = selectedImage?.id ?? null;
+
+  const handleSelect = useCallback(
+    (image: SelectableImage) => {
+      onSelect(image);
+    },
+    [onSelect]
+  );
+
+  const handleRowClick = useCallback(
+    (row: Row<object>) => {
+      handleSelect(row.original as SelectableImage);
+    },
+    [handleSelect]
+  );
+
+  const handleAddRemote = () => {
+    const normalized = normalizeRemoteURL(remoteURL);
+    if (!normalized) return;
+    if (remoteProtocol === "simplestreams") {
+      setUserAddedRemoteServers((prev) => {
+        if (prev.some((remote) => remote.server === normalized)) return prev;
+        return [...prev, { server: normalized, protocol: "simplestreams" }];
+      });
+    } else if (remoteProtocol === "oci" && ociImage) {
+      const ociEntry = buildOciImage(normalized, ociImage);
+      setRemoteImages((prev) => [
+        ociEntry,
+        ...prev.filter((image) => image.id !== ociEntry.id),
+      ]);
+    }
+    setRemoteURL("");
+    setOciImage("");
+    setAddingRemote(false);
+  };
+
+  const columns = useMemo(
+    () => [
+      {
+        header: "Image",
+        accessorKey: "label",
+        cell: ({ row }: { row: Row<object> }) => {
+          const image = row.original as SelectableImage;
+          return (
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-semibold truncate" title={image.os}>
+                  {image.os ?? "Unknown OS"}
+                  {image.release ? ` ${image.release}` : ""}
+                </span>
+                <Badge
+                  variant={image.local ? "secondary" : "outline"}
+                  className="text-[10px] uppercase flex-shrink-0"
+                >
+                  {image.local ? "Local" : "Remote"}
+                </Badge>
+              </div>
+              <span
+                className="text-xs text-muted-foreground truncate"
+                title={image.label}
+              >
+                {image.label}
+              </span>
+              {!image.local && image.remote?.server ? (
+                <span
+                  className="text-[10px] text-muted-foreground truncate"
+                  title={formatSource(image.remote.server)}
+                >
+                  {formatSource(image.remote.server)}
+                </span>
+              ) : null}
+            </div>
+          );
+        },
+      },
+      {
+        header: "Type",
+        id: "types",
+        cell: ({ row }: { row: Row<object> }) => {
+          const image = row.original as SelectableImage;
+          const typeText = image.types.length
+            ? image.types
+                .map((type) =>
+                  type === "virtual-machine" ? "Virtual Machine" : "Container"
+                )
+                .join(", ")
+            : "—";
+          return (
+            <div className="truncate" title={typeText}>
+              {typeText}
+            </div>
+          );
+        },
+      },
+      {
+        header: "Arch",
+        accessorKey: "arch",
+        cell: ({ getValue }: { getValue: () => unknown }) => {
+          const arch = getValue() as string | undefined;
+          return (
+            <div className="truncate" title={arch}>
+              {arch ?? "—"}
+            </div>
+          );
+        },
+      },
+    ],
+    []
+  );
+
+  return (
+    <div className="mt-2 space-y-4 flex flex-col min-h-0">
+      {isLoading ? <Spinner className="mx-auto my-6" /> : null}
+      {!isLoading ? (
+        <>
+          <div className="rounded-md border bg-muted/30 p-3 text-sm flex-shrink-0">
+            {selectedImage ? (
+              <>
+                <p className="font-medium">
+                  {selectedImage.os ?? "Unknown OS"}
+                  {selectedImage.release ? ` · ${selectedImage.release}` : ""}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  {selectedImage.label}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedImage.remote
+                    ? `${formatProtocol(
+                        selectedImage.remote.protocol
+                      )} · ${formatSource(selectedImage.remote.server)}`
+                    : "Local image"}
+                </p>
+              </>
+            ) : (
+              <p className="text-muted-foreground">
+                Select an image to define the instance base.
+              </p>
+            )}
           </div>
-          <DataTable
-            className={`${
+          <div className="flex flex-wrap items-center gap-3 flex-shrink-0">
+            <div>
+              <p className="font-medium text-md my-auto">Available Images</p>
+              <p className="text-xs text-muted-foreground">
+                {currentProject === "all"
+                  ? "All projects"
+                  : `Project · ${currentProject}`}
+              </p>
+            </div>
+            <div className="sm:ml-auto flex flex-wrap items-center gap-2 w-full sm:w-fit">
+              <Input
+                placeholder="Search images..."
+                value={stringFilter}
+                onChange={(event) => setStringFilter(event.currentTarget.value)}
+                className="h-9 w-40  sm:w-64"
+              />
+              <Dialog open={addingRemote} onOpenChange={setAddingRemote}>
+                <DialogTrigger asChild>
+                  <Button className="ml-auto h-fit">Add Remote</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Remote</DialogTitle>
+                    <DialogDescription>
+                      Add a Simplestreams server or OCI image to pull from.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Label htmlFor="remoteProtocol">Remote Type</Label>
+                  <div className="flex gap-2 -mt-2" id="remoteProtocol">
+                    <Select
+                      value={remoteProtocol}
+                      onValueChange={(value) =>
+                        setRemoteProtocol(value as "simplestreams" | "oci")
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Remote Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="simplestreams">
+                          Simplestreams
+                        </SelectItem>
+                        <SelectItem value="oci">OCI</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      placeholder="https://images.example.com"
+                      value={remoteURL}
+                      onChange={(event) => setRemoteURL(event.target.value)}
+                    />
+                  </div>
+                  {remoteProtocol === "oci" ? (
+                    <>
+                      <Label htmlFor="ociImage">OCI Image</Label>
+                      <Input
+                        id="ociImage"
+                        value={ociImage}
+                        onChange={(event) => setOciImage(event.target.value)}
+                        placeholder="alias"
+                        className="-mt-2"
+                      />
+                    </>
+                  ) : null}
+                  <DialogFooter>
+                    <Button
+                      disabled={
+                        !remoteURL ||
+                        (remoteProtocol === "oci" && !ociImage.trim().length)
+                      }
+                      onClick={handleAddRemote}
+                    >
+                      {remoteProtocol === "oci"
+                        ? "Add OCI Image"
+                        : "Add Remote Server"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+          <div
+            className={`mt-2 flex-1 min-h-0 overflow-hidden ${
               isValidating || loadingRemotes ? "animate-pulse" : ""
-            } mt-2 mb-auto`}
-            stringFilter={stringFilter}
-            cols={[
-              {
-                header: "OS",
-                accessorKey: "os",
-              },
-              {
-                header: "Release",
-                accessorKey: "release",
-              },
-              {
-                header: "Variant",
-                accessorKey: "variant",
-              },
-              {
-                header: "Architecture",
-                accessorKey: "arch",
-              },
-              {
-                header: "Source",
-                accessorKey: "local",
-                cell: ({ getValue }) => (getValue() ? "Local" : "Remote"),
-              },
-              {
-                header: "Select",
-                id: "select",
-                cell: () => (
-                  <Button size="sm" variant="outline">
-                    Select
-                  </Button>
-                ),
-              },
-            ]}
-            data={images}
-          />
+            }`}
+          >
+            <DataTable
+              className="h-full [&>div]:h-full [&>div]:overflow-auto"
+              stringFilter={stringFilter}
+              cols={columns}
+              data={images}
+              onRowClick={handleRowClick}
+              getRowClassName={(row) =>
+                (row.original as SelectableImage).id === selectedImageId
+                  ? "bg-muted/30"
+                  : ""
+              }
+            />
+          </div>
         </>
       ) : null}
     </div>
   );
+}
+
+function normalizeRemoteURL(url: string) {
+  if (!url) return "";
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed;
+}
+
+function mergeImageLists(
+  current: SelectableImage[],
+  incoming: SelectableImage[]
+) {
+  const map = new Map<string, SelectableImage>();
+  current.forEach((image) => map.set(image.id, image));
+  incoming.forEach((image) => map.set(image.id, image));
+  return Array.from(map.values());
+}
+
+async function fetchSimplestreamImages(remote: RemoteServer) {
+  const base = remote.server;
+  const indexRes = await fetch(`${base}/streams/v1/index.json`);
+  if (!indexRes.ok) {
+    throw new Error(`Unable to fetch index from ${base}`);
+  }
+  const indexJson = await indexRes.json();
+  const imagesPath = indexJson.index?.images?.path ?? "streams/v1/images.json";
+  const path = imagesPath.startsWith("http")
+    ? imagesPath
+    : `${base}/${imagesPath.replace(/^\//, "")}`;
+  const imagesRes = await fetch(path);
+  if (!imagesRes.ok) {
+    throw new Error(`Unable to fetch images from ${base}`);
+  }
+  const imagesJson = await imagesRes.json();
+  const products = (imagesJson.products ?? {}) as Record<
+    string,
+    SimplestreamProduct
+  >;
+  const remoteImages: SelectableImage[] = [];
+  Object.entries(products).forEach(([key, product]) => {
+    const alias = extractPrimaryAlias(product.aliases) ?? key;
+    const versionKey = selectLatestVersion(product.versions);
+    const versionItems: Record<string, SimplestreamItem> | undefined =
+      versionKey ? product.versions?.[versionKey]?.items : undefined;
+    const types = deriveImageTypes(versionItems);
+    remoteImages.push({
+      id: `remote-${base}-${alias}-${product.arch ?? ""}-${
+        product.variant ?? ""
+      }`,
+      local: false,
+      label: alias,
+      os: product.os,
+      release: product.release,
+      variant: product.variant,
+      arch: product.arch === "amd64" ? "x86_64" : product.arch,
+      types,
+      remote: {
+        server: base,
+        alias,
+        protocol: "simplestreams",
+      },
+    });
+  });
+  return remoteImages;
+}
+
+function extractPrimaryAlias(aliases?: unknown) {
+  if (!aliases) return undefined;
+  if (Array.isArray(aliases)) {
+    return aliases[0]?.name;
+  }
+  if (typeof aliases === "string") {
+    return aliases.split(",")[0];
+  }
+  return undefined;
+}
+
+function selectLatestVersion(versions?: Record<string, unknown>) {
+  if (!versions) return null;
+  return Object.keys(versions).sort().at(-1) ?? null;
+}
+
+function deriveImageTypes(items?: Record<string, SimplestreamItem>) {
+  if (!items) return [];
+  const values = Object.values(items);
+  const types = new Set<ImageKind>();
+  const containerMatch = values.some((item) =>
+    ["squashfs", "lxd", "rootfs"].some(
+      (token) =>
+        (item.ftype ?? "").includes(token) || (item.path ?? "").includes(token)
+    )
+  );
+  if (containerMatch) {
+    types.add("container");
+  }
+  const vmMatch = values.some((item) =>
+    ["disk", "qcow", "uefi"].some(
+      (token) =>
+        (item.ftype ?? "").includes(token) || (item.path ?? "").includes(token)
+    )
+  );
+  if (vmMatch) {
+    types.add("virtual-machine");
+  }
+  return Array.from(types);
+}
+
+function buildOciImage(server: string, alias: string): SelectableImage {
+  const trimmedAlias = alias.trim();
+  return {
+    id: `oci-${server}-${trimmedAlias}`,
+    local: false,
+    label: trimmedAlias,
+    os: trimmedAlias,
+    types: ["container", "virtual-machine"],
+    remote: {
+      server,
+      alias: trimmedAlias,
+      protocol: "oci",
+    },
+  };
+}
+
+function formatProtocol(protocol: "simplestreams" | "oci") {
+  return protocol === "simplestreams" ? "Simplestreams" : "OCI";
+}
+
+function formatSource(server?: string) {
+  if (!server) return "Remote";
+  try {
+    const parsed = new URL(server);
+    return parsed.hostname;
+  } catch {
+    return server;
+  }
 }

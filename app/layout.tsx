@@ -6,6 +6,8 @@ import ServerConfigProvider from "@/components/context/serverConfig";
 import SwrProvider from "@/components/context/swr";
 import AuthenticationProvider from "@/components/context/authentication";
 import Router from "./router";
+import ProjectProvider from "@/components/context/projects";
+import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,7 +44,10 @@ export default function RootLayout({
           <ServerConfigProvider>
             <ThemeProvider>
               <AuthenticationProvider>
-                <Router>{children}</Router>
+                <ProjectProvider>
+                  <Router>{children}</Router>
+                  <Toaster />
+                </ProjectProvider>
               </AuthenticationProvider>
             </ThemeProvider>
           </ServerConfigProvider>
