@@ -135,7 +135,6 @@ export default function CreateInstance({ className }: { className?: string }) {
     }
     form.trigger("source");
   };
-  console.log(data?.configs);
   return (
     <div className={className}>
       <Dialog>
