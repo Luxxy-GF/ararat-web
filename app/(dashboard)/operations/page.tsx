@@ -171,19 +171,10 @@ export default function OperationsPage() {
         <div>
           <p className="text-2xl font-semibold">Operations</p>
           <p className="text-sm text-muted-foreground">
-            Live tasks and background operations running on Incus.
+            Live tasks and background operations
           </p>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-3">
-          <Badge
-            variant="outline"
-            className={cn(
-              "border-white/20 text-xs uppercase tracking-wide",
-              isUpdating ? "text-blue-200" : "text-emerald-200"
-            )}
-          >
-            {isUpdating ? "Updating…" : "Live"}
-          </Badge>
           {selectedOperations.length ? (
             <Button
               variant="outline"
@@ -270,7 +261,7 @@ export default function OperationsPage() {
           if (!open) setInspectorOperation(null);
         }}
       >
-        <SheetContent side="right" className="sm:max-w-md">
+        <SheetContent className="sm:max-w-md">
           {inspectorOperation ? (
             <OperationInspector operation={inspectorOperation} />
           ) : (
