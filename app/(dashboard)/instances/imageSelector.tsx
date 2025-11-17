@@ -227,24 +227,30 @@ export default function ImageSelector({
         cell: ({ row }: { row: Row<object> }) => {
           const image = row.original as SelectableImage;
           return (
-            <div className="flex max-w-[280px] flex-col gap-0.5">
-              <div className="flex items-center gap-2">
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <div className="flex items-center gap-2 min-w-0">
                 <span className="font-semibold truncate" title={image.os}>
                   {image.os ?? "Unknown OS"}
                   {image.release ? ` ${image.release}` : ""}
                 </span>
                 <Badge
                   variant={image.local ? "secondary" : "outline"}
-                  className="text-[10px] uppercase"
+                  className="text-[10px] uppercase flex-shrink-0"
                 >
                   {image.local ? "Local" : "Remote"}
                 </Badge>
               </div>
-              <span className="text-xs text-muted-foreground truncate">
+              <span
+                className="text-xs text-muted-foreground truncate"
+                title={image.label}
+              >
                 {image.label}
               </span>
               {!image.local && image.remote?.server ? (
-                <span className="text-[10px] text-muted-foreground truncate">
+                <span
+                  className="text-[10px] text-muted-foreground truncate"
+                  title={formatSource(image.remote.server)}
+                >
                   {formatSource(image.remote.server)}
                 </span>
               ) : null}
@@ -257,18 +263,31 @@ export default function ImageSelector({
         id: "types",
         cell: ({ row }: { row: Row<object> }) => {
           const image = row.original as SelectableImage;
-          return image.types.length
+          const typeText = image.types.length
             ? image.types
                 .map((type) =>
                   type === "virtual-machine" ? "Virtual Machine" : "Container"
                 )
                 .join(", ")
             : "—";
+          return (
+            <div className="truncate" title={typeText}>
+              {typeText}
+            </div>
+          );
         },
       },
       {
         header: "Arch",
         accessorKey: "arch",
+        cell: ({ getValue }: { getValue: () => unknown }) => {
+          const arch = getValue() as string | undefined;
+          return (
+            <div className="truncate" title={arch}>
+              {arch ?? "—"}
+            </div>
+          );
+        },
       },
     ],
     []
