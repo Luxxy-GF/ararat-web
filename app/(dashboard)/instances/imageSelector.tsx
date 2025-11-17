@@ -26,7 +26,8 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { useImages } from "@/lib/swr/incus/images";
-import { ProjectContext } from "@/components/context/projects";
+import { Image } from "@/lib/incus/types/images";
+import { ProjectsContext } from "@/components/context/projects";
 
 type RemoteProtocol = "simplestreams";
 
@@ -80,7 +81,7 @@ export default function ImageSelector({
   selectedImage: SelectableImage | null;
   onSelect: (image: SelectableImage) => void;
 }) {
-  const { currentProject } = use(ProjectContext);
+  const { currentProject } = use(ProjectsContext);
   const {
     data: localImagesData,
     isLoading,
@@ -102,7 +103,7 @@ export default function ImageSelector({
 
   const localImages = useMemo<SelectableImage[]>(() => {
     if (!localImagesData) return [];
-    return localImagesData.map((image) => ({
+    return localImagesData.map((image: Image) => ({
       id: `local-${image.fingerprint}`,
       local: true,
       label:
@@ -119,7 +120,7 @@ export default function ImageSelector({
   const derivedRemoteServers = useMemo<RemoteServer[]>(() => {
     if (!localImagesData) return [];
     const map = new Map<string, RemoteServer>();
-    localImagesData.forEach((image) => {
+    localImagesData.forEach((image: Image) => {
       const server = image.update_source?.server;
       if (!server) return;
       const normalized = normalizeRemoteURL(server);

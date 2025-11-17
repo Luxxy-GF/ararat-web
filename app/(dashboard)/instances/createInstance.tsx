@@ -1,6 +1,5 @@
 "use client";
 
-import { ServerConfigMetadataContext } from "@/components/context/serverConfigMetadata";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,6 +32,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import ImageSelector, { SelectableImage } from "./imageSelector";
+import { ConfigurableOptionsContext } from "@/components/context/server";
 
 const sourceSchema = z
   .object({
@@ -74,7 +74,7 @@ const formSchema = z.object({
   source: sourceSchema,
 });
 export default function CreateInstance({ className }: { className?: string }) {
-  const { data } = use(ServerConfigMetadataContext);
+  const { data } = use(ConfigurableOptionsContext);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {

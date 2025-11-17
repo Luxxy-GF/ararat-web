@@ -14,7 +14,7 @@ import DataTable from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInstances } from "@/lib/swr/incus/instances";
-import { Instance, InstanceState } from "@/types/incus/instances";
+import { Instance, InstanceState } from "@/lib/incus/types/instances";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -26,7 +26,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
-import { ProjectContext } from "@/components/context/projects";
+import { ProjectsContext } from "@/components/context/projects";
 import { Progress } from "@/components/ui/progress";
 
 type InstanceAction = "start" | "stop" | "restart" | "freeze";
@@ -78,7 +78,7 @@ async function performInstanceAction({
 }
 
 export default function Instances() {
-  const { currentProject } = use(ProjectContext);
+  const { currentProject } = use(ProjectsContext);
   const { data, error, isLoading, isValidating, mutate } =
     useInstances(currentProject);
   const [search, setSearch] = React.useState("");

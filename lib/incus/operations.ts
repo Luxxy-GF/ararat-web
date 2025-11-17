@@ -1,4 +1,4 @@
-import { IncusOperation } from "@/types/incus/operations";
+import { IncusOperation } from "@/lib/incus/types/operations";
 
 type OperationListMetadata = {
   running?: string[];

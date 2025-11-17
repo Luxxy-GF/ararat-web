@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, use, useEffect } from "react";
-import { ServerConfigContext } from "./serverConfig";
+import { ServerConfigurationContext } from "./server";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 
@@ -22,18 +22,20 @@ export default function AuthenticationProvider({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isValidating, isLoading, data } = use(ServerConfigContext);
-  console.log("AuthProvider:", isValidating, isLoading, data);
+  const { isValidating, isLoading, data } = use(ServerConfigurationContext);
   useEffect(() => {
     if (!isValidating) {
-      if (!pathname.startsWith("/authentication")) {
-        if (data?.auth == "untrusted") {
+      if (data?.auth == "untrusted") {
+        if (!pathname.startsWith("/authentication")) {
           router.replace("/authentication/login");
+        }
+      } else if (data?.auth == "trusted") {
+        if (pathname === "/") {
+          router.replace("/instances");
         }
       }
     }
   }, [data, isValidating, pathname, router]);
-  console.log(isValidating, isLoading, data);
   return (
     <AuthenticationContext.Provider
       value={{

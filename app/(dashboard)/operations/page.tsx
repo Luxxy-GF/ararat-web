@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import DataTable from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -20,7 +19,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { IncusOperation } from "@/types/incus/operations";
+import { IncusOperation } from "@/lib/incus/types/operations";
 
 const STATUS_STYLES: Record<
   string,
@@ -74,7 +73,6 @@ export default function OperationsPage() {
   const [inspectorOperation, setInspectorOperation] =
     useState<IncusOperation | null>(null);
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
-  const { toast } = useToast();
 
   const fetchOperations = useCallback(async () => {
     setIsUpdating(true);
@@ -88,17 +86,11 @@ export default function OperationsPage() {
         })
       );
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to load operations",
-        description:
-          error instanceof Error ? error.message : "Unexpected error occurred.",
-      });
     } finally {
       setIsLoading(false);
       window.setTimeout(() => setIsUpdating(false), 800);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     fetchOperations();

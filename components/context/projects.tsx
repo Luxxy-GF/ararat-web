@@ -1,23 +1,30 @@
 "use client";
 
-import { createContext, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useProjects } from "@/lib/swr/incus/projects";
-import { Project } from "@/types/incus/projects";
+import { Project } from "@/lib/incus/types/projects";
+import { mutate } from "swr";
 
 export const ALL_PROJECTS_VALUE = "all";
 const STORAGE_KEY = "ararat-selected-project";
 
-export interface ProjectContextValue {
+interface ProjectsContextValue {
   projects: Project[];
   currentProject: string;
   effectiveProject: string | null;
-  setProject: (name: string) => void;
+  setProject: (projectName: string) => void;
   isLoading: boolean;
   isValidating: boolean;
   error: Error | null;
 }
 
-export const ProjectContext = createContext<ProjectContextValue>({
+export const ProjectsContext = createContext<ProjectsContextValue>({
   projects: [],
   currentProject: ALL_PROJECTS_VALUE,
   effectiveProject: null,
@@ -27,17 +34,22 @@ export const ProjectContext = createContext<ProjectContextValue>({
   error: null,
 });
 
-export default function ProjectProvider({
+export default function ProjectsProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const { data, isLoading, isValidating, error } = useProjects();
+  useEffect(() => {
+    if (data && !isValidating) {
+      for (const project of data) {
+        mutate(`/1.0/projects/${project.name}`, project);
+      }
+    }
+  }, [data, isValidating]);
   const [storedProject, setStoredProject] = useState<string>(() => {
     if (typeof window === "undefined") return ALL_PROJECTS_VALUE;
-    return (
-      window.localStorage.getItem(STORAGE_KEY) ?? ALL_PROJECTS_VALUE
-    );
+    return window.localStorage.getItem(STORAGE_KEY) ?? ALL_PROJECTS_VALUE;
   });
 
   const currentProject = useMemo(() => {
@@ -59,7 +71,7 @@ export default function ProjectProvider({
     setStoredProject(projectName);
   }, []);
 
-  const value = useMemo<ProjectContextValue>(() => {
+  const value = useMemo(() => {
     const effectiveProject =
       currentProject === ALL_PROJECTS_VALUE ? null : currentProject;
     return {
@@ -71,16 +83,11 @@ export default function ProjectProvider({
       isValidating,
       error: error ?? null,
     };
-  }, [
-    currentProject,
-    data,
-    error,
-    isLoading,
-    isValidating,
-    setProject,
-  ]);
+  }, [currentProject, data, error, isLoading, isValidating, setProject]);
 
   return (
-    <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>
+    <ProjectsContext.Provider value={value}>
+      {children}
+    </ProjectsContext.Provider>
   );
 }
