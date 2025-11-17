@@ -92,8 +92,9 @@ export default function ImageSelector({
   const [remoteImages, setRemoteImages] = useState<SelectableImage[]>([]);
   const [loadingRemotes, setLoadingRemotes] = useState(false);
   const [addingRemote, setAddingRemote] = useState(false);
-  const [remoteProtocol, setRemoteProtocol] =
-    useState<"simplestreams" | "oci">("simplestreams");
+  const [remoteProtocol, setRemoteProtocol] = useState<"simplestreams" | "oci">(
+    "simplestreams"
+  );
   const [remoteURL, setRemoteURL] = useState("");
   const [ociImage, setOciImage] = useState("");
   const [stringFilter, setStringFilter] = useState("");
@@ -104,7 +105,8 @@ export default function ImageSelector({
     return localImagesData.map((image) => ({
       id: `local-${image.fingerprint}`,
       local: true,
-      label: image.aliases?.[0]?.name ?? image.properties.os ?? image.fingerprint,
+      label:
+        image.aliases?.[0]?.name ?? image.properties.os ?? image.fingerprint,
       os: image.properties.os,
       release: image.properties.release,
       variant: image.properties.variant,
@@ -158,7 +160,11 @@ export default function ImageSelector({
               mergeImageLists(prev, remoteImagesForServer)
             );
           } catch (error) {
-            console.error("Unable to fetch remote images", remote.server, error);
+            console.error(
+              "Unable to fetch remote images",
+              remote.server,
+              error
+            );
           }
         }
       } finally {
@@ -285,9 +291,9 @@ export default function ImageSelector({
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {selectedImage.remote
-                    ? `${formatProtocol(selectedImage.remote.protocol)} · ${formatSource(
-                        selectedImage.remote.server
-                      )}`
+                    ? `${formatProtocol(
+                        selectedImage.remote.protocol
+                      )} · ${formatSource(selectedImage.remote.server)}`
                     : "Local image"}
                 </p>
               </>
@@ -315,9 +321,7 @@ export default function ImageSelector({
               />
               <Dialog open={addingRemote} onOpenChange={setAddingRemote}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="my-auto">
-                    Add Remote
-                  </Button>
+                  <Button className="h-fit">Add Remote</Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -423,8 +427,7 @@ async function fetchSimplestreamImages(remote: RemoteServer) {
     throw new Error(`Unable to fetch index from ${base}`);
   }
   const indexJson = await indexRes.json();
-  const imagesPath =
-    indexJson.index?.images?.path ?? "streams/v1/images.json";
+  const imagesPath = indexJson.index?.images?.path ?? "streams/v1/images.json";
   const path = imagesPath.startsWith("http")
     ? imagesPath
     : `${base}/${imagesPath.replace(/^\//, "")}`;
@@ -433,8 +436,10 @@ async function fetchSimplestreamImages(remote: RemoteServer) {
     throw new Error(`Unable to fetch images from ${base}`);
   }
   const imagesJson = await imagesRes.json();
-  const products = (imagesJson.products ??
-    {}) as Record<string, SimplestreamProduct>;
+  const products = (imagesJson.products ?? {}) as Record<
+    string,
+    SimplestreamProduct
+  >;
   const remoteImages: SelectableImage[] = [];
   Object.entries(products).forEach(([key, product]) => {
     const alias = extractPrimaryAlias(product.aliases) ?? key;
@@ -443,7 +448,9 @@ async function fetchSimplestreamImages(remote: RemoteServer) {
       versionKey ? product.versions?.[versionKey]?.items : undefined;
     const types = deriveImageTypes(versionItems);
     remoteImages.push({
-      id: `remote-${base}-${alias}-${product.arch ?? ""}-${product.variant ?? ""}`,
+      id: `remote-${base}-${alias}-${product.arch ?? ""}-${
+        product.variant ?? ""
+      }`,
       local: false,
       label: alias,
       os: product.os,
@@ -482,16 +489,18 @@ function deriveImageTypes(items?: Record<string, SimplestreamItem>) {
   const values = Object.values(items);
   const types = new Set<ImageKind>();
   const containerMatch = values.some((item) =>
-    ["squashfs", "lxd", "rootfs"].some((token) =>
-      (item.ftype ?? "").includes(token) || (item.path ?? "").includes(token)
+    ["squashfs", "lxd", "rootfs"].some(
+      (token) =>
+        (item.ftype ?? "").includes(token) || (item.path ?? "").includes(token)
     )
   );
   if (containerMatch) {
     types.add("container");
   }
   const vmMatch = values.some((item) =>
-    ["disk", "qcow", "uefi"].some((token) =>
-      (item.ftype ?? "").includes(token) || (item.path ?? "").includes(token)
+    ["disk", "qcow", "uefi"].some(
+      (token) =>
+        (item.ftype ?? "").includes(token) || (item.path ?? "").includes(token)
     )
   );
   if (vmMatch) {
