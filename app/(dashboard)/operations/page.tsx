@@ -20,6 +20,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { IncusOperation } from "@/types/incus/operations";
 
 const STATUS_STYLES: Record<
   string,
@@ -65,9 +66,9 @@ export default function OperationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [filter, setFilter] = useState("");
-  const [selectedOperations, setSelectedOperations] = useState<IncusOperation[]>(
-    []
-  );
+  const [selectedOperations, setSelectedOperations] = useState<
+    IncusOperation[]
+  >([]);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [inspectorOperation, setInspectorOperation] =
@@ -314,7 +315,12 @@ function MetadataSection({
   title: string;
   metadata: unknown;
 }) {
-  if (!metadata || (typeof metadata === "object" && metadata !== null && !Object.keys(metadata as object).length)) {
+  if (
+    !metadata ||
+    (typeof metadata === "object" &&
+      metadata !== null &&
+      !Object.keys(metadata as object).length)
+  ) {
     return null;
   }
 
