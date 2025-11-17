@@ -92,7 +92,7 @@ export default function Instances() {
     React.useState<Instance | null>(null);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
 
-const columns = React.useMemo(() => {
+  const columns = React.useMemo(() => {
     const baseColumns = [
       {
         header: "Instance Name",
@@ -153,16 +153,15 @@ const columns = React.useMemo(() => {
         cell: ({ row }: { row: Row<object> }) => {
           const instance = row.original as Instance;
           const memoryUsage = instance.state?.memory?.usage ?? 0;
-         const diskUsage = getRootDiskUsage(instance.state) ?? 0;
-         const memoryPercent = calcUsagePercent(
-           memoryUsage,
-           instance.state?.memory?.total ?? instance.state?.memory?.usage_peak
-         );
-         const diskPercent = calcUsagePercent(
-           diskUsage,
-           instance.state?.disk?.root?.total ??
-             instance.state?.disk?.root?.usage_peak
-         );
+          const diskUsage = getRootDiskUsage(instance.state) ?? 0;
+          const memoryPercent = calcUsagePercent(
+            memoryUsage,
+            instance.state?.memory?.total ?? instance.state?.memory?.usage_peak
+          );
+          const diskPercent = calcUsagePercent(
+            diskUsage,
+            instance.state?.disk?.root?.total
+          );
           return (
             <div className="flex flex-col gap-1.5">
               <div className="flex justify-between text-xs text-muted-foreground">
@@ -275,7 +274,10 @@ const columns = React.useMemo(() => {
                 {(
                   Object.entries(instanceActionDetails) as [
                     InstanceAction,
-                    { label: string; Icon: React.ComponentType<{ className?: string }> }
+                    {
+                      label: string;
+                      Icon: React.ComponentType<{ className?: string }>;
+                    }
                   ][]
                 ).map(([action, { label, Icon }]) => (
                   <Button
@@ -309,7 +311,8 @@ const columns = React.useMemo(() => {
           <Alert variant="destructive">
             <AlertTitle>Unable to load instances</AlertTitle>
             <AlertDescription>
-              {error.message || "Check your Incus API connection and try again."}
+              {error.message ||
+                "Check your Incus API connection and try again."}
             </AlertDescription>
           </Alert>
         ) : null}
@@ -358,9 +361,10 @@ const columns = React.useMemo(() => {
 function InstanceDetails({ instance }: { instance: Instance }) {
   const memoryUsage = instance.state?.memory?.usage;
   const diskUsage = getRootDiskUsage(instance.state);
-  const networkDetails = React.useMemo(() => getNetworkDetails(instance), [
-    instance,
-  ]);
+  const networkDetails = React.useMemo(
+    () => getNetworkDetails(instance),
+    [instance]
+  );
   const baseImage = getBaseImage(instance);
   const rootDiskPool = getRootDiskPool(instance);
   const hasStateData = Boolean(instance.state);
@@ -486,7 +490,9 @@ function InstanceDetails({ instance }: { instance: Instance }) {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground text-right">No profiles</p>
+            <p className="text-sm text-muted-foreground text-right">
+              No profiles
+            </p>
           )}
         </Section>
         <Section title="Snapshots">
