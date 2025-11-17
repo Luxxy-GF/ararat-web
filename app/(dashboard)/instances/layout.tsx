@@ -1,11 +1,9 @@
-import ServerConfigMetadataProvider from "@/components/context/serverConfigMetadata";
+import { ConfigurableOptionsProvider } from "@/components/context/server";
 
 export default function InstancesLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <ServerConfigMetadataProvider>{children}</ServerConfigMetadataProvider>
-  );
+  return <ConfigurableOptionsProvider>{children}</ConfigurableOptionsProvider>;
 }
