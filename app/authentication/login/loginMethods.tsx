@@ -1,7 +1,7 @@
 "use client";
-import { ServerConfigurationContext } from "@/components/context/server";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import ServerConfigurationContext from "@/app/_context/server";
+import { Button } from "@/app/_components/ui/button";
+import { Skeleton } from "@/app/_components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import React, { startTransition, use, useEffect } from "react";
 
