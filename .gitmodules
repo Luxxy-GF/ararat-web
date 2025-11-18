@@ -1,4 +1,4 @@
-[submodule "components/ui"]
-	path = components/ui
+[submodule "app/_components/ui"]
+	path = app/_components/ui
 	url = https://github.com/hyecompany/ui-web
 	branch = meg
