@@ -5,18 +5,23 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
+} from "@/app/_components/ui/accordion";
+import { Button } from "@/app/_components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from "@/app/_components/ui/dialog";
+import { Input } from "@/app/_components/ui/input";
+import { Label } from "@/app/_components/ui/label";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/_components/ui/tabs";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import { useEffect, useRef, useState } from "react";
 

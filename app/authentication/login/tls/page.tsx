@@ -4,7 +4,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/app/_components/ui/card";
 import TlsOptions from "./tlsOptions";
 export const metadata = {
   title: "TLS Login | Hye Ararat",

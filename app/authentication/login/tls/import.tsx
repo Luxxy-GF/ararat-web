@@ -1,10 +1,14 @@
 "use client";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/app/_components/ui/alert";
 import { AlertCircleIcon, CircleCheck, InfoIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/app/_components/ui/button";
+import { Input } from "@/app/_components/ui/input";
 import { useState } from "react";
-import { addCertificate } from "@/lib/incus/certificate";
+import { addCertificate } from "@/app/_lib/certificate";
 
 export default function ImportCertificate() {
   const [trustToken, setTrustToken] = useState("");

@@ -4,9 +4,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/app/_components/ui/card";
 import LoginMethods from "./loginMethods";
-import AlreadyAuthenticated from "../alreadyAuthenticated";
+import AlreadyAuthenticated from "../_components/alreadyAuthenticated";
 
 export const metadata = {
   title: "Login | Hye Ararat",

@@ -1,10 +1,15 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/_components/ui/tabs";
 import ImportCertificate from "./import";
 import CreateCertificate from "./create";
 
-import AlreadyAuthenticated from "../../alreadyAuthenticated";
+import AlreadyAuthenticated from "../../_components/alreadyAuthenticated";
 
 export default function TlsOptions() {
   return (
