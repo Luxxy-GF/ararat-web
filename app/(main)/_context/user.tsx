@@ -5,6 +5,7 @@ import AuthenticationContext, {
   AuthenticationContextData,
 } from "../../_context/authentication";
 import { useClientCertificate } from "@/app/_hooks/certificate";
+import IsClientContext from "@/app/_context/isClient";
 
 interface UserContextData {
   id: string;
@@ -29,9 +30,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     isValidating: tlsIsValidating,
     isLoading: tlsIsLoading,
   } = useClientCertificate(authData?.identifier);
-
+  const isClient = use(IsClientContext);
   return (
-    <UserContext.Provider
+    <UserContext
       value={{
         data: tlsData
           ? {
@@ -39,11 +40,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
               name: tlsData.name,
             }
           : null,
-        isLoading: authIsLoading || tlsIsLoading,
-        isValidating: authIsValidating || tlsIsValidating,
+        isLoading: authIsLoading || tlsIsLoading || !isClient,
+        isValidating: authIsValidating || tlsIsValidating || !isClient,
       }}
     >
       {children}
-    </UserContext.Provider>
+    </UserContext>
   );
 }

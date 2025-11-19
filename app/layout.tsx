@@ -5,9 +5,9 @@ import ThemeProvider from "@/app/_context/theme";
 import SwrProvider from "@/app/_context/swr";
 import { AuthenticationProvider } from "@/app/_context/authentication";
 import Router from "./router";
-import { ServerConfigurationProvider } from "./_context/server";
 import { EventEmitterProvider } from "@/app/_context/events";
 import { Toaster } from "@/app/_components/ui/sonner";
+import { IsClientProvider } from "./_context/isClient";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,9 +40,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} antialiased`}
       >
-        <SwrProvider>
-          <ThemeProvider>
-            <ServerConfigurationProvider>
+        <IsClientProvider>
+          <SwrProvider>
+            <ThemeProvider>
               <AuthenticationProvider>
                 <EventEmitterProvider>
                   <Router>
@@ -51,9 +51,9 @@ export default function RootLayout({
                   </Router>
                 </EventEmitterProvider>
               </AuthenticationProvider>
-            </ServerConfigurationProvider>
-          </ThemeProvider>
-        </SwrProvider>
+            </ThemeProvider>
+          </SwrProvider>
+        </IsClientProvider>
       </body>
     </html>
   );

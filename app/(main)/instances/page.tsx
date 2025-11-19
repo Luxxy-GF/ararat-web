@@ -32,6 +32,7 @@ import {
 import { Spinner } from "@/app/_components/ui/spinner";
 import ProjectsContext from "@/app/(main)/_context/projects";
 import { Progress } from "@/app/_components/ui/progress";
+import IsClientContext from "@/app/_context/isClient";
 
 type InstanceAction = "start" | "stop" | "restart" | "freeze";
 
@@ -95,6 +96,7 @@ export default function Instances() {
   const [inspectorInstance, setInspectorInstance] =
     React.useState<Instance | null>(null);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const isClient = use(IsClientContext);
 
   const columns = React.useMemo(() => {
     const baseColumns = [
@@ -249,7 +251,7 @@ export default function Instances() {
     setIsSheetOpen(true);
   }, []);
 
-  const isBusy = isLoading && !data;
+  const isBusy = (isLoading && !data) || !isClient;
 
   React.useEffect(() => {
     setSelectedInstances([]);
