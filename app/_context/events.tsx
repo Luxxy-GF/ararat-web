@@ -94,8 +94,8 @@ export function EventEmitterProvider({
   }, []);
 
   return (
-    <EventEmitterContext.Provider value={{ eventEmitter }}>
+    <EventEmitterContext value={{ eventEmitter }}>
       {children}
-    </EventEmitterContext.Provider>
+    </EventEmitterContext>
   );
 }
