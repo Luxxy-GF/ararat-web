@@ -279,7 +279,7 @@ export default function ImageSelector({
         },
       },
       {
-        header: "Arch",
+        header: "Architecture",
         accessorKey: "arch",
         cell: ({ getValue }: { getValue: () => unknown }) => {
           const arch = getValue() as string | undefined;
@@ -341,7 +341,9 @@ export default function ImageSelector({
               />
               <Dialog open={addingRemote} onOpenChange={setAddingRemote}>
                 <DialogTrigger asChild>
-                  <Button className="ml-auto h-fit">Add Remote</Button>
+                  <Button className="ml-auto h-fit" variant="outline">
+                    Add Remote
+                  </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
