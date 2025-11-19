@@ -36,8 +36,8 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import ImageSelector, { SelectableImage } from "./imageSelector";
-import ConfigurableOptionsContext from "../../_context/server";
 import InstanceProperties from "@/app/(main)/instances/_components/properties";
+import { useServerConfiguration } from "@/app/_hooks/server";
 
 const sourceSchema = z
   .object({
@@ -79,7 +79,7 @@ const formSchema = z.object({
   source: sourceSchema,
 });
 export default function CreateInstance({ className }: { className?: string }) {
-  const { data } = use(ConfigurableOptionsContext);
+  const { data } = useServerConfiguration();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
