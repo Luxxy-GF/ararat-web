@@ -31,13 +31,14 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/app/_components/ui/tabs";
-import { use, useState } from "react";
+import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import ImageSelector, { SelectableImage } from "./imageSelector";
 import InstanceProperties from "@/app/(main)/instances/_components/properties";
 import { useServerConfiguration } from "@/app/_hooks/server";
+import InstanceDevices from "./devices";
 
 const sourceSchema = z
   .object({
@@ -80,6 +81,9 @@ const formSchema = z.object({
 });
 export default function CreateInstance({ className }: { className?: string }) {
   const { data } = useServerConfiguration();
+  const [profilesSelected, setProfilesSelected] = useState<string[]>([
+    "default",
+  ]);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -178,12 +182,16 @@ export default function CreateInstance({ className }: { className?: string }) {
                   >
                     <TabsTrigger value="properties">Properties</TabsTrigger>
                     <TabsTrigger value="source">Source</TabsTrigger>
+                    <TabsTrigger value="devices">Devices</TabsTrigger>
                   </TabsList>
                   <TabsContent
                     value="properties"
-                    className="overflow-auto flex-1 min-h-0"
+                    className="overflow-auto flex-1 min-h-0 px-1"
                   >
-                    <InstanceProperties />
+                    <InstanceProperties
+                      profilesSelected={profilesSelected}
+                      setProfilesSelected={setProfilesSelected}
+                    />
                   </TabsContent>
                   <TabsContent
                     value="source"
@@ -225,6 +233,9 @@ export default function CreateInstance({ className }: { className?: string }) {
                         onSelect={handleImageSelect}
                       />
                     ) : null}
+                  </TabsContent>
+                  <TabsContent value="devices">
+                    <InstanceDevices profiles={profilesSelected} />
                   </TabsContent>
                 </Tabs>
               </div>
