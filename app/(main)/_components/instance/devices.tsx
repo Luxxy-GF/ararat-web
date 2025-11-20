@@ -5,12 +5,22 @@ import { useProfiles } from "../../_hooks/profiles";
 import Devices from "../devices";
 import type { Device } from "../../instances/_lib/instances.d";
 
+/**
+ * Props for the InstanceDevices component
+ */
 export interface InstanceDevicesProps {
+  /** Profile names to fetch inherited devices from */
   profiles: string[];
+  /** Instance-specific devices (overrides) */
   devices?: Record<string, Device>;
+  /** Callback when devices change */
   onDevicesChange?: (devices: Record<string, Device>) => void;
 }
 
+/**
+ * Device management component for instances.
+ * Fetches devices from profiles and allows overriding them.
+ */
 export default function InstanceDevices({
   profiles,
   devices = {},

@@ -20,13 +20,24 @@ import {
 import { IconPlus, IconTrash } from "@tabler/icons-react";
 import type { Device } from "@/app/(main)/instances/_lib/instances.d";
 
+/**
+ * Props for the Devices component
+ */
 export interface DevicesProps {
+  /** Local devices that can be modified */
   devices: Record<string, Device>;
+  /** Devices inherited from profiles (read-only, shown with dashed border) */
   inheritedDevices?: Record<string, Device>;
+  /** Callback when local devices change */
   onDevicesChange?: (devices: Record<string, Device>) => void;
+  /** Whether the component is in read-only mode */
   readonly?: boolean;
 }
 
+/**
+ * Supported device types according to Incus API
+ * @see https://linuxcontainers.org/incus/docs/main/reference/devices/
+ */
 const DEVICE_TYPES = [
   { value: "disk", label: "Disk" },
   { value: "nic", label: "Network" },
