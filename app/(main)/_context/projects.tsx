@@ -42,7 +42,9 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (data && !isValidating) {
       for (const project of data) {
-        mutate(`/1.0/projects/${project.name}`, project);
+        mutate(`/1.0/projects/${project.name}`, project, {
+          revalidate: false,
+        });
       }
     }
   }, [data, isValidating]);
