@@ -6,10 +6,12 @@ import {
   useEffect,
   useMemo,
   useState,
+  use,
 } from "react";
 import { useProjects } from "@/app/(main)/_hooks/projects";
 import type { Project } from "@/app/(main)/_lib/projects.d";
 import { mutate } from "swr";
+import IsClientContext from "@/app/_context/isClient";
 
 export const ALL_PROJECTS_VALUE = "all";
 const STORAGE_KEY = "ararat-selected-project";
@@ -35,11 +37,14 @@ const ProjectsContext = createContext<ProjectsContextValue>({
 });
 export default ProjectsContext;
 export function ProjectsProvider({ children }: { children: React.ReactNode }) {
+  const isClient = use(IsClientContext);
   const { data, isLoading, isValidating, error } = useProjects();
   useEffect(() => {
     if (data && !isValidating) {
       for (const project of data) {
-        mutate(`/1.0/projects/${project.name}`, project);
+        mutate(`/1.0/projects/${project.name}`, project, {
+          revalidate: false,
+        });
       }
     }
   }, [data, isValidating]);
@@ -75,15 +80,19 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
       currentProject,
       effectiveProject,
       setProject,
-      isLoading,
-      isValidating,
+      isLoading: !isClient || isLoading,
+      isValidating: !isClient || isValidating,
       error: error ?? null,
     };
-  }, [currentProject, data, error, isLoading, isValidating, setProject]);
+  }, [
+    currentProject,
+    data,
+    error,
+    isLoading,
+    isValidating,
+    setProject,
+    isClient,
+  ]);
 
-  return (
-    <ProjectsContext.Provider value={value}>
-      {children}
-    </ProjectsContext.Provider>
-  );
+  return <ProjectsContext value={value}>{children}</ProjectsContext>;
 }

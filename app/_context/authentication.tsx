@@ -1,9 +1,10 @@
 "use client";
 
-import { createContext, use, useEffect } from "react";
-import ServerConfigurationContext from "./server";
+import { createContext, use, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
+import { useServerConfiguration } from "../_hooks/server";
+import IsClientContext from "./isClient";
 
 export interface AuthenticationContextData {
   isAuthenticated: boolean;
@@ -25,7 +26,9 @@ export function AuthenticationProvider({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isValidating, isLoading, data } = use(ServerConfigurationContext);
+  const isClient = use(IsClientContext);
+
+  const { isValidating, isLoading, data } = useServerConfiguration();
   useEffect(() => {
     if (!isValidating) {
       if (data?.auth == "untrusted") {
@@ -38,20 +41,21 @@ export function AuthenticationProvider({
         }
       }
     }
-  }, [data, isValidating, pathname, router]);
+  }, [data, isValidating, pathname, router, isClient]);
+
   return (
-    <AuthenticationContext.Provider
+    <AuthenticationContext
       value={{
         data: {
           isAuthenticated: data?.auth == "trusted" ? true : false,
           method: data?.auth_user_method,
           identifier: data?.auth_user_name,
         },
-        isLoading: isLoading,
-        isValidating: isValidating,
+        isLoading: !isClient || isLoading,
+        isValidating: !isClient || isValidating,
       }}
     >
       {children}
-    </AuthenticationContext.Provider>
+    </AuthenticationContext>
   );
 }

@@ -1,16 +1,16 @@
 "use client";
-import ServerConfigurationContext from "@/app/_context/server";
 import { Button } from "@/app/_components/ui/button";
 import { Skeleton } from "@/app/_components/ui/skeleton";
+import { useServerConfiguration } from "@/app/_hooks/server";
 import { useRouter } from "next/navigation";
-import React, { startTransition, use, useEffect } from "react";
+import React, { startTransition, useEffect } from "react";
 
 function TLSButton(props: React.ComponentProps<typeof Button>) {
   return <Button {...props}>TLS</Button>;
 }
 
 export default function LoginMethodsComponent() {
-  const { isLoading, data, isValidating } = use(ServerConfigurationContext);
+  const { isLoading, data, isValidating } = useServerConfiguration();
   const [authenticating, setAuthenticating] = React.useState(false);
   const router = useRouter();
   useEffect(() => {

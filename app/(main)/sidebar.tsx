@@ -52,6 +52,7 @@ import {
 } from "../_components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "../_components/ui/avatar";
 import UserContext from "./_context/user";
+import { Skeleton } from "../_components/ui/skeleton";
 
 type NavMainItem = {
   title: string;
@@ -265,29 +266,43 @@ function NavSecondary({
 
 function NavUser() {
   const { isMobile } = useSidebar();
-  const { data: authData, isValidating: authIsValidating } = React.use(
-    AuthenticationContext
-  );
-  const { data: userData, isValidating: userIsValidating } =
-    React.use(UserContext);
+  const {
+    data: authData,
+    isValidating: authIsValidating,
+    isLoading: authIsLoading,
+  } = React.use(AuthenticationContext);
+  const {
+    data: userData,
+    isValidating: userIsValidating,
+    isLoading: userIsLoading,
+  } = React.use(UserContext);
   return (
     <SidebarMenu className={authIsValidating ? "animate-pulse" : ""}>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild disabled={authData?.method == "tls"}>
+          <DropdownMenuTrigger
+            asChild
+            disabled={authIsLoading ? true : authData?.method == "tls"}
+          >
             <SidebarMenuButton
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
-                {authData?.method == "oidc" ? (
-                  <>
-                    <AvatarImage src={"user.avatar"} alt={"user.name"} />
-                    <AvatarFallback className="rounded-lg">JM</AvatarFallback>
-                  </>
+                {!authIsLoading ? (
+                  authData?.method == "oidc" ? (
+                    <>
+                      <AvatarImage src={"user.avatar"} alt={"user.name"} />
+                      <AvatarFallback className="rounded-lg">JM</AvatarFallback>
+                    </>
+                  ) : (
+                    <>
+                      <IconCertificate className="m-auto" />
+                    </>
+                  )
                 ) : (
                   <>
-                    <IconCertificate className="m-auto" />
+                    <Skeleton />
                   </>
                 )}
               </Avatar>
@@ -297,12 +312,18 @@ function NavUser() {
                     userIsValidating ? "animate-pulse" : ""
                   }`}
                 >
-                  {authData?.method == "tls" ? userData?.name : "First Last"}
+                  {!userIsLoading
+                    ? authData?.method == "tls"
+                      ? userData?.name
+                      : "First Last"
+                    : "ppp"}
                 </span>
                 <span className="text-muted-foreground truncate text-xs">
-                  {authData?.method == "tls"
-                    ? authData?.identifier?.slice(0, 12)
-                    : "email@hyecompany.com"}
+                  {!authIsLoading
+                    ? authData?.method == "tls"
+                      ? authData?.identifier?.slice(0, 12)
+                      : "email@hyecompany.com"
+                    : "Loading..."}
                 </span>
               </div>
               {authData?.method == "oidc" ? (

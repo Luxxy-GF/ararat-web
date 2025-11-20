@@ -1,8 +1,7 @@
 import type { StandardResponse, ErrorResponse } from "@/app/_lib/response.d";
 
 export async function jsonFetcher(url: string) {
-  const endpoint = new URL(url);
-  console.log(endpoint, "endpoint");
+  const endpoint = new URL(window.location.origin + url);
   return fetch(endpoint.toString())
     .then(
       (res) =>
