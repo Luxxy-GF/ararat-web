@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import { useProfiles } from "../../_hooks/profiles";
-import Devices from "../devices";
-import type { Device } from "../../instances/_lib/instances.d";
+import Devices from "../../_components/devices";
+import type { Device } from "../_lib/instances.d";
 
 /**
  * Props for the InstanceDevices component
