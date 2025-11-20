@@ -17,7 +17,7 @@ export function useProfiles(profiles?: string[]) {
     if (profile?.name) profilesList.push(profile.name);
   });
   if (profiles?.length == 0) {
-    query += `&filter${profilesList.map((p) => `name eq ${p}`).join(" or ")}`;
+    query += `&filter=${profilesList.map((p) => `name eq ${p}`).join(" or ")}`;
     mutate(`/1.0/profiles?recursion=1${query}`, result.data, {
       revalidate: false,
     });
