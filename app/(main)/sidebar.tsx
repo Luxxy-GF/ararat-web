@@ -276,7 +276,6 @@ function NavUser() {
     isValidating: userIsValidating,
     isLoading: userIsLoading,
   } = React.use(UserContext);
-  console.log(authIsLoading, authData?.method, "LOADING");
   return (
     <SidebarMenu className={authIsValidating ? "animate-pulse" : ""}>
       <SidebarMenuItem>
