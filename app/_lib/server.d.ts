@@ -16,11 +16,31 @@ export interface ServerConfig {
   [key: string]: unknown;
 }
 
+export interface ConfigOption {
+  key: string;
+  type: string;
+  scope?: string;
+  default?: string;
+  shortdesc?: string;
+  longdesc?: string;
+  condition?: string;
+}
+
+export interface DeviceTypeConfig {
+  [key: string]: ConfigOption;
+}
+
 export interface ConfigurableOptions {
   configs: {
     cluster: object;
     cluster_group: object;
-    devices: object;
+    devices: {
+      disk?: DeviceTypeConfig;
+      gpu?: DeviceTypeConfig;
+      nic?: DeviceTypeConfig;
+      proxy?: DeviceTypeConfig;
+      [key: string]: DeviceTypeConfig | undefined;
+    };
     image: object;
     instance: object;
     kernel: object;

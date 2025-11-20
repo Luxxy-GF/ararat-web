@@ -4,5 +4,5 @@ export interface Profile {
   name: string;
   description?: string;
   config: Record<string, string>;
-  devices: Device[];
+  devices: Record<string, Device>;
 }

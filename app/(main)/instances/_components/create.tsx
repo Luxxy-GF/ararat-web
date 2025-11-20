@@ -38,7 +38,8 @@ import z from "zod";
 import ImageSelector, { SelectableImage } from "./imageSelector";
 import InstanceProperties from "@/app/(main)/instances/_components/properties";
 import { useServerConfiguration } from "@/app/_hooks/server";
-import InstanceDevices from "./devices";
+import InstanceDevices from "@/app/(main)/_components/instance/devices";
+import type { Device } from "@/app/(main)/instances/_lib/instances.d";
 
 const sourceSchema = z
   .object({
@@ -84,6 +85,7 @@ export default function CreateInstance({ className }: { className?: string }) {
   const [profilesSelected, setProfilesSelected] = useState<string[]>([
     "default",
   ]);
+  const [devices, setDevices] = useState<Record<string, Device>>({});
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -235,7 +237,11 @@ export default function CreateInstance({ className }: { className?: string }) {
                     ) : null}
                   </TabsContent>
                   <TabsContent value="devices">
-                    <InstanceDevices profiles={profilesSelected} />
+                    <InstanceDevices 
+                      profiles={profilesSelected}
+                      devices={devices}
+                      onDevicesChange={setDevices}
+                    />
                   </TabsContent>
                 </Tabs>
               </div>
