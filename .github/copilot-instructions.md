@@ -9,6 +9,13 @@ This project (Hye Ararat) is a web app that allows users to manage system/app co
 - Consumer-specific files remain in their respective consumer folders.
 - Files shared across consumers are placed in the nearest appropriate parent folder.
 
+### Component Organization
+
+- **Instance-specific components**: Located in `app/(main)/instances/_components/`
+  - Example: `app/(main)/instances/_components/devices.tsx` for instance device management
+- **Shared components**: Located in `app/(main)/_components/`
+  - Example: `app/(main)/_components/devices.tsx` for reusable device editor (used across instances and profiles)
+
 ## Libraries
 
 - Tailwind CSS for the frontend

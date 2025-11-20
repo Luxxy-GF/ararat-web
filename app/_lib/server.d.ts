@@ -17,17 +17,15 @@ export interface ServerConfig {
 }
 
 export interface ConfigOption {
-  key: string;
   type: string;
-  scope?: string;
+  required?: string;
   default?: string;
   shortdesc?: string;
   longdesc?: string;
-  condition?: string;
 }
 
 export interface DeviceTypeConfig {
-  [key: string]: ConfigOption;
+  keys: Array<Record<string, ConfigOption>>;
 }
 
 export interface ConfigurableOptions {
@@ -35,11 +33,7 @@ export interface ConfigurableOptions {
     cluster: object;
     cluster_group: object;
     devices: {
-      disk?: DeviceTypeConfig;
-      gpu?: DeviceTypeConfig;
-      nic?: DeviceTypeConfig;
-      proxy?: DeviceTypeConfig;
-      [key: string]: DeviceTypeConfig | undefined;
+      [key: string]: DeviceTypeConfig;
     };
     image: object;
     instance: object;

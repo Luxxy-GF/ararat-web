@@ -38,7 +38,7 @@ import z from "zod";
 import ImageSelector, { SelectableImage } from "./imageSelector";
 import InstanceProperties from "@/app/(main)/instances/_components/properties";
 import { useServerConfiguration } from "@/app/_hooks/server";
-import InstanceDevices from "@/app/(main)/_components/instance/devices";
+import InstanceDevices from "./devices";
 import type { Device } from "@/app/(main)/instances/_lib/instances.d";
 
 const sourceSchema = z
