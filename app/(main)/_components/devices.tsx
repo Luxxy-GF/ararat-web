@@ -46,6 +46,11 @@ export default function Devices({
   const [newDeviceName, setNewDeviceName] = React.useState("");
   const [newDeviceType, setNewDeviceType] = React.useState<string>("disk");
 
+  // Sync local state with prop changes
+  React.useEffect(() => {
+    setLocalDevices(devices);
+  }, [devices]);
+
   // Combine inherited and local devices for display
   const allDevices = React.useMemo(() => {
     return { ...inheritedDevices, ...localDevices };
