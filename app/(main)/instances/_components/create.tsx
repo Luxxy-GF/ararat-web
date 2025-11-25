@@ -99,18 +99,19 @@ export default function CreateInstance({ className }: { className?: string }) {
   // Correct implementation using useMemo
   const memoizedExpandedConfig = useMemo(() => {
     const result: Record<string, string> = {};
-    if (!profiles) return result;
+    if (!profiles || profiles.length === 0) return result;
 
-    // Apply profiles in order
-    profilesSelected.forEach(profileName => {
-      const profile = profiles.find(p => p.name === profileName);
-      if (profile && profile.config) {
+    const profileMap = new Map(profiles.map((p) => [p.name, p]));
+
+    for (const profileName of profilesSelected) {
+      const profile = profileMap.get(profileName);
+      if (profile?.config) {
         Object.assign(result, profile.config);
       }
-    });
+    }
+
     return result;
   }, [profiles, profilesSelected]);
-
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -188,12 +189,13 @@ export default function CreateInstance({ className }: { className?: string }) {
               </Button>
             </DialogTrigger>
             <DialogContent
-              className={`max-h-[90vh] w-full flex flex-col transition-all duration-200 ${selectingImage
-                ? "sm:max-w-5xl"
-                : currentTab === "devices" || currentTab === "general"
+              className={`max-h-[90vh] w-full flex flex-col transition-all duration-200 ${
+                selectingImage
+                  ? "sm:max-w-5xl"
+                  : currentTab === "devices" || currentTab === "general"
                   ? "sm:max-w-6xl h-[90vh]"
                   : "sm:max-w-xl"
-                }`}
+              }`}
             >
               <DialogHeader className="shrink-0">
                 <DialogTitle>Create Instance</DialogTitle>
