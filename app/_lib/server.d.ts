@@ -16,11 +16,27 @@ export interface ServerConfig {
   [key: string]: unknown;
 }
 
+export interface ConfigOption {
+  type: string;
+  required?: string;
+  default?: string;
+  shortdesc?: string;
+  longdesc?: string;
+  condition?: string;
+  fullKey?: string;
+}
+
+export interface DeviceTypeConfig {
+  keys: Array<Record<string, ConfigOption>>;
+}
+
 export interface ConfigurableOptions {
   configs: {
     cluster: object;
     cluster_group: object;
-    devices: object;
+    devices: {
+      [key: string]: DeviceTypeConfig;
+    };
     image: object;
     instance: object;
     kernel: object;

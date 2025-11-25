@@ -77,9 +77,11 @@ export type SelectableImage = {
 export default function ImageSelector({
   selectedImage,
   onSelect,
+  instanceType,
 }: {
   selectedImage: SelectableImage | null;
   onSelect: (image: SelectableImage) => void;
+  instanceType?: "virtual-machine" | "container";
 }) {
   const { currentProject } = use(ProjectsContext);
   const {
@@ -180,10 +182,11 @@ export default function ImageSelector({
     };
   }, [remoteServers]);
 
-  const images = useMemo(
-    () => [...localImages, ...remoteImages],
-    [localImages, remoteImages]
-  );
+  const images = useMemo(() => {
+    const allImages = [...localImages, ...remoteImages];
+    if (!instanceType) return allImages;
+    return allImages.filter((image) => image.types.includes(instanceType));
+  }, [localImages, remoteImages, instanceType]);
   const selectedImageId = selectedImage?.id ?? null;
 
   const handleSelect = useCallback(

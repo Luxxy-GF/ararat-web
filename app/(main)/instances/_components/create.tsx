@@ -39,6 +39,7 @@ import ImageSelector, { SelectableImage } from "./imageSelector";
 import InstanceProperties from "@/app/(main)/instances/_components/properties";
 import { useServerConfiguration } from "@/app/_hooks/server";
 import InstanceDevices from "./devices";
+import type { Device } from "@/app/(main)/instances/_lib/instances.d";
 
 const sourceSchema = z
   .object({
@@ -84,6 +85,10 @@ export default function CreateInstance({ className }: { className?: string }) {
   const [profilesSelected, setProfilesSelected] = useState<string[]>([
     "default",
   ]);
+  const [instanceType, setInstanceType] = useState<
+    "virtual-machine" | "container"
+  >("container");
+  const [devices, setDevices] = useState<Record<string, Device>>({});
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -160,11 +165,13 @@ export default function CreateInstance({ className }: { className?: string }) {
               </Button>
             </DialogTrigger>
             <DialogContent
-              className={`${
+              className={`max-h-[90vh] w-full flex flex-col transition-all duration-200 ${
                 selectingImage
-                  ? "max-h-screen w-full sm:max-w-5xl flex flex-col"
-                  : "min-w-xs min-h-0"
-              } transition-all duration-200`}
+                  ? "sm:max-w-5xl"
+                  : currentTab === "devices"
+                  ? "sm:max-w-6xl h-[90vh]"
+                  : "sm:max-w-xl"
+              }`}
             >
               <DialogHeader className="shrink-0">
                 <DialogTitle>Create Instance</DialogTitle>
@@ -191,6 +198,8 @@ export default function CreateInstance({ className }: { className?: string }) {
                     <InstanceProperties
                       profilesSelected={profilesSelected}
                       setProfilesSelected={setProfilesSelected}
+                      instanceType={instanceType}
+                      setInstanceType={setInstanceType}
                     />
                   </TabsContent>
                   <TabsContent
@@ -231,11 +240,20 @@ export default function CreateInstance({ className }: { className?: string }) {
                       <ImageSelector
                         selectedImage={selectedImage}
                         onSelect={handleImageSelect}
+                        instanceType={instanceType}
                       />
                     ) : null}
                   </TabsContent>
-                  <TabsContent value="devices">
-                    <InstanceDevices profiles={profilesSelected} />
+                  <TabsContent
+                    value="devices"
+                    className="flex-1 min-h-0 overflow-hidden"
+                  >
+                    <InstanceDevices
+                      profiles={profilesSelected}
+                      devices={devices}
+                      onDevicesChange={setDevices}
+                      instanceType={instanceType}
+                    />
                   </TabsContent>
                 </Tabs>
               </div>
