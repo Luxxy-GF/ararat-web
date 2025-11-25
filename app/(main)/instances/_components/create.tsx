@@ -31,7 +31,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/app/_components/ui/tabs";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
@@ -40,6 +40,9 @@ import InstanceProperties from "@/app/(main)/instances/_components/properties";
 import { useServerConfiguration } from "@/app/_hooks/server";
 import InstanceDevices from "./devices";
 import type { Device } from "@/app/(main)/instances/_lib/instances.d";
+
+import GeneralConfiguration from "./general-configuration";
+import { useProfiles } from "@/app/(main)/_hooks/profiles";
 
 const sourceSchema = z
   .object({
@@ -89,6 +92,27 @@ export default function CreateInstance({ className }: { className?: string }) {
     "virtual-machine" | "container"
   >("container");
   const [devices, setDevices] = useState<Record<string, Device>>({});
+  const [config, setConfig] = useState<Record<string, string>>({});
+
+  const { data: profiles } = useProfiles();
+
+  // Correct implementation using useMemo
+  const memoizedExpandedConfig = useMemo(() => {
+    let result: Record<string, string> = {};
+    if (!profiles || profiles.length === 0) return result;
+
+    const profileMap = new Map(profiles.map((p) => [p.name, p]));
+
+    for (const profileName of profilesSelected) {
+      const profile = profileMap.get(profileName);
+      if (profile?.config) {
+        result = { ...result, ...profile.config };
+      }
+    }
+
+    return result;
+  }, [profiles, profilesSelected]);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -168,7 +192,7 @@ export default function CreateInstance({ className }: { className?: string }) {
               className={`max-h-[90vh] w-full flex flex-col transition-all duration-200 ${
                 selectingImage
                   ? "sm:max-w-5xl"
-                  : currentTab === "devices"
+                  : currentTab === "devices" || currentTab === "general"
                   ? "sm:max-w-6xl h-[90vh]"
                   : "sm:max-w-xl"
               }`}
@@ -190,6 +214,7 @@ export default function CreateInstance({ className }: { className?: string }) {
                     <TabsTrigger value="properties">Properties</TabsTrigger>
                     <TabsTrigger value="source">Source</TabsTrigger>
                     <TabsTrigger value="devices">Devices</TabsTrigger>
+                    <TabsTrigger value="general">Configuration</TabsTrigger>
                   </TabsList>
                   <TabsContent
                     value="properties"
@@ -252,6 +277,17 @@ export default function CreateInstance({ className }: { className?: string }) {
                       profiles={profilesSelected}
                       devices={devices}
                       onDevicesChange={setDevices}
+                      instanceType={instanceType}
+                    />
+                  </TabsContent>
+                  <TabsContent
+                    value="general"
+                    className="flex-1 min-h-0 overflow-hidden"
+                  >
+                    <GeneralConfiguration
+                      config={config}
+                      expandedConfig={memoizedExpandedConfig}
+                      onConfigChange={setConfig}
                       instanceType={instanceType}
                     />
                   </TabsContent>

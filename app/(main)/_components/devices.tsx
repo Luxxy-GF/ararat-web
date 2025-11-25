@@ -29,11 +29,6 @@ import {
   ComboboxItem,
 } from "@/app/_components/ui/combobox";
 import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from "@/app/_components/ui/resizable";
-import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -47,6 +42,7 @@ import {
   IconDeviceGamepad2,
   IconArrowsLeftRight,
   IconArrowLeft,
+  IconX,
 } from "@tabler/icons-react";
 import { useConfigurableOptions } from "@/app/_hooks/server";
 import {
@@ -57,6 +53,8 @@ import { useNetworks } from "@/app/(main)/_hooks/networks";
 import type { Device } from "@/app/(main)/instances/_lib/instances.d";
 import type { ConfigOption } from "@/app/_lib/server.d";
 import { useResources } from "@/app/(main)/_hooks/resources";
+import { VerticalTabsLayout } from "@/app/_components/layout/vertical-tabs-layout";
+import { useMobile } from "@/app/_components/ui/hooks/use-mobile";
 
 // Utility function to validate port specifications (Issue 3)
 function validatePort(portSpec: string): boolean {
@@ -270,7 +268,8 @@ class DeviceValidator {
     deviceConfig: any,
     isRoot: boolean,
     isNetworkDevice: boolean,
-    isGPUDevice: boolean
+    isGPUDevice: boolean,
+    instanceType: "container" | "virtual-machine"
   ): ValidationError[] {
     const errors: ValidationError[] = [];
 
@@ -278,7 +277,15 @@ class DeviceValidator {
     if (deviceConfig?.keys) {
       deviceConfig.keys.forEach((keyObj: any) => {
         Object.entries(keyObj).forEach(([key, config]: [string, any]) => {
-          if (config.required === "yes") {
+          // Use required_for if present, otherwise fall back to required === "yes"
+          let isRequired = false;
+          if (Array.isArray(config.required_for)) {
+            isRequired = config.required_for.includes(instanceType);
+          } else if (config.required === "yes") {
+            isRequired = true;
+          }
+
+          if (isRequired) {
             if (isRoot && key === "pool" && !properties.pool) {
               errors.push({
                 field: key,
@@ -339,7 +346,8 @@ class DeviceValidator {
     editingDeviceName?: string,
     isRoot?: boolean,
     isNetworkDevice?: boolean,
-    isGPUDevice?: boolean
+    isGPUDevice?: boolean,
+    instanceType: "container" | "virtual-machine" = "container"
   ): ValidationResult {
     const errors: ValidationError[] = [];
 
@@ -386,7 +394,8 @@ class DeviceValidator {
       deviceConfig,
       isRoot || false,
       isNetworkDevice || false,
-      isGPUDevice || false
+      isGPUDevice || false,
+      instanceType
     );
     errors.push(...requiredErrors);
 
@@ -2037,31 +2046,7 @@ export default function Devices({
     device: Device;
   } | null>(null);
   const [isCreatingRootDisk, setIsCreatingRootDisk] = React.useState(false);
-  const [containerWidth, setContainerWidth] = React.useState(0);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    if (!containerRef.current) return;
-
-    let timeoutId: NodeJS.Timeout;
-    const observer = new ResizeObserver((entries) => {
-      // Debounce resize updates to avoid excessive re-renders
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        for (const entry of entries) {
-          setContainerWidth(entry.contentRect.width);
-        }
-      }, 100);
-    });
-
-    observer.observe(containerRef.current);
-    return () => {
-      clearTimeout(timeoutId);
-      observer.disconnect();
-    };
-  }, []);
-
-  const isMobile = containerWidth < 768; // md breakpoint
+  const { isMobile } = useMobile();
 
   const { data: configurableOptions } = useConfigurableOptions();
   const isInternalUpdate = React.useRef(false);
@@ -2190,458 +2175,220 @@ export default function Devices({
     }
   };
 
+  const [showDetailPanel, setShowDetailPanel] = React.useState(false);
+
+  const handleAddClick = () => {
+    setIsCreatingRootDisk(true);
+    setSelectedDevice(null);
+    setShowDetailPanel(true);
+  };
+
   const handleDeviceClick = (name: string, device: Device) => {
     if (readonly) {
       return;
     }
     // Allow clicking inherited devices to override them
     setSelectedDevice({ name, device });
+    setShowDetailPanel(true);
   };
+
+  const closeDetailPanel = () => {
+    setSelectedDevice(null);
+    setIsCreatingRootDisk(false);
+    setShowDetailPanel(false);
+  };
+
+  const tabs = React.useMemo(() => {
+    return DEVICE_TYPES.map((type) => {
+      const count = Object.values({
+        ...inheritedDevices,
+        ...localDevices,
+      }).filter(
+        (d) => d.type === type.value || d.type.startsWith(`${type.value}_`)
+      ).length;
+
+      return {
+        value: type.value,
+        label: type.label,
+        icon: type.icon,
+        count,
+        description: type.description,
+      };
+    });
+  }, [inheritedDevices, localDevices]);
 
   const selectedDeviceType = DEVICE_TYPES.find((t) => t.value === selectedType);
 
-  const renderDeviceTypeButton = (type: (typeof DEVICE_TYPES)[0]) => {
-    const Icon = type.icon;
-    const count = Object.values({
-      ...inheritedDevices,
-      ...localDevices,
-    }).filter(
-      (d) => d.type === type.value || d.type.startsWith(`${type.value}_`)
-    ).length;
-
-    return (
-      <button
-        key={type.value}
-        onClick={() => setSelectedType(type.value)}
-        className={`w-full flex items-start gap-3 p-2 sm:p-3 rounded-md transition-colors text-left ${
-          selectedType === type.value
-            ? "bg-primary text-primary-foreground"
-            : "hover:bg-muted"
-        }`}
-      >
-        <Icon className="h-5 w-5 shrink-0 mt-0.5" />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-medium text-sm">{type.label}</span>
-            {count > 0 && (
-              <Badge
-                variant={selectedType === type.value ? "secondary" : "outline"}
-                className="h-5 px-1.5 text-xs"
-              >
-                {count}
-              </Badge>
-            )}
-          </div>
-          <p
-            className={`text-xs mt-0.5 ${
-              selectedType === type.value
-                ? "text-primary-foreground/80"
-                : "text-muted-foreground"
-            }`}
-          >
-            {type.description}
-          </p>
+  const renderDetailForm = () => (
+    <div className="h-full flex flex-col">
+      <div className="p-4 border-b flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 -ml-1 md:hidden"
+          onClick={closeDetailPanel}
+          aria-label="Back"
+        >
+          <IconArrowLeft className="h-4 w-4" />
+        </Button>
+        <h3 className="font-semibold text-sm">
+          {selectedDevice
+            ? `Edit ${selectedDevice.name}`
+            : isCreatingRootDisk && !hasRootDisk && selectedType === "disk"
+            ? "Add Root Disk"
+            : `Add ${(() => {
+                const deviceType = DEVICE_TYPES.find(
+                  (t) => t.value === selectedType
+                );
+                if (!deviceType) return "Device";
+                const label = deviceType.label;
+                if (label.endsWith("ies")) {
+                  return label.slice(0, -3) + "y";
+                }
+                if (label.endsWith("s") && !label.endsWith("ss")) {
+                  return label.slice(0, -1);
+                }
+                return label;
+              })()}`}
+        </h3>
+        <div className="ml-auto md:hidden">
+          {/* Mobile close button if needed, or just rely on back */}
         </div>
-      </button>
-    );
-  };
+        <div className="ml-auto hidden md:block">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={closeDetailPanel}
+          >
+            <IconX className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-hidden">
+        <AddDeviceForm
+          deviceType={selectedType}
+          deviceConfig={
+            configurableOptions?.configs?.devices?.[
+              selectedType.startsWith("nic_") ? "nic_bridged" : selectedType
+            ]
+          }
+          onAdd={(name, device) => {
+            handleAdd(name, device);
+            setShowDetailPanel(false);
+          }}
+          editingDevice={selectedDevice || undefined}
+          isInherited={
+            selectedDevice
+              ? isInherited(selectedDevice.name) ||
+                isOverridden(selectedDevice.name)
+              : false
+          }
+          onUpdate={(oldName, newName, device) => {
+            handleUpdate(oldName, newName, device);
+            setShowDetailPanel(false);
+          }}
+          onCancelEdit={closeDetailPanel}
+          isCreatingRootDisk={isCreatingRootDisk}
+          existingDevices={localDevices}
+          inheritedDevices={inheritedDevices}
+          flags={flags}
+        />
+      </div>
+    </div>
+  );
 
   return (
-    <div
-      ref={containerRef}
-      className="h-full w-full border rounded-lg overflow-hidden"
+    <VerticalTabsLayout
+      tabs={tabs}
+      selectedTab={selectedType}
+      onTabSelect={(type) => {
+        setSelectedType(type);
+        setShowDetailPanel(false); // Close detail panel when switching tabs
+      }}
+      title="Device Types"
+      detailPanel={
+        !readonly && showDetailPanel ? renderDetailForm() : undefined
+      }
+      contentSize={readonly ? 80 : 50}
     >
-      {/* Desktop Layout with Resizable Panels */}
-      {!isMobile && (
-        <ResizablePanelGroup direction="horizontal" className="flex h-full">
-          {/* Sidebar Panel */}
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-            <div className="h-full bg-muted/30 flex flex-col">
-              <div className="p-3 border-b">
-                <h3 className="font-semibold text-sm">Device Types</h3>
-              </div>
-              <ScrollArea className="flex-1">
-                <div className="p-2 space-y-1">
-                  {DEVICE_TYPES.map((type) => renderDeviceTypeButton(type))}
-                </div>
-              </ScrollArea>
-            </div>
-          </ResizablePanel>
-
-          <ResizableHandle />
-
-          {/* Device List Panel */}
-          <ResizablePanel defaultSize={readonly ? 80 : 50} minSize={30}>
-            <div className="h-full flex flex-col">
-              <div className="p-4 border-b">
-                <div className="flex items-center gap-2">
-                  {selectedDeviceType && (
-                    <>
-                      <selectedDeviceType.icon className="h-5 w-5" />
-                      <h3 className="font-semibold">
-                        {selectedDeviceType.label}
-                      </h3>
-                    </>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {selectedDeviceType?.description}
-                </p>
-              </div>
-              <ScrollArea className="flex-1">
-                <div className="p-4 space-y-3">
-                  {!readonly &&
-                    selectedType === "disk" &&
-                    !hasRootDisk &&
-                    !isCreatingRootDisk && (
-                      <Card className="border-dashed border-primary/50 bg-primary/5">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm font-semibold">
-                            No Root Disk
-                          </CardTitle>
-                          <CardDescription className="text-xs">
-                            A root disk is typically required for instances.
-                            Would you like to add one?
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <Button
-                            size="sm"
-                            className="w-full"
-                            onClick={() => {
-                              setIsCreatingRootDisk(true);
-                              setSelectedDevice(null);
-                            }}
-                          >
-                            <IconPlus className="h-4 w-4 mr-2" />
-                            Add Root Disk
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    )}
-                  {filteredDevices.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <div className="rounded-full bg-muted p-4 mb-4">
-                        {selectedDeviceType && (
-                          <selectedDeviceType.icon className="h-8 w-8 text-muted-foreground" />
-                        )}
-                      </div>
-                      <p className="text-sm font-medium">
-                        No devices configured
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Add a {selectedType} device to get started
-                      </p>
-                    </div>
-                  ) : (
-                    filteredDevices.map(([name, device]) => (
-                      <DeviceListItem
-                        key={name}
-                        name={name}
-                        device={device}
-                        inherited={isInherited(name)}
-                        overridden={isOverridden(name)}
-                        readonly={readonly}
-                        selected={selectedDevice?.name === name}
-                        hasIssues={hasIssues(name, device)}
-                        onRemove={handleRemove}
-                        onReset={handleReset}
-                        onClick={() => handleDeviceClick(name, device)}
-                      />
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-            </div>
-          </ResizablePanel>
-
-          {/* Add Device Panel */}
+      <div className="h-full flex flex-col">
+        <div className="p-4 border-b flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            {selectedDeviceType && (
+              <>
+                <selectedDeviceType.icon className="h-5 w-5" />
+                <h3 className="font-semibold">{selectedDeviceType.label}</h3>
+              </>
+            )}
+          </div>
           {!readonly && (
-            <>
-              <ResizableHandle />
-              <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
-                <div className="h-full flex flex-col">
-                  <div className="p-4 border-b">
-                    <h3 className="font-semibold text-sm">
-                      {selectedDevice
-                        ? `Edit ${selectedDevice.name}`
-                        : isCreatingRootDisk &&
-                          !hasRootDisk &&
-                          selectedType === "disk"
-                        ? "Add Root Disk"
-                        : `Add ${(() => {
-                            const deviceType = DEVICE_TYPES.find(
-                              (t) => t.value === selectedType
-                            );
-                            if (!deviceType) return "Device";
-                            // For types ending in 's' or 'ies', remove the plural
-                            const label = deviceType.label;
-                            if (label.endsWith("ies")) {
-                              return label.slice(0, -3) + "y";
-                            }
-                            if (label.endsWith("s") && !label.endsWith("ss")) {
-                              return label.slice(0, -1);
-                            }
-                            return label;
-                          })()}`}
-                    </h3>
-                  </div>
-                  <div className="flex-1 overflow-hidden">
-                    <AddDeviceForm
-                      deviceType={selectedType}
-                      deviceConfig={
-                        configurableOptions?.configs?.devices?.[
-                          selectedType.startsWith("nic_")
-                            ? "nic_bridged"
-                            : selectedType
-                        ]
-                      }
-                      onAdd={handleAdd}
-                      editingDevice={selectedDevice || undefined}
-                      isInherited={
-                        selectedDevice
-                          ? isInherited(selectedDevice.name) ||
-                            isOverridden(selectedDevice.name)
-                          : false
-                      }
-                      onUpdate={handleUpdate}
-                      onCancelEdit={() => {
-                        setSelectedDevice(null);
-                        setIsCreatingRootDisk(false);
-                      }}
-                      isCreatingRootDisk={isCreatingRootDisk}
-                      existingDevices={localDevices}
-                      inheritedDevices={inheritedDevices}
-                      flags={flags}
-                    />
-                  </div>
-                </div>
-              </ResizablePanel>
-            </>
-          )}
-        </ResizablePanelGroup>
-      )}
-
-      {/* Mobile Layout (non-resizable) */}
-      {isMobile && (
-        <div className="flex flex-col h-full overflow-hidden">
-          {selectedDevice || isCreatingRootDisk ? (
-            // Detail View (Form)
-            <div className="flex flex-col h-full overflow-hidden">
-              <div className="p-3 border-b flex items-center gap-2 bg-muted/30">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 -ml-1"
-                  onClick={() => {
-                    setSelectedDevice(null);
-                    setIsCreatingRootDisk(false);
-                  }}
-                  aria-label="Back to device list"
-                >
-                  <IconArrowLeft className="h-4 w-4" />
-                </Button>
-                <h3 className="font-semibold text-sm">
-                  {selectedDevice
-                    ? `Edit ${selectedDevice.name}`
-                    : isCreatingRootDisk &&
-                      !hasRootDisk &&
-                      selectedType === "disk"
-                    ? "Add Root Disk"
-                    : `Add ${(() => {
-                        const deviceType_ = DEVICE_TYPES.find(
-                          (t) => t.value === selectedType
-                        );
-                        if (!deviceType_) return "Device";
-                        const label = deviceType_.label;
-                        // Handle "Proxies" -> "Proxy"
-                        if (label.endsWith("ies")) {
-                          return label.slice(0, -3) + "y";
-                        }
-                        // Handle "Networks", "Disks", "GPUs" -> singular
-                        if (label.endsWith("s") && !label.endsWith("ss")) {
-                          return label.slice(0, -1);
-                        }
-                        return label;
-                      })()}`}
-                </h3>
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <AddDeviceForm
-                  deviceType={selectedType}
-                  deviceConfig={
-                    configurableOptions?.configs?.devices?.[
-                      selectedType.startsWith("nic_")
-                        ? "nic_bridged"
-                        : selectedType
-                    ]
-                  }
-                  onAdd={handleAdd}
-                  editingDevice={selectedDevice || undefined}
-                  isInherited={
-                    selectedDevice
-                      ? isInherited(selectedDevice.name) ||
-                        isOverridden(selectedDevice.name)
-                      : false
-                  }
-                  onUpdate={handleUpdate}
-                  onCancelEdit={() => {
-                    setSelectedDevice(null);
-                    setIsCreatingRootDisk(false);
-                  }}
-                  isCreatingRootDisk={isCreatingRootDisk}
-                  existingDevices={localDevices}
-                  inheritedDevices={inheritedDevices}
-                  flags={flags}
-                />
-              </div>
-            </div>
-          ) : (
-            // Master View (List)
-            <div className="flex flex-col h-full overflow-hidden relative">
-              <div className="w-full border-b bg-muted/30">
-                <div className="p-3 border-b">
-                  <h3 className="font-semibold text-sm">Device Types</h3>
-                </div>
-                <ScrollArea className="h-auto whitespace-nowrap">
-                  <div className="flex p-2 gap-2 overflow-x-auto">
-                    {DEVICE_TYPES.map((type) => {
-                      const Icon = type.icon;
-                      const count = Object.values({
-                        ...inheritedDevices,
-                        ...localDevices,
-                      }).filter(
-                        (d) =>
-                          d.type === type.value ||
-                          d.type.startsWith(`${type.value}_`)
-                      ).length;
-                      const isSelected = selectedType === type.value;
-
-                      return (
-                        <button
-                          key={type.value}
-                          onClick={() => setSelectedType(type.value)}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors border ${
-                            isSelected
-                              ? "bg-primary text-primary-foreground border-primary"
-                              : "bg-background hover:bg-muted border-transparent"
-                          }`}
-                        >
-                          <Icon className="h-4 w-4" />
-                          <span className="text-xs font-medium">
-                            {type.label}
-                          </span>
-                          {count > 0 && (
-                            <Badge
-                              variant={isSelected ? "secondary" : "outline"}
-                              className="h-4 px-1 text-[10px]"
-                            >
-                              {count}
-                            </Badge>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-              </div>
-
-              <div className="flex-1 flex flex-col overflow-hidden">
-                <div className="p-4 border-b flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    {selectedDeviceType && (
-                      <>
-                        <selectedDeviceType.icon className="h-5 w-5" />
-                        <h3 className="font-semibold">
-                          {selectedDeviceType.label}
-                        </h3>
-                      </>
-                    )}
-                  </div>
-                  {!readonly && (
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        // Open the add device form
-                        // The useEffect will determine if it's root disk or regular based on hasRootDisk
-                        setIsCreatingRootDisk(true);
-                        setSelectedDevice(null);
-                      }}
-                      className="h-8 text-xs"
-                    >
-                      <IconPlus className="h-3 w-3 mr-1" />
-                      Add
-                    </Button>
-                  )}
-                </div>
-                <ScrollArea className="flex-1">
-                  <div className="p-4 space-y-3 pb-20">
-                    {!readonly &&
-                      selectedType === "disk" &&
-                      !hasRootDisk &&
-                      !isCreatingRootDisk && (
-                        <Card className="border-dashed border-primary/50 bg-primary/5">
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-semibold">
-                              No Root Disk
-                            </CardTitle>
-                            <CardDescription className="text-xs">
-                              A root disk is typically required for instances.
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="pt-0">
-                            <Button
-                              size="sm"
-                              className="w-full"
-                              onClick={() => {
-                                setIsCreatingRootDisk(true);
-                                setSelectedDevice(null);
-                              }}
-                            >
-                              <IconPlus className="h-4 w-4 mr-2" />
-                              Add Root Disk
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      )}
-                    {filteredDevices.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <div className="rounded-full bg-muted p-4 mb-4">
-                          {selectedDeviceType && (
-                            <selectedDeviceType.icon className="h-8 w-8 text-muted-foreground" />
-                          )}
-                        </div>
-                        <p className="text-sm font-medium">
-                          No devices configured
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Add a {selectedType} device to get started
-                        </p>
-                      </div>
-                    ) : (
-                      filteredDevices.map(([name, device]) => (
-                        <DeviceListItem
-                          key={name}
-                          name={name}
-                          device={device}
-                          inherited={isInherited(name)}
-                          overridden={isOverridden(name)}
-                          readonly={readonly}
-                          selected={false}
-                          hasIssues={hasIssues(name, device)}
-                          onRemove={handleRemove}
-                          onReset={handleReset}
-                          onClick={() => handleDeviceClick(name, device)}
-                        />
-                      ))
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
-            </div>
+            <Button size="sm" onClick={handleAddClick} className="h-8 text-xs">
+              <IconPlus className="h-3 w-3 mr-1" />
+              Add
+            </Button>
           )}
         </div>
-      )}
-    </div>
+        <ScrollArea className="flex-1">
+          <div className="p-4 space-y-3">
+            {!readonly &&
+              selectedType === "disk" &&
+              !hasRootDisk &&
+              !isCreatingRootDisk && (
+                <Card className="border-dashed border-primary/50 bg-primary/5">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-semibold">
+                      No Root Disk
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      A root disk is typically required for instances. Would you
+                      like to add one?
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      onClick={handleAddClick}
+                    >
+                      <IconPlus className="h-4 w-4 mr-2" />
+                      Add Root Disk
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            {filteredDevices.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="rounded-full bg-muted p-4 mb-4">
+                  {selectedDeviceType && (
+                    <selectedDeviceType.icon className="h-8 w-8 text-muted-foreground" />
+                  )}
+                </div>
+                <p className="text-sm font-medium">No devices configured</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add a {selectedType} device to get started
+                </p>
+              </div>
+            ) : (
+              filteredDevices.map(([name, device]) => (
+                <DeviceListItem
+                  key={name}
+                  name={name}
+                  device={device}
+                  inherited={isInherited(name)}
+                  overridden={isOverridden(name)}
+                  readonly={readonly}
+                  selected={selectedDevice?.name === name}
+                  hasIssues={hasIssues(name, device)}
+                  onRemove={handleRemove}
+                  onReset={handleReset}
+                  onClick={() => handleDeviceClick(name, device)}
+                />
+              ))
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+    </VerticalTabsLayout>
   );
 }
