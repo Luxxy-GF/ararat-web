@@ -21,6 +21,31 @@ function processConfigurableOptions(config: ConfigurableOptions) {
     devices?: Record<string, OptionCategory>;
   };
 
+  // Centralized pattern configuration for instance type detection
+  // NOTE: This uses string matching on description fields to infer supported instance types.
+  // This is a heuristic approach that may break if description formatting changes.
+  // If the API ever provides explicit metadata for supported types, use that instead.
+  const TYPE_PATTERNS = {
+    container: [
+      "(only for containers)",
+      "(container only)",
+      "containers only",
+    ],
+    vm: [
+      "(only for virtual machines)",
+      "(vm only)",
+      "virtual machines only",
+      "vms only",
+      "for vms",
+    ],
+  };
+
+  const REQUIRED_PATTERNS = {
+    universal: ["yes", "true"],
+    container: ["container"],
+    vm: ["virtual machine", "vm"],
+  };
+
   // Helper to process a single option
   const processOption = (option: ConfigOption) => {
     const textToCheck = [option.condition, option.shortdesc, option.longdesc]
@@ -28,25 +53,15 @@ function processConfigurableOptions(config: ConfigurableOptions) {
       .join(" ")
       .toLowerCase();
 
-    // NOTE: The following logic uses string matching on description fields to infer
-    // supported instance types. This is brittle and may break if the description
-    // formatting changes. If the API ever provides explicit metadata for supported types,
-    // use that instead of this heuristic. See CodeQL warning for details.
+    // Default to supporting both types
     option.supported_types = ["container", "virtual-machine"];
 
-    if (
-      textToCheck.includes("(only for containers)") ||
-      textToCheck.includes("(container only)") ||
-      textToCheck.includes("containers only")
-    ) {
+    // Check for container-only patterns
+    if (TYPE_PATTERNS.container.some((pattern) => textToCheck.includes(pattern))) {
       option.supported_types = ["container"];
-    } else if (
-      textToCheck.includes("(only for virtual machines)") ||
-      textToCheck.includes("(vm only)") ||
-      textToCheck.includes("virtual machines only") ||
-      textToCheck.includes("vms only") ||
-      textToCheck.includes("for vms")
-    ) {
+    } 
+    // Check for VM-only patterns
+    else if (TYPE_PATTERNS.vm.some((pattern) => textToCheck.includes(pattern))) {
       option.supported_types = ["virtual-machine"];
     }
 
@@ -54,11 +69,12 @@ function processConfigurableOptions(config: ConfigurableOptions) {
     option.required_for = [];
     if (option.required) {
       const req = option.required.toLowerCase();
-      if (req === "yes" || req === "true") {
+      
+      if (REQUIRED_PATTERNS.universal.some((pattern) => req === pattern)) {
         option.required_for = ["container", "virtual-machine"];
-      } else if (req.includes("container")) {
+      } else if (REQUIRED_PATTERNS.container.some((pattern) => req.includes(pattern))) {
         option.required_for = ["container"];
-      } else if (req.includes("virtual machine") || req.includes("vm")) {
+      } else if (REQUIRED_PATTERNS.vm.some((pattern) => req.includes(pattern))) {
         option.required_for = ["virtual-machine"];
       }
     }
