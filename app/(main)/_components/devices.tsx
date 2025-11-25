@@ -53,6 +53,8 @@ import { useNetworks } from "@/app/(main)/_hooks/networks";
 import type { Device } from "@/app/(main)/instances/_lib/instances.d";
 import type { ConfigOption } from "@/app/_lib/server.d";
 import { useResources } from "@/app/(main)/_hooks/resources";
+import { VerticalTabsLayout } from "@/app/_components/layout/vertical-tabs-layout";
+import { useMobile } from "@/app/_components/ui/hooks/use-mobile";
 
 // Utility function to validate port specifications (Issue 3)
 function validatePort(portSpec: string): boolean {
@@ -466,10 +468,11 @@ function DeviceListItem({
   return (
     <div
       onClick={onClick}
-      className={`w-full text-left ${readonly && inherited && !overridden
-        ? "cursor-not-allowed"
-        : "cursor-pointer"
-        }`}
+      className={`w-full text-left ${
+        readonly && inherited && !overridden
+          ? "cursor-not-allowed"
+          : "cursor-pointer"
+      }`}
       role="button"
       tabIndex={readonly && inherited && !overridden ? -1 : 0}
       onKeyDown={(e) => {
@@ -478,14 +481,18 @@ function DeviceListItem({
           onClick();
         }
       }}
-      aria-label={`${name} device - ${device.type}${inherited ? " (inherited)" : ""
-        }${overridden ? " (overridden)" : ""}`}
+      aria-label={`${name} device - ${device.type}${
+        inherited ? " (inherited)" : ""
+      }${overridden ? " (overridden)" : ""}`}
     >
       <Card
-        className={`${inherited ? "border-dashed" : ""} ${overridden ? "border-orange-500/50" : ""
-          } ${hasIssues ? "border-destructive" : ""} ${selected ? "ring-2 ring-primary" : "hover:bg-muted/50"
-          } ${readonly && inherited && !overridden ? "opacity-50" : ""
-          } transition-all`}
+        className={`${inherited ? "border-dashed" : ""} ${
+          overridden ? "border-orange-500/50" : ""
+        } ${hasIssues ? "border-destructive" : ""} ${
+          selected ? "ring-2 ring-primary" : "hover:bg-muted/50"
+        } ${
+          readonly && inherited && !overridden ? "opacity-50" : ""
+        } transition-all`}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
@@ -702,7 +709,7 @@ function AddDeviceForm({
     ) {
       const config =
         configurableOptions.configs.devices[
-        deviceConfigKey as keyof typeof configurableOptions.configs.devices
+          deviceConfigKey as keyof typeof configurableOptions.configs.devices
         ];
       return config || null;
     }
@@ -1080,8 +1087,8 @@ function AddDeviceForm({
             {(!flags?.type ||
               flags.type === "virtual-machine" ||
               flags.type === "container") && (
-                <SelectItem value="physical">Physical</SelectItem>
-              )}
+              <SelectItem value="physical">Physical</SelectItem>
+            )}
             {(!flags?.type || flags.type === "virtual-machine") && (
               <SelectItem value="mdev">MDEV</SelectItem>
             )}
@@ -1844,10 +1851,10 @@ function AddDeviceForm({
             {isNetworkDevice
               ? renderNetworkFields()
               : isGPUDevice
-                ? null
-                : deviceType === "proxy"
-                  ? renderProxyFields()
-                  : null}
+              ? null
+              : deviceType === "proxy"
+              ? renderProxyFields()
+              : null}
             {requiredCategories.length > 0 && (
               <div className="space-y-6">
                 {requiredCategories.map((category) => (
@@ -2003,29 +2010,26 @@ function AddDeviceForm({
           {editingDevice
             ? `Save ${editingDevice.name}`
             : `Add ${(() => {
-              const deviceType_ = DEVICE_TYPES.find(
-                (t) => t.value === deviceType
-              );
-              if (!deviceType_) return "Device";
-              const label = deviceType_.label;
-              // Handle "Proxies" -> "Proxy"
-              if (label.endsWith("ies")) {
-                return label.slice(0, -3) + "y";
-              }
-              // Handle "Networks", "Disks", "GPUs" -> singular
-              if (label.endsWith("s") && !label.endsWith("ss")) {
-                return label.slice(0, -1);
-              }
-              return label;
-            })()}`}
+                const deviceType_ = DEVICE_TYPES.find(
+                  (t) => t.value === deviceType
+                );
+                if (!deviceType_) return "Device";
+                const label = deviceType_.label;
+                // Handle "Proxies" -> "Proxy"
+                if (label.endsWith("ies")) {
+                  return label.slice(0, -3) + "y";
+                }
+                // Handle "Networks", "Disks", "GPUs" -> singular
+                if (label.endsWith("s") && !label.endsWith("ss")) {
+                  return label.slice(0, -1);
+                }
+                return label;
+              })()}`}
         </Button>
       </div>
     </div>
   );
 }
-
-import { VerticalTabsLayout } from "@/app/_components/layout/vertical-tabs-layout";
-import { useMobile } from "@/app/_components/ui/hooks/use-mobile";
 
 export default function Devices({
   devices,
@@ -2230,11 +2234,9 @@ export default function Devices({
         <h3 className="font-semibold text-sm">
           {selectedDevice
             ? `Edit ${selectedDevice.name}`
-            : isCreatingRootDisk &&
-              !hasRootDisk &&
-              selectedType === "disk"
-              ? "Add Root Disk"
-              : `Add ${(() => {
+            : isCreatingRootDisk && !hasRootDisk && selectedType === "disk"
+            ? "Add Root Disk"
+            : `Add ${(() => {
                 const deviceType = DEVICE_TYPES.find(
                   (t) => t.value === selectedType
                 );
@@ -2268,9 +2270,7 @@ export default function Devices({
           deviceType={selectedType}
           deviceConfig={
             configurableOptions?.configs?.devices?.[
-            selectedType.startsWith("nic_")
-              ? "nic_bridged"
-              : selectedType
+              selectedType.startsWith("nic_") ? "nic_bridged" : selectedType
             ]
           }
           onAdd={(name, device) => {
@@ -2281,7 +2281,7 @@ export default function Devices({
           isInherited={
             selectedDevice
               ? isInherited(selectedDevice.name) ||
-              isOverridden(selectedDevice.name)
+                isOverridden(selectedDevice.name)
               : false
           }
           onUpdate={(oldName, newName, device) => {
@@ -2307,7 +2307,9 @@ export default function Devices({
         setShowDetailPanel(false); // Close detail panel when switching tabs
       }}
       title="Device Types"
-      detailPanel={(!readonly && showDetailPanel) ? renderDetailForm() : undefined}
+      detailPanel={
+        !readonly && showDetailPanel ? renderDetailForm() : undefined
+      }
       contentSize={readonly ? 80 : 50}
     >
       <div className="h-full flex flex-col">
@@ -2316,18 +2318,12 @@ export default function Devices({
             {selectedDeviceType && (
               <>
                 <selectedDeviceType.icon className="h-5 w-5" />
-                <h3 className="font-semibold">
-                  {selectedDeviceType.label}
-                </h3>
+                <h3 className="font-semibold">{selectedDeviceType.label}</h3>
               </>
             )}
           </div>
           {!readonly && (
-            <Button
-              size="sm"
-              onClick={handleAddClick}
-              className="h-8 text-xs"
-            >
+            <Button size="sm" onClick={handleAddClick} className="h-8 text-xs">
               <IconPlus className="h-3 w-3 mr-1" />
               Add
             </Button>
@@ -2345,8 +2341,8 @@ export default function Devices({
                       No Root Disk
                     </CardTitle>
                     <CardDescription className="text-xs">
-                      A root disk is typically required for instances.
-                      Would you like to add one?
+                      A root disk is typically required for instances. Would you
+                      like to add one?
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="pt-0">
@@ -2368,9 +2364,7 @@ export default function Devices({
                     <selectedDeviceType.icon className="h-8 w-8 text-muted-foreground" />
                   )}
                 </div>
-                <p className="text-sm font-medium">
-                  No devices configured
-                </p>
+                <p className="text-sm font-medium">No devices configured</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Add a {selectedType} device to get started
                 </p>
