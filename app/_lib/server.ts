@@ -24,7 +24,10 @@ function processConfigurableOptions(config: ConfigurableOptions) {
       option.longdesc
     ].filter(Boolean).join(" ").toLowerCase();
 
-    // Determine supported types
+    // NOTE: The following logic uses string matching on description fields to infer
+    // supported instance types. This is brittle and may break if the description
+    // formatting changes. If the API ever provides explicit metadata for supported types,
+    // use that instead of this heuristic. See CodeQL warning for details.
     option.supported_types = ["container", "virtual-machine"];
 
     if (
