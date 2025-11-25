@@ -86,7 +86,7 @@ export function VerticalTabsLayout({
     const renderTabs = (orientation: "vertical" | "horizontal") => (
         <div className={cn(
             "flex",
-            orientation === "vertical" ? "flex-col p-2 space-y-1" : "flex-col p-2 space-y-1"
+            "flex-col p-2 space-y-1"
         )}>
             {tabs.map((tab) => {
                 const Icon = tab.icon;
