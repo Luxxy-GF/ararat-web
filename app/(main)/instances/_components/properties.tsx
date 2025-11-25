@@ -18,13 +18,26 @@ import {
   ComboboxContent,
   ComboboxItem,
 } from "@/app/_components/ui/combobox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/_components/ui/select";
 
 export default function InstanceProperties({
   profilesSelected,
   setProfilesSelected,
+  instanceType,
+  setInstanceType,
 }: {
   profilesSelected: string[];
   setProfilesSelected: React.Dispatch<React.SetStateAction<string[]>>;
+  instanceType: "virtual-machine" | "container";
+  setInstanceType: React.Dispatch<
+    React.SetStateAction<"virtual-machine" | "container">
+  >;
 }) {
   const {
     data: profiles,
@@ -67,6 +80,23 @@ export default function InstanceProperties({
             ))}
           </ComboboxContent>
         </Combobox>
+      </Field>
+      <Field>
+        <FieldLabel htmlFor="type">Type</FieldLabel>
+        <Select
+          value={instanceType}
+          onValueChange={(value) =>
+            setInstanceType(value as "virtual-machine" | "container")
+          }
+        >
+          <SelectTrigger id="type">
+            <SelectValue placeholder="Select instance type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="container">Container</SelectItem>
+            <SelectItem value="virtual-machine">Virtual Machine</SelectItem>
+          </SelectContent>
+        </Select>
       </Field>
     </div>
   );
