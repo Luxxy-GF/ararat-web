@@ -22,6 +22,8 @@ export interface ConfigOption {
   default?: string;
   shortdesc?: string;
   longdesc?: string;
+  condition?: string;
+  fullKey?: string;
 }
 
 export interface DeviceTypeConfig {
