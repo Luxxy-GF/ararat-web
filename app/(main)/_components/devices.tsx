@@ -275,7 +275,13 @@ class DeviceValidator {
     if (deviceConfig?.keys) {
       deviceConfig.keys.forEach((keyObj: any) => {
         Object.entries(keyObj).forEach(([key, config]: [string, any]) => {
-          const isRequired = config.required_for?.includes(instanceType) || config.required === "yes"; // Fallback for safety
+          // Use required_for if present, otherwise fall back to required === "yes"
+          let isRequired = false;
+          if (Array.isArray(config.required_for)) {
+            isRequired = config.required_for.includes(instanceType);
+          } else if (config.required === "yes") {
+            isRequired = true;
+          }
 
           if (isRequired) {
             if (isRoot && key === "pool" && !properties.pool) {
