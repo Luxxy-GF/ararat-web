@@ -24,6 +24,8 @@ export interface ConfigOption {
   longdesc?: string;
   condition?: string;
   fullKey?: string;
+  supported_types?: ("container" | "virtual-machine")[];
+  required_for?: ("container" | "virtual-machine")[];
 }
 
 export interface DeviceTypeConfig {
