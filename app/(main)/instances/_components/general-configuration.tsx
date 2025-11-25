@@ -55,7 +55,8 @@ export default function GeneralConfiguration({
         const cats: ConfigCategory[] = [];
 
         Object.entries(instanceConfig).forEach(([categoryName, categoryData]) => {
-            if (categoryName === "volatile") return; // Hide volatile category
+            // The 'volatile' category contains system-managed configuration that should not be exposed to users.
+            if (categoryName === "volatile") return;
             if (typeof categoryData !== "object" || !categoryData || !("keys" in categoryData)) {
                 return;
             }
