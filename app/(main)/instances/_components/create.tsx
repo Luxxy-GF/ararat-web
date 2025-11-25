@@ -98,7 +98,7 @@ export default function CreateInstance({ className }: { className?: string }) {
 
   // Correct implementation using useMemo
   const memoizedExpandedConfig = useMemo(() => {
-    const result: Record<string, string> = {};
+    let result: Record<string, string> = {};
     if (!profiles || profiles.length === 0) return result;
 
     const profileMap = new Map(profiles.map((p) => [p.name, p]));
@@ -106,7 +106,7 @@ export default function CreateInstance({ className }: { className?: string }) {
     for (const profileName of profilesSelected) {
       const profile = profileMap.get(profileName);
       if (profile?.config) {
-        Object.assign(result, profile.config);
+        result = { ...result, ...profile.config };
       }
     }
 
