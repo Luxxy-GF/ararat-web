@@ -269,7 +269,7 @@ class DeviceValidator {
     isRoot: boolean,
     isNetworkDevice: boolean,
     isGPUDevice: boolean,
-    instanceType: "container" | "virtual-machine" = "container"
+    instanceType: "container" | "virtual-machine"
   ): ValidationError[] {
     const errors: ValidationError[] = [];
 
