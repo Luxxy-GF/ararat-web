@@ -6,23 +6,27 @@ export async function getServerConfiguration() {
 }
 
 export async function getConfigurableOptions() {
-  return jsonFetcher("/1.0/metadata/configuration").then(
-    (data) => {
-      const config = data.metadata as ConfigurableOptions;
-      processConfigurableOptions(config);
-      return config;
-    }
-  );
+  return jsonFetcher("/1.0/metadata/configuration").then((data) => {
+    const config = data.metadata as ConfigurableOptions;
+    processConfigurableOptions(config);
+    return config;
+  });
 }
 
 function processConfigurableOptions(config: ConfigurableOptions) {
+  type OptionKeyGroup = Record<string, ConfigOption>;
+  type OptionCategory = { keys?: OptionKeyGroup[] };
+  type ConfigsShape = {
+    instance?: Record<string, OptionCategory>;
+    devices?: Record<string, OptionCategory>;
+  };
+
   // Helper to process a single option
   const processOption = (option: ConfigOption) => {
-    const textToCheck = [
-      option.condition,
-      option.shortdesc,
-      option.longdesc
-    ].filter(Boolean).join(" ").toLowerCase();
+    const textToCheck = [option.condition, option.shortdesc, option.longdesc]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
 
     // NOTE: The following logic uses string matching on description fields to infer
     // supported instance types. This is brittle and may break if the description
@@ -60,28 +64,23 @@ function processConfigurableOptions(config: ConfigurableOptions) {
     }
   };
 
+  const configs = config.configs as ConfigsShape;
+
+  const traverseCategories = (collection?: Record<string, OptionCategory>) => {
+    if (!collection) return;
+    Object.values(collection).forEach((category) => {
+      category.keys?.forEach((keyObj) => {
+        Object.values(keyObj).forEach((opt) => processOption(opt));
+      });
+    });
+  };
+
   // Traverse the structure
   // 1. Instance configs (flat objects with keys array)
-  if (config.configs.instance) {
-    Object.values(config.configs.instance).forEach((category: any) => {
-      if (category.keys) {
-        category.keys.forEach((keyObj: any) => {
-          Object.values(keyObj).forEach((opt: any) => processOption(opt));
-        });
-      }
-    });
-  }
+  traverseCategories(configs.instance);
 
   // 2. Device configs (nested under devices -> type -> keys)
-  if (config.configs.devices) {
-    Object.values(config.configs.devices).forEach((deviceType: any) => {
-      if (deviceType.keys) {
-        deviceType.keys.forEach((keyObj: any) => {
-          Object.values(keyObj).forEach((opt: any) => processOption(opt));
-        });
-      }
-    });
-  }
+  traverseCategories(configs.devices);
 
   // Process other top-level configs if they follow the same pattern
   // For now, focusing on instance and devices as requested
