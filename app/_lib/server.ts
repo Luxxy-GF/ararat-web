@@ -26,11 +26,7 @@ function processConfigurableOptions(config: ConfigurableOptions) {
   // This is a heuristic approach that may break if description formatting changes.
   // If the API ever provides explicit metadata for supported types, use that instead.
   const TYPE_PATTERNS = {
-    container: [
-      "(only for containers)",
-      "(container only)",
-      "containers only",
-    ],
+    container: ["(only for containers)", "(container only)", "containers only"],
     vm: [
       "(only for virtual machines)",
       "(vm only)",
@@ -57,11 +53,15 @@ function processConfigurableOptions(config: ConfigurableOptions) {
     option.supported_types = ["container", "virtual-machine"];
 
     // Check for container-only patterns
-    if (TYPE_PATTERNS.container.some((pattern) => textToCheck.includes(pattern))) {
+    if (
+      TYPE_PATTERNS.container.some((pattern) => textToCheck.includes(pattern))
+    ) {
       option.supported_types = ["container"];
-    } 
+    }
     // Check for VM-only patterns
-    else if (TYPE_PATTERNS.vm.some((pattern) => textToCheck.includes(pattern))) {
+    else if (
+      TYPE_PATTERNS.vm.some((pattern) => textToCheck.includes(pattern))
+    ) {
       option.supported_types = ["virtual-machine"];
     }
 
@@ -69,12 +69,16 @@ function processConfigurableOptions(config: ConfigurableOptions) {
     option.required_for = [];
     if (option.required) {
       const req = option.required.toLowerCase();
-      
+
       if (REQUIRED_PATTERNS.universal.some((pattern) => req === pattern)) {
         option.required_for = ["container", "virtual-machine"];
-      } else if (REQUIRED_PATTERNS.container.some((pattern) => req.includes(pattern))) {
+      } else if (
+        REQUIRED_PATTERNS.container.some((pattern) => req.includes(pattern))
+      ) {
         option.required_for = ["container"];
-      } else if (REQUIRED_PATTERNS.vm.some((pattern) => req.includes(pattern))) {
+      } else if (
+        REQUIRED_PATTERNS.vm.some((pattern) => req.includes(pattern))
+      ) {
         option.required_for = ["virtual-machine"];
       }
     }
