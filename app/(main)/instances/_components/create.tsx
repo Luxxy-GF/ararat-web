@@ -82,59 +82,80 @@ function toYaml(obj: Record<string, unknown>, indent = 0): string {
 function fromYaml(yaml: string): Record<string, unknown> {
   const lines = yaml.split("\n");
   const result: Record<string, unknown> = {};
-  const stack: { obj: Record<string, unknown>; indent: number }[] = [
-    { obj: result, indent: -1 },
-  ];
-  let currentArray: unknown[] | null = null;
-
-  for (const line of lines) {
-    if (!line.trim() || line.trim().startsWith("#")) continue;
-
-    const match = line.match(/^(\s*)([^:\s]+):\s*(.*)$/);
-    if (!match) {
-      // Check for array item
-      const arrayMatch = line.match(/^(\s*)-\s*(.*)$/);
-      if (arrayMatch && currentArray !== null) {
-        const value = arrayMatch[2].trim();
-        try {
-          currentArray.push(JSON.parse(value));
-        } catch {
-          currentArray.push(value);
-        }
-      }
+  
+  // First pass: identify all top-level keys and their values
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line.trim() || line.trim().startsWith("#")) {
+      i++;
       continue;
     }
 
-    const indent = match[1].length;
-    const key = match[2];
-    const value: string | undefined = match[3].trim();
-
-    // Pop stack until we find the right parent
-    while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
-      stack.pop();
+    // Match a key-value pair
+    const keyMatch = line.match(/^([^:\s]+):\s*(.*)$/);
+    if (!keyMatch) {
+      i++;
+      continue;
     }
 
-    const parent = stack[stack.length - 1].obj;
+    const key = keyMatch[1];
+    const valueStr = keyMatch[2].trim();
 
-    if (value === "" || value === "{}") {
-      // Nested object or empty object
-      const newObj: Record<string, unknown> = {};
-      parent[key] = newObj;
-      stack.push({ obj: newObj, indent });
-      currentArray = null;
-    } else if (value === undefined) {
-      // Array start
-      const newArray: unknown[] = [];
-      parent[key] = newArray;
-      currentArray = newArray;
-    } else {
-      // Parse the value
+    if (valueStr) {
+      // Inline value
       try {
-        parent[key] = JSON.parse(value);
+        result[key] = JSON.parse(valueStr);
       } catch {
-        parent[key] = value;
+        result[key] = valueStr;
       }
-      currentArray = null;
+      i++;
+    } else {
+      // Check if this is an array or object
+      i++;
+      if (i < lines.length && lines[i].trim().startsWith("-")) {
+        // Array
+        const arr: unknown[] = [];
+        while (i < lines.length && lines[i].trim().startsWith("-")) {
+          const itemMatch = lines[i].match(/^\s*-\s*(.*)$/);
+          if (itemMatch) {
+            const itemValue = itemMatch[1].trim();
+            try {
+              arr.push(JSON.parse(itemValue));
+            } catch {
+              arr.push(itemValue);
+            }
+          }
+          i++;
+        }
+        result[key] = arr;
+      } else {
+        // Nested object - parse indented lines
+        const obj: Record<string, unknown> = {};
+        while (i < lines.length) {
+          const nestedLine = lines[i];
+          if (!nestedLine.trim()) {
+            i++;
+            continue;
+          }
+          // Check if still indented (belongs to this object)
+          if (!nestedLine.startsWith("  ") && nestedLine.trim()) {
+            break;
+          }
+          const nestedMatch = nestedLine.match(/^\s+([^:\s]+):\s*(.*)$/);
+          if (nestedMatch) {
+            const nestedKey = nestedMatch[1];
+            const nestedValue = nestedMatch[2].trim();
+            try {
+              obj[nestedKey] = JSON.parse(nestedValue);
+            } catch {
+              obj[nestedKey] = nestedValue;
+            }
+          }
+          i++;
+        }
+        result[key] = obj;
+      }
     }
   }
 
@@ -167,7 +188,7 @@ const sourceSchema = z
   );
 
 const formSchema = z.object({
-  // only letters, numbers, and ashes. cannot start with digit or dash. name must not end with dash
+  // only letters, numbers, and dashes. cannot start with digit or dash. name must not end with dash
   name: z
     .string()
     .min(3, "Instance name must be at least 3 characters long")
