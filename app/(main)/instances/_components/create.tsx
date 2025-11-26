@@ -225,19 +225,34 @@ async function createInstance(
   }
   const url = `/1.0/instances${params.toString() ? `?${params.toString()}` : ""}`;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
 
-  const data = await response.json();
-  if (data.type === "error") {
-    return { error: data.error || data.metadata?.error || "Failed to create instance" };
+    let data: any = {};
+    // Try to parse JSON, even for error responses
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+
+    if (!response.ok) {
+      return { error: data.error || `HTTP ${response.status}: ${response.statusText}` };
+    }
+
+    if (data.type === "error") {
+      return { error: data.error || "Failed to create instance" };
+    }
+    return { operation: data.operation };
+  } catch (err: any) {
+    return { error: err?.message || "Network error" };
   }
-  return { operation: data.operation };
 }
 
 export default function CreateInstance({ className }: { className?: string }) {
