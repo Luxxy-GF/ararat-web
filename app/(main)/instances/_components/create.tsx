@@ -383,14 +383,8 @@ export default function CreateInstance({ className }: { className?: string }) {
     // Check root disk
     if (!hasValidRootDisk) return false;
 
-    // Check source - either none or valid image selection
-    const source = formValues.source;
-    if (source?.type === "image") {
-      if (!source.fingerprint && !source.alias) return false;
-    }
-
     return true;
-  }, [form.formState, formValues, hasValidRootDisk]);
+  }, [form.formState, hasValidRootDisk]);
 
   // Build the instance payload
   const buildPayload = useCallback(() => {
