@@ -278,6 +278,9 @@ export default function CreateInstance({ className }: { className?: string }) {
     (tab: string) => {
       if (tab === "yaml") {
         setYamlContent(generateYamlContent());
+      } else {
+        // Clear YAML error when leaving the YAML tab to avoid stale error messages
+        setYamlError(null);
       }
       setCurrentTab(tab);
     },
