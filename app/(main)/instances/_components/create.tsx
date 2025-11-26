@@ -222,8 +222,11 @@ export default function CreateInstance({ className }: { className?: string }) {
     // Check root disk
     if (!rootDiskValid) return false;
 
+    // Check YAML error
+    if (yamlError) return false;
+
     return true;
-  }, [form.formState, rootDiskValid]);
+  }, [form.formState, rootDiskValid, yamlError]);
 
   // Build the instance payload
   const buildPayload = useCallback(() => {
