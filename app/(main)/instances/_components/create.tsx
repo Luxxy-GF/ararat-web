@@ -501,8 +501,10 @@ export default function CreateInstance({ className }: { className?: string }) {
             }
           }
         }
-      } catch {
-        setYamlError("Invalid YAML syntax");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Invalid YAML syntax";
+        setYamlError(message);
+        console.error("YAML parsing error:", error);
       }
     },
     [form, setInstanceType, setProfilesSelected, setDevices, setConfig]
