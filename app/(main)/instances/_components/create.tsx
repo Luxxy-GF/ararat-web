@@ -399,6 +399,8 @@ export default function CreateInstance({ className }: { className?: string }) {
         setProfilesSelected(["default"]);
         setInstanceType("container");
         setYamlContent("");
+        setCurrentTab("properties");
+        setYamlError(null);
       }
     } catch (error) {
       toast.error(
