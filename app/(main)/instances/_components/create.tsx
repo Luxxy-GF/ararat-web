@@ -540,7 +540,13 @@ export default function CreateInstance({ className }: { className?: string }) {
 
   return (
     <div className={className}>
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          if (!isSubmitting) {
+            setDialogOpen(open);
+          }
+        }}
         <Form {...form}>
           <form
             onSubmit={(e) => {
