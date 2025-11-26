@@ -427,7 +427,7 @@ export default function CreateInstance({ className }: { className?: string }) {
             }}
           >
             <DialogTrigger asChild>
-              <Button className={className}>Create Instance</Button>
+              <Button className={className} onClick={() => setDialogOpen(true)}>Create Instance</Button>
             </DialogTrigger>
             <DialogContent
               className={`max-h-[90vh] w-full flex flex-col transition-all duration-200 ${
