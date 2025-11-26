@@ -505,7 +505,7 @@ export default function CreateInstance({ className }: { className?: string }) {
         setYamlError("Invalid YAML syntax");
       }
     },
-    [form]
+    [form, setInstanceType, setProfilesSelected, setDevices, setConfig]
   );
 
   // Handle form submission
