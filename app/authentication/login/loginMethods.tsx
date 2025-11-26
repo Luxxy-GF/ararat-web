@@ -28,7 +28,7 @@ export default function LoginMethodsComponent() {
           setTimeout(() => {
             router.replace("/authentication/login/tls");
           }, 1);
-        } else if (data.auth_methods[0] == "oidc") {
+        } else if (data.auth_methods[0] === "oidc") {
           console.log("Redirecting to OIDC auth");
           setTimeout(() => {
             router.replace("/authentication/login/oidc");
