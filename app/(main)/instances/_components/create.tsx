@@ -235,7 +235,7 @@ async function createInstance(
 
   const data = await response.json();
   if (data.type === "error") {
-    return { error: data.error || "Failed to create instance" };
+    return { error: data.error || data.metadata?.error || "Failed to create instance" };
   }
   return { operation: data.operation };
 }
