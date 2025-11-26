@@ -9,6 +9,10 @@ function TLSButton(props: React.ComponentProps<typeof Button>) {
   return <Button {...props}>TLS</Button>;
 }
 
+function OIDCButton(props: React.ComponentProps<typeof Button>) {
+  return <Button {...props}>OpenID Connect</Button>;
+}
+
 export default function LoginMethodsComponent() {
   const { isLoading, data, isValidating } = useServerConfiguration();
   const [authenticating, setAuthenticating] = React.useState(false);
@@ -24,21 +28,41 @@ export default function LoginMethodsComponent() {
           setTimeout(() => {
             router.replace("/authentication/login/tls");
           }, 1);
+        } else if (data.auth_methods[0] == "oidc") {
+          console.log("Redirecting to OIDC auth");
+          setTimeout(() => {
+            router.replace("/authentication/login/oidc");
+          }, 1);
         }
       }
     }
   }, [data, isValidating, router]);
   return (
-    <div>
+    <div className="flex flex-wrap gap-2">
       {!isLoading ? (
         data?.auth_methods.map((method) => {
           const props = {
-            onClick: () => setAuthenticating(true),
+            onClick: () => {
+              setAuthenticating(true);
+              if (method == "tls") {
+                router.push("/authentication/login/tls");
+              } else if (method == "oidc") {
+                router.push("/authentication/login/oidc");
+              }
+            },
             loading: authenticating,
           };
           if (method == "tls")
             return (
               <TLSButton
+                className={isValidating ? "animate-pulse" : ""}
+                key={method}
+                {...props}
+              />
+            );
+          if (method == "oidc")
+            return (
+              <OIDCButton
                 className={isValidating ? "animate-pulse" : ""}
                 key={method}
                 {...props}
