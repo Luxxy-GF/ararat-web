@@ -11,7 +11,7 @@ import { InfoIcon } from "lucide-react";
 import AlreadyAuthenticated from "../../_components/alreadyAuthenticated";
 
 // Hardcoded OIDC login endpoint - this is a trusted Incus API endpoint
-const OIDC_LOGIN_ENDPOINT = "/1.0/oidc/login";
+const OIDC_LOGIN_ENDPOINT = "/oidc/login";
 
 export default function OidcLogin() {
   const [isRedirecting, setIsRedirecting] = useState(false);

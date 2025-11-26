@@ -19,11 +19,11 @@ export default function LoginMethodsComponent() {
   const router = useRouter();
   useEffect(() => {
     if (!isValidating) {
-      if (data?.auth_methods.length == 1) {
+      if (data?.auth_methods.length === 1) {
         startTransition(() => {
           setAuthenticating(true);
         });
-        if (data.auth_methods[0] == "tls") {
+        if (data.auth_methods[0] === "tls") {
           console.log("Redirecting to TLS auth");
           setTimeout(() => {
             router.replace("/authentication/login/tls");
@@ -44,9 +44,9 @@ export default function LoginMethodsComponent() {
           const props = {
             onClick: () => {
               setAuthenticating(true);
-              if (method == "tls") {
+              if (method === "tls") {
                 router.push("/authentication/login/tls");
-              } else if (method == "oidc") {
+              } else if (method === "oidc") {
                 router.push("/authentication/login/oidc");
               }
             },
@@ -60,7 +60,7 @@ export default function LoginMethodsComponent() {
                 {...props}
               />
             );
-          if (method == "oidc")
+          if (method === "oidc")
             return (
               <OIDCButton
                 className={isValidating ? "animate-pulse" : ""}
