@@ -52,7 +52,7 @@ export default function LoginMethodsComponent() {
             },
             loading: authenticating,
           };
-          if (method == "tls")
+          if (method === "tls")
             return (
               <TLSButton
                 className={isValidating ? "animate-pulse" : ""}
