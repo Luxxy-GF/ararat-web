@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/app/_components/ui/button";
 import {
   Alert,
@@ -10,25 +10,17 @@ import {
 import { InfoIcon } from "lucide-react";
 import AlreadyAuthenticated from "../../_components/alreadyAuthenticated";
 
+// Hardcoded OIDC login endpoint - this is a trusted Incus API endpoint
+const OIDC_LOGIN_ENDPOINT = "/1.0/oidc/login";
+
 export default function OidcLogin() {
   const [isRedirecting, setIsRedirecting] = useState(false);
-
-  useEffect(() => {
-    // Check if this is a redirect back from OIDC provider
-    // by checking if we just became authenticated
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has("code") || urlParams.has("error")) {
-      // The server handles the OIDC callback, so if we're here with these params,
-      // the authentication should have been handled already.
-      // The AuthenticationProvider will redirect to the dashboard if authenticated.
-    }
-  }, []);
 
   function handleOidcLogin() {
     setIsRedirecting(true);
     // Redirect to the Incus OIDC login endpoint
     // The server will handle the OIDC flow and redirect back
-    window.location.href = "/1.0/oidc/login";
+    window.location.href = OIDC_LOGIN_ENDPOINT;
   }
 
   return (
