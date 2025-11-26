@@ -30,21 +30,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/app/_components/ui/form";
+import type { InstanceFormValues } from "@/app/(main)/instances/_lib/instances.d";
 
 interface InstancePropertiesProps {
-  form: UseFormReturn<{
-    name: string;
-    description?: string;
-    ephemeral?: boolean;
-    source: {
-      type: "image" | "none";
-      fingerprint?: string;
-      alias?: string;
-      server?: string;
-      mode?: "pull";
-      protocol?: "simplestreams" | "oci";
-    };
-  }>;
+  form: UseFormReturn<InstanceFormValues>;
   profilesSelected: string[];
   setProfilesSelected: React.Dispatch<React.SetStateAction<string[]>>;
   instanceType: "virtual-machine" | "container";

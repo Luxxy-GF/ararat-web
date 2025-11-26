@@ -76,3 +76,20 @@ export interface Instance {
 export type InstancesMetadata = Instance[];
 
 export type InstancesResponse = StandardResponse<InstancesMetadata>;
+
+/**
+ * Form values for creating a new instance
+ */
+export interface InstanceFormValues {
+  name: string;
+  description?: string;
+  ephemeral?: boolean;
+  source: {
+    type: "image" | "none";
+    fingerprint?: string;
+    alias?: string;
+    server?: string;
+    mode?: "pull";
+    protocol?: "simplestreams" | "oci";
+  };
+}

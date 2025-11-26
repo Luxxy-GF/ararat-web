@@ -31,7 +31,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/app/_components/ui/tabs";
-import { useState, useMemo, use, useCallback } from "react";
+import { useState, useMemo, use, useCallback, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
@@ -39,128 +39,18 @@ import ImageSelector, { SelectableImage } from "./imageSelector";
 import InstanceProperties from "@/app/(main)/instances/_components/properties";
 import InstanceDevices from "./devices";
 import type { Device } from "@/app/(main)/instances/_lib/instances.d";
+import { hasValidRootDisk, createInstance } from "@/app/(main)/instances/_lib/instances";
+import { toYaml, fromYaml } from "@/app/_utils/yaml";
 
 import GeneralConfiguration from "./general-configuration";
 import { useProfiles } from "@/app/(main)/_hooks/profiles";
 import ProjectsContext from "@/app/(main)/_context/projects";
 import { Spinner } from "@/app/_components/ui/spinner";
 import { toast } from "sonner";
-import Editor from "@monaco-editor/react";
+import Editor, { OnMount } from "@monaco-editor/react";
 import { useTheme } from "next-themes";
 import { mutate } from "swr";
-
-// Helper function to convert instance config to YAML
-function toYaml(obj: Record<string, unknown>, indent = 0): string {
-  const pad = "  ".repeat(indent);
-  let result = "";
-  for (const [key, value] of Object.entries(obj)) {
-    if (value === undefined || value === null) continue;
-    if (typeof value === "object" && !Array.isArray(value)) {
-      const nested = toYaml(value as Record<string, unknown>, indent + 1);
-      if (nested.trim()) {
-        result += `${pad}${key}:\n${nested}`;
-      } else {
-        result += `${pad}${key}: {}\n`;
-      }
-    } else if (Array.isArray(value)) {
-      result += `${pad}${key}:\n`;
-      value.forEach((item) => {
-        if (typeof item === "string") {
-          result += `${pad}  - ${item}\n`;
-        } else {
-          result += `${pad}  - ${JSON.stringify(item)}\n`;
-        }
-      });
-    } else {
-      result += `${pad}${key}: ${JSON.stringify(value)}\n`;
-    }
-  }
-  return result;
-}
-
-// Helper function to parse YAML to object (simple parser for our use case)
-function fromYaml(yaml: string): Record<string, unknown> {
-  const lines = yaml.split("\n");
-  const result: Record<string, unknown> = {};
-  
-  // First pass: identify all top-level keys and their values
-  let i = 0;
-  while (i < lines.length) {
-    const line = lines[i];
-    if (!line.trim() || line.trim().startsWith("#")) {
-      i++;
-      continue;
-    }
-
-    // Match a key-value pair
-    const keyMatch = line.match(/^([^:\s]+):\s*(.*)$/);
-    if (!keyMatch) {
-      i++;
-      continue;
-    }
-
-    const key = keyMatch[1];
-    const valueStr = keyMatch[2].trim();
-
-    if (valueStr) {
-      // Inline value
-      try {
-        result[key] = JSON.parse(valueStr);
-      } catch {
-        result[key] = valueStr;
-      }
-      i++;
-    } else {
-      // Check if this is an array or object
-      i++;
-      if (i < lines.length && lines[i].trim().startsWith("-")) {
-        // Array
-        const arr: unknown[] = [];
-        while (i < lines.length && lines[i].trim().startsWith("-")) {
-          const itemMatch = lines[i].match(/^\s*-\s*(.*)$/);
-          if (itemMatch) {
-            const itemValue = itemMatch[1].trim();
-            try {
-              arr.push(JSON.parse(itemValue));
-            } catch {
-              arr.push(itemValue);
-            }
-          }
-          i++;
-        }
-        result[key] = arr;
-      } else {
-        // Nested object - parse indented lines
-        const obj: Record<string, unknown> = {};
-        while (i < lines.length) {
-          const nestedLine = lines[i];
-          if (!nestedLine.trim()) {
-            i++;
-            continue;
-          }
-          // Check if still indented (belongs to this object)
-          if (!nestedLine.startsWith("  ") && nestedLine.trim()) {
-            break;
-          }
-          const nestedMatch = nestedLine.match(/^\s+([^:\s]+):\s*(.*)$/);
-          if (nestedMatch) {
-            const nestedKey = nestedMatch[1];
-            const nestedValue = nestedMatch[2].trim();
-            try {
-              obj[nestedKey] = JSON.parse(nestedValue);
-            } catch {
-              obj[nestedKey] = nestedValue;
-            }
-          }
-          i++;
-        }
-        result[key] = obj;
-      }
-    }
-  }
-
-  return result;
-}
+import type * as Monaco from "monaco-editor";
 
 const sourceSchema = z
   .object({
@@ -201,60 +91,6 @@ const formSchema = z.object({
   ephemeral: z.boolean().optional(),
   source: sourceSchema,
 });
-
-// Helper to check if root disk is valid
-function isValidRootDisk(
-  devices: Record<string, Device>,
-  inheritedDevices: Record<string, Device>
-): boolean {
-  const allDevices = { ...inheritedDevices, ...devices };
-  const rootDisk = Object.values(allDevices).find(
-    (device) => device.type === "disk" && device.path === "/"
-  );
-  return rootDisk !== undefined && !!rootDisk.pool;
-}
-
-// Create instance API call
-async function createInstance(
-  payload: Record<string, unknown>,
-  project: string | null
-): Promise<{ operation?: string; error?: string }> {
-  const params = new URLSearchParams();
-  if (project && project !== "all") {
-    params.set("project", project);
-  }
-  const url = `/1.0/instances${params.toString() ? `?${params.toString()}` : ""}`;
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    let data: any = {};
-    // Try to parse JSON, even for error responses
-    try {
-      data = await response.json();
-    } catch {
-      data = {};
-    }
-
-    if (!response.ok) {
-      return { error: data.error || `HTTP ${response.status}: ${response.statusText}` };
-    }
-
-    if (data.type === "error") {
-      return { error: data.error || "Failed to create instance" };
-    }
-    return { operation: data.operation };
-  } catch (err: any) {
-    return { error: err?.message || "Network error" };
-  }
-}
-
 export default function CreateInstance({ className }: { className?: string }) {
   const { effectiveProject } = use(ProjectsContext);
   const { resolvedTheme } = useTheme();
@@ -269,6 +105,8 @@ export default function CreateInstance({ className }: { className?: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [yamlError, setYamlError] = useState<string | null>(null);
+  const [yamlContent, setYamlContent] = useState<string>("");
+  const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
 
   const { data: profiles } = useProfiles();
 
@@ -369,9 +207,10 @@ export default function CreateInstance({ className }: { className?: string }) {
   };
 
   // Check if form is valid for submission
-  const formValues = useWatch({ control: form.control });
-  const hasValidRootDisk = useMemo(
-    () => isValidRootDisk(devices, inheritedDevices),
+  // Watch form changes to re-evaluate validity
+  useWatch({ control: form.control });
+  const rootDiskValid = useMemo(
+    () => hasValidRootDisk(devices, inheritedDevices),
     [devices, inheritedDevices]
   );
 
@@ -381,10 +220,10 @@ export default function CreateInstance({ className }: { className?: string }) {
     if (!formState.isValid) return false;
 
     // Check root disk
-    if (!hasValidRootDisk) return false;
+    if (!rootDiskValid) return false;
 
     return true;
-  }, [form.formState, hasValidRootDisk]);
+  }, [form.formState, rootDiskValid]);
 
   // Build the instance payload
   const buildPayload = useCallback(() => {
@@ -425,16 +264,33 @@ export default function CreateInstance({ className }: { className?: string }) {
     return payload;
   }, [form, instanceType, profilesSelected, devices, config]);
 
-  // Generate YAML from current state
-  const yamlContent = useMemo(() => {
+  // Generate YAML only when switching to the YAML tab
+  const generateYamlContent = useCallback(() => {
     const payload = buildPayload();
     return toYaml(payload);
   }, [buildPayload]);
 
-  // Handle YAML changes
+  // Update YAML content when switching to YAML tab
+  const handleTabChange = useCallback(
+    (tab: string) => {
+      if (tab === "yaml") {
+        setYamlContent(generateYamlContent());
+      }
+      setCurrentTab(tab);
+    },
+    [generateYamlContent]
+  );
+
+  // Handle Monaco editor mount
+  const handleEditorMount: OnMount = useCallback((editor) => {
+    editorRef.current = editor;
+  }, []);
+
+  // Handle YAML changes - updates form state from editor changes
   const handleYamlChange = useCallback(
     (value: string | undefined) => {
       if (!value) return;
+      setYamlContent(value);
       setYamlError(null);
 
       try {
@@ -512,7 +368,7 @@ export default function CreateInstance({ className }: { className?: string }) {
       return;
     }
 
-    if (!hasValidRootDisk) {
+    if (!rootDiskValid) {
       toast.error("A valid root disk with a storage pool is required");
       setCurrentTab("devices");
       return;
@@ -539,6 +395,7 @@ export default function CreateInstance({ className }: { className?: string }) {
         setSelectedImage(null);
         setProfilesSelected(["default"]);
         setInstanceType("container");
+        setYamlContent("");
       }
     } catch (error) {
       toast.error(
@@ -558,6 +415,7 @@ export default function CreateInstance({ className }: { className?: string }) {
             setDialogOpen(open);
           }
         }}
+      >
         <Form {...form}>
           <form
             onSubmit={(e) => {
@@ -587,7 +445,7 @@ export default function CreateInstance({ className }: { className?: string }) {
                 <Tabs
                   className="w-full flex flex-col flex-1 min-h-0"
                   value={currentTab}
-                  onValueChange={setCurrentTab}
+                  onValueChange={handleTabChange}
                 >
                   <TabsList
                     className="w-full shrink-0"
@@ -694,6 +552,7 @@ export default function CreateInstance({ className }: { className?: string }) {
                         defaultLanguage="yaml"
                         value={yamlContent}
                         onChange={handleYamlChange}
+                        onMount={handleEditorMount}
                         theme={resolvedTheme === "dark" ? "vs-dark" : "light"}
                         options={{
                           minimap: { enabled: false },
