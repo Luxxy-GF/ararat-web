@@ -28,6 +28,8 @@ export default function LoginMethodsComponent() {
     }
   }, [authenticating]);
 
+  // Auto-redirect when only one auth method is available
+  // Uses replace() to prevent user from navigating back to this intermediate state
   useEffect(() => {
     if (!isValidating) {
       if (data?.auth_methods.length === 1) {
@@ -53,6 +55,7 @@ export default function LoginMethodsComponent() {
       {!isLoading ? (
         data?.auth_methods.map((method) => {
           const props = {
+            // Manual selection uses push() to allow users to return to this page
             onClick: () => {
               setAuthenticating(true);
               if (method === "tls") {
