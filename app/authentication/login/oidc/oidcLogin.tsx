@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/app/_components/ui/button";
 import {
   Alert,
@@ -15,6 +15,16 @@ const OIDC_LOGIN_ENDPOINT = "/oidc/login";
 
 export default function OidcLogin() {
   const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // Reset redirecting state if the user navigates back or redirect fails
+  useEffect(() => {
+    if (isRedirecting) {
+      const timeout = setTimeout(() => {
+        setIsRedirecting(false);
+      }, 5000);
+      return () => clearTimeout(timeout);
+    }
+  }, [isRedirecting]);
 
   function handleOidcLogin() {
     setIsRedirecting(true);

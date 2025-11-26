@@ -17,6 +17,17 @@ export default function LoginMethodsComponent() {
   const { isLoading, data, isValidating } = useServerConfiguration();
   const [authenticating, setAuthenticating] = React.useState(false);
   const router = useRouter();
+
+  // Reset authenticating state if the user navigates back
+  useEffect(() => {
+    if (authenticating) {
+      const timeout = setTimeout(() => {
+        setAuthenticating(false);
+      }, 5000);
+      return () => clearTimeout(timeout);
+    }
+  }, [authenticating]);
+
   useEffect(() => {
     if (!isValidating) {
       if (data?.auth_methods.length === 1) {
