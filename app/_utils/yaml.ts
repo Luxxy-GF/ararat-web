@@ -13,7 +13,9 @@ export function toYaml(obj: Record<string, unknown>): string {
 }
 
 /**
- * Parse a YAML string to a JavaScript object
+ * Parse a YAML string to a JavaScript object.
+ * Note: js-yaml 4.x uses DEFAULT_SCHEMA by default which is safe
+ * and does not execute arbitrary JavaScript code.
  */
 export function fromYaml(yamlString: string): Record<string, unknown> {
   const result = yaml.load(yamlString);
