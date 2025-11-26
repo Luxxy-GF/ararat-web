@@ -1,13 +1,11 @@
 "use client";
 
 import * as React from "react";
+import { UseFormReturn } from "react-hook-form";
 
 import {
   Field,
-  FieldError,
-  FieldGroup,
   FieldLabel,
-  FieldSet,
 } from "@/app/_components/ui/field";
 import { Input } from "@/app/_components/ui/input";
 import { useProfiles } from "@/app/(main)/_hooks/profiles";
@@ -25,20 +23,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/_components/ui/select";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/app/_components/ui/form";
 
-export default function InstanceProperties({
-  profilesSelected,
-  setProfilesSelected,
-  instanceType,
-  setInstanceType,
-}: {
+interface InstancePropertiesProps {
+  form: UseFormReturn<{
+    name: string;
+    description?: string;
+    ephemeral?: boolean;
+    source: {
+      type: "image" | "none";
+      fingerprint?: string;
+      alias?: string;
+      server?: string;
+      mode?: "pull";
+      protocol?: "simplestreams" | "oci";
+    };
+  }>;
   profilesSelected: string[];
   setProfilesSelected: React.Dispatch<React.SetStateAction<string[]>>;
   instanceType: "virtual-machine" | "container";
   setInstanceType: React.Dispatch<
     React.SetStateAction<"virtual-machine" | "container">
   >;
-}) {
+}
+
+export default function InstanceProperties({
+  form,
+  profilesSelected,
+  setProfilesSelected,
+  instanceType,
+  setInstanceType,
+}: InstancePropertiesProps) {
   const {
     data: profiles,
     isLoading: isLoadingProfiles,
@@ -46,14 +67,41 @@ export default function InstanceProperties({
   } = useProfiles();
   return (
     <div className="flex flex-col gap-2">
-      <Field>
-        <FieldLabel htmlFor="name">Name</FieldLabel>
-        <Input id="name" />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="description">Description</FieldLabel>
-        <Input id="description" />
-      </Field>
+      <FormField
+        control={form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Name</FormLabel>
+            <FormControl>
+              <Input
+                id="name"
+                placeholder="my-instance"
+                {...field}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="description"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Description</FormLabel>
+            <FormControl>
+              <Input
+                id="description"
+                placeholder="Optional description"
+                {...field}
+                value={field.value || ""}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
       <Field>
         <FieldLabel htmlFor="profile">Profiles</FieldLabel>
         <Combobox
