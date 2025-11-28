@@ -33,6 +33,7 @@ import { Spinner } from "@/app/_components/ui/spinner";
 import ProjectsContext from "@/app/(main)/_context/projects";
 import { Progress } from "@/app/_components/ui/progress";
 import IsClientContext from "@/app/_context/isClient";
+import { useRouter } from "next/navigation";
 
 type InstanceAction = "start" | "stop" | "restart" | "freeze";
 
@@ -246,10 +247,12 @@ export default function Instances() {
     setSelectedInstances(rows.map((row) => row.original as Instance));
   }, []);
 
+  const router = useRouter();
+
   const handleRowClick = React.useCallback((row: Row<object>) => {
-    setInspectorInstance(row.original as Instance);
-    setIsSheetOpen(true);
-  }, []);
+    const instance = row.original as Instance;
+    router.push(`/instance?name=${instance.name}`);
+  }, [router]);
 
   const isBusy = (isLoading && !data) || !isClient;
 
@@ -400,8 +403,8 @@ function InstanceDetails({ instance }: { instance: Instance }) {
             value={
               instance.state?.memory?.total
                 ? `${formatBytes(memoryUsage)} / ${formatBytes(
-                    instance.state.memory.total
-                  )}`
+                  instance.state.memory.total
+                )}`
                 : formatBytes(memoryUsage)
             }
             hidden={!hasStateData || typeof memoryUsage !== "number"}
