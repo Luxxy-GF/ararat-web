@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { useSearchParams } from "next/navigation";
-import { useInstance } from "../_hooks/useInstance";
-import { useFiles } from "../_hooks/useFiles";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useInstance } from "../_hooks/instance";
+import { useFiles } from "../_hooks/files";
 import { Spinner } from "@/app/_components/ui/spinner";
 import { FileBrowser } from "../../_components/files";
 
@@ -24,7 +24,31 @@ export default function FilesPage() {
 }
 
 function Files({ instance }: { instance: any }) {
-    const [currentPath, setCurrentPath] = React.useState("/");
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const initialPath = searchParams.get("path") || "/";
+    const [currentPath, setCurrentPath] = React.useState(initialPath);
+
+    // Sync state if URL changes (e.g. back button)
+    React.useEffect(() => {
+        const pathParam = searchParams.get("path") || "/";
+        if (pathParam !== currentPath) {
+            setCurrentPath(pathParam);
+        }
+    }, [searchParams]);
+
+    const handleNavigate = (path: string) => {
+        setCurrentPath(path);
+        const params = new URLSearchParams(searchParams.toString());
+        if (path === "/") {
+            params.delete("path");
+        } else {
+            params.set("path", path);
+        }
+        router.push(`${pathname}?${params.toString()}`);
+    };
+
     const {
         files,
         isLoading,
@@ -43,7 +67,7 @@ function Files({ instance }: { instance: any }) {
             isLoading={isLoading}
             isError={isError}
             currentPath={currentPath}
-            onNavigate={setCurrentPath}
+            onNavigate={handleNavigate}
             onUpload={(file) => uploadFile(currentPath, file)}
             onCreateDirectory={(name) => createDirectory(currentPath, name)}
             onDelete={deleteFile}

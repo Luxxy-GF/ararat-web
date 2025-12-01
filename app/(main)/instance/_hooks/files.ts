@@ -8,11 +8,26 @@ import {
     saveFileContent as apiSaveFileContent,
 } from "../_lib/files";
 
-const fetcher = (url: string) =>
-    fetch(url).then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch files");
-        return res.json();
-    });
+const directoryFetcher = async (url: string) => {
+    const res = await fetch(url);
+    if (!res.ok) {
+        const error = new Error("An error occurred while fetching the data.");
+        (error as any).status = res.status;
+        throw error;
+    }
+
+    const text = await res.text();
+    try {
+        const json = JSON.parse(text);
+        if (json.type === "sync" && Array.isArray(json.metadata)) {
+            return json;
+        }
+    } catch (e) {
+        // Not JSON
+    }
+
+    throw new Error("NOT_A_DIRECTORY");
+};
 
 export function useFiles(instanceName: string, path: string) {
     // Ensure path starts with /
@@ -21,7 +36,7 @@ export function useFiles(instanceName: string, path: string) {
     // Fetch file listing
     const { data, error, isLoading } = useSWR(
         `/1.0/instances/${instanceName}/files?path=${encodeURIComponent(normalizedPath)}`,
-        fetcher
+        directoryFetcher
     );
 
     const uploadFile = async (currentPath: string, file: File) => {
@@ -49,8 +64,8 @@ export function useFiles(instanceName: string, path: string) {
         return apiFetchFileContent(instanceName, filePath);
     };
 
-    const saveFileContent = async (filePath: string, content: string) => {
-        await apiSaveFileContent(instanceName, filePath, content);
+    const saveFileContent = async (filePath: string, content: string, mode?: string) => {
+        await apiSaveFileContent(instanceName, filePath, content, mode);
     };
 
     return {

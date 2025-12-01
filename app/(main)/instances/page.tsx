@@ -109,7 +109,7 @@ export default function Instances() {
           return (
             <button
               type="button"
-              className="text-left font-medium text-primary underline focus:outline-none"
+              className="text-left font-medium text-primary underline focus:outline-none cursor-pointer"
               onClick={(event) => {
                 event.stopPropagation();
                 router.push(`/instance?name=${instance.name}`);

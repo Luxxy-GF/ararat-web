@@ -2,18 +2,10 @@
 
 import React from "react";
 import { useSearchParams } from "next/navigation";
-import { useInstance } from "../_hooks/useInstance";
-import { useSnapshots } from "../_hooks/useSnapshots";
+import { useInstance } from "../_hooks/instance";
+import { useSnapshots } from "../_hooks/snapshots";
 import { InstanceSnapshot } from "../../instances/_lib/instances.d";
 import { Spinner } from "@/app/_components/ui/spinner";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/app/_components/ui/table";
 import { Button } from "@/app/_components/ui/button";
 import {
     DropdownMenu,
@@ -44,6 +36,8 @@ import {
 } from "lucide-react";
 import { formatDate, formatBytes } from "../_lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/app/_components/ui/alert";
+import DataTable from "@/app/_components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
 
 export default function SnapshotsPage() {
     const searchParams = useSearchParams();
@@ -65,6 +59,73 @@ function Snapshots({ instance }: { instance: any }) {
     const [isCreateOpen, setIsCreateOpen] = React.useState(false);
     const [actionError, setActionError] = React.useState<string | null>(null);
 
+    // Dialog states managed at the list level to work with DataTable actions
+    const [renameSnapshot, setRenameSnapshot] = React.useState<InstanceSnapshot | null>(null);
+    const [restoreSnapshot, setRestoreSnapshot] = React.useState<InstanceSnapshot | null>(null);
+    const [deleteSnapshot, setDeleteSnapshot] = React.useState<InstanceSnapshot | null>(null);
+
+    const columns: ColumnDef<InstanceSnapshot>[] = [
+        {
+            accessorKey: "name",
+            header: "Name",
+            cell: ({ row }) => {
+                const name = row.original.name;
+                const shortName = name.split("/").pop() || "";
+                return <span className="font-medium">{shortName}</span>;
+            },
+        },
+        {
+            accessorKey: "created_at",
+            header: "Created At",
+            cell: ({ row }) => formatDate(row.original.created_at),
+        },
+        {
+            accessorKey: "stateful",
+            header: "Stateful",
+            cell: ({ row }) => (row.original.stateful ? "Yes" : "No"),
+        },
+        {
+            accessorKey: "size",
+            header: "Size",
+            cell: ({ row }) => (row.original.size ? formatBytes(row.original.size) : "—"),
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => {
+                const snapshot = row.original;
+                return (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => setRestoreSnapshot(snapshot)}>
+                                <RotateCcwIcon className="mr-2 h-4 w-4" />
+                                Restore
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setRenameSnapshot(snapshot)}>
+                                <PencilIcon className="mr-2 h-4 w-4" />
+                                Rename
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                onClick={() => setDeleteSnapshot(snapshot)}
+                                className="text-destructive focus:text-destructive"
+                            >
+                                <TrashIcon className="mr-2 h-4 w-4" />
+                                Delete
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                );
+            },
+        },
+    ];
+
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -84,111 +145,39 @@ function Snapshots({ instance }: { instance: any }) {
             )}
 
             <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Created At</TableHead>
-                            <TableHead>Stateful</TableHead>
-                            <TableHead>Size</TableHead>
-                            <TableHead className="w-[70px]"></TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {instance.snapshots && instance.snapshots.length > 0 ? (
-                            instance.snapshots.map((snapshot: any) => (
-                                <SnapshotRow
-                                    key={snapshot.name}
-                                    snapshot={snapshot}
-                                    instanceName={instance.name}
-                                    onError={setActionError}
-                                />
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">
-                                    No snapshots found.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                <DataTable data={instance.snapshots || []} cols={columns as any} />
             </div>
-        </div>
-    );
-}
 
-function SnapshotRow({
-    snapshot,
-    instanceName,
-    onError,
-}: {
-    snapshot: InstanceSnapshot;
-    instanceName: string;
-    onError: (err: string | null) => void;
-}) {
-    const [isRenameOpen, setIsRenameOpen] = React.useState(false);
-    const [isRestoreOpen, setIsRestoreOpen] = React.useState(false);
-    const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
-
-    return (
-        <TableRow>
-            <TableCell className="font-medium">{snapshot.name.split("/").pop()}</TableCell>
-            <TableCell>{formatDate(snapshot.created_at)}</TableCell>
-            <TableCell>{snapshot.stateful ? "Yes" : "No"}</TableCell>
-            <TableCell>{snapshot.size ? formatBytes(snapshot.size) : "—"}</TableCell>
-            <TableCell>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => setIsRestoreOpen(true)}>
-                            <RotateCcwIcon className="mr-2 h-4 w-4" />
-                            Restore
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setIsRenameOpen(true)}>
-                            <PencilIcon className="mr-2 h-4 w-4" />
-                            Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            onClick={() => setIsDeleteOpen(true)}
-                            className="text-destructive focus:text-destructive"
-                        >
-                            <TrashIcon className="mr-2 h-4 w-4" />
-                            Delete
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-
+            {renameSnapshot && (
                 <RenameSnapshotDialog
-                    instanceName={instanceName}
-                    snapshotName={snapshot.name}
-                    open={isRenameOpen}
-                    onOpenChange={setIsRenameOpen}
-                    onError={onError}
+                    instanceName={instance.name}
+                    snapshotName={renameSnapshot.name}
+                    open={!!renameSnapshot}
+                    onOpenChange={(open) => !open && setRenameSnapshot(null)}
+                    onError={setActionError}
                 />
+            )}
+
+            {restoreSnapshot && (
                 <RestoreSnapshotDialog
-                    instanceName={instanceName}
-                    snapshotName={snapshot.name}
-                    open={isRestoreOpen}
-                    onOpenChange={setIsRestoreOpen}
-                    onError={onError}
+                    instanceName={instance.name}
+                    snapshotName={restoreSnapshot.name}
+                    open={!!restoreSnapshot}
+                    onOpenChange={(open) => !open && setRestoreSnapshot(null)}
+                    onError={setActionError}
                 />
+            )}
+
+            {deleteSnapshot && (
                 <DeleteSnapshotDialog
-                    instanceName={instanceName}
-                    snapshotName={snapshot.name}
-                    open={isDeleteOpen}
-                    onOpenChange={setIsDeleteOpen}
-                    onError={onError}
+                    instanceName={instance.name}
+                    snapshotName={deleteSnapshot.name}
+                    open={!!deleteSnapshot}
+                    onOpenChange={(open) => !open && setDeleteSnapshot(null)}
+                    onError={setActionError}
                 />
-            </TableCell>
-        </TableRow>
+            )}
+        </div>
     );
 }
 
@@ -291,6 +280,11 @@ function RenameSnapshotDialog({
     const [newName, setNewName] = React.useState(shortName);
     const [isLoading, setIsLoading] = React.useState(false);
     const { renameSnapshot } = useSnapshots(instanceName);
+
+    // Update newName when snapshotName changes
+    React.useEffect(() => {
+        setNewName(snapshotName.split("/").pop() || "");
+    }, [snapshotName]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

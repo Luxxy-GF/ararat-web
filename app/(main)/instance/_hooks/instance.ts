@@ -1,21 +1,17 @@
 import useSWR from "swr";
 import { Instance } from "../../instances/_lib/instances.d";
 import { StandardResponse } from "../../../_lib/response";
-
-const fetcher = (...args: Parameters<typeof fetch>) =>
-    fetch(...args)
-        .then((res) => res.json())
-        .then((data) => data.metadata);
+import { jsonFetcher } from "../../../_lib/fetcher";
 
 export function useInstance(name: string | null, config?: any) {
-    const { data, error, isLoading, mutate } = useSWR<Instance>(
+    const { data, error, isLoading, mutate } = useSWR<StandardResponse<Instance>>(
         name ? `/1.0/instances/${name}?recursion=1` : null,
-        fetcher,
+        jsonFetcher,
         config
     );
 
     return {
-        instance: data,
+        instance: data?.metadata,
         isLoading,
         isError: error,
         mutate,
@@ -23,13 +19,13 @@ export function useInstance(name: string | null, config?: any) {
 }
 
 export function useInstanceAccess(name: string | null) {
-    const { data, error, isLoading } = useSWR<string[]>(
+    const { data, error, isLoading } = useSWR<StandardResponse<string[]>>(
         name ? `/1.0/instances/${name}/access` : null,
-        fetcher
+        jsonFetcher
     );
 
     return {
-        access: data,
+        access: data?.metadata,
         isLoading,
         isError: error,
     };

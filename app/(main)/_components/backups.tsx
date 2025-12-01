@@ -2,14 +2,6 @@
 
 import React from "react";
 import { Spinner } from "@/app/_components/ui/spinner";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/app/_components/ui/table";
 import { Button } from "@/app/_components/ui/button";
 import {
   DropdownMenu,
@@ -44,12 +36,15 @@ import {
   AlertTitle,
 } from "@/app/_components/ui/alert";
 import { formatDate } from "@/app/(main)/instance/_lib/utils";
+import DataTable from "@/app/_components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
 
 export interface Backup {
   name: string;
   created_at: string;
   expires_at?: string;
   container_only?: boolean;
+  instance_only?: boolean;
   optimized_storage?: boolean;
 }
 
@@ -59,12 +54,13 @@ interface BackupListProps {
   isError: any;
   onCreate: (
     name: string,
-    containerOnly: boolean,
+    instanceOnly: boolean,
     optimizedStorage: boolean
   ) => Promise<void>;
   onDelete: (name: string) => Promise<void>;
   onRename: (oldName: string, newName: string) => Promise<void>;
   onDownload: (name: string) => void;
+  canUseOptimizedStorage?: boolean;
 }
 
 export function BackupList({
@@ -75,9 +71,104 @@ export function BackupList({
   onDelete,
   onRename,
   onDownload,
+  canUseOptimizedStorage = false,
 }: BackupListProps) {
   const [actionError, setActionError] = React.useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
+
+  // Dialog states managed at the list level to work with DataTable actions
+  const [renameBackup, setRenameBackup] = React.useState<Backup | null>(null);
+  const [deleteBackup, setDeleteBackup] = React.useState<Backup | null>(null);
+
+  const columns: ColumnDef<Backup>[] = [
+    {
+      accessorKey: "name",
+      header: "Name",
+      cell: ({ row }) => {
+        const name = row.original.name;
+        const shortName = name.split("/").pop() || "";
+        return <span className="font-medium">{shortName}</span>;
+      },
+    },
+    {
+      accessorKey: "created_at",
+      header: "Created At",
+      cell: ({ row }) => formatDate(row.original.created_at),
+    },
+    {
+      accessorKey: "expires_at",
+      header: "Expires At",
+      cell: ({ row }) =>
+        row.original.expires_at
+          ? formatDate(row.original.expires_at)
+          : "Never",
+    },
+    {
+      id: "exclude_snapshots",
+      header: "Exclude Snapshots",
+      cell: ({ row }) =>
+        row.original.container_only || row.original.instance_only
+          ? "Yes"
+          : "No",
+    },
+    {
+      accessorKey: "optimized_storage",
+      header: "Optimized Storage",
+      cell: ({ row }) => (row.original.optimized_storage ? "Yes" : "No"),
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const backup = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => onDownload(backup.name)}>
+                <DownloadIcon className="mr-2 h-4 w-4" />
+                Download
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setRenameBackup(backup)}>
+                <PencilIcon className="mr-2 h-4 w-4" />
+                Rename
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setDeleteBackup(backup)}
+                className="text-destructive focus:text-destructive"
+              >
+                <TrashIcon className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center p-8">
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Alert variant="destructive">
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>Failed to load backups.</AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -86,11 +177,12 @@ export function BackupList({
         <CreateBackupDialog
           open={isCreateOpen}
           onOpenChange={setIsCreateOpen}
-          onCreate={(name, containerOnly, optimizedStorage) =>
-            onCreate(name, containerOnly, optimizedStorage).catch((e: any) =>
+          onCreate={(name, instanceOnly, optimizedStorage) =>
+            onCreate(name, instanceOnly, optimizedStorage).catch((e: any) =>
               setActionError(e.message)
             )
           }
+          canUseOptimizedStorage={canUseOptimizedStorage}
         />
       </div>
 
@@ -102,133 +194,35 @@ export function BackupList({
       )}
 
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Created At</TableHead>
-              <TableHead>Expires At</TableHead>
-              <TableHead>Container Only</TableHead>
-              <TableHead>Optimized Storage</TableHead>
-              <TableHead className="w-[70px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
-                  <Spinner className="mx-auto h-6 w-6" />
-                </TableCell>
-              </TableRow>
-            ) : isError ? (
-              <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="h-24 text-center text-destructive"
-                >
-                  Failed to load backups.
-                </TableCell>
-              </TableRow>
-            ) : backups.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
-                  No backups found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              backups.map((backup) => (
-                <BackupRow
-                  key={backup.name}
-                  backup={backup}
-                  onDelete={() =>
-                    onDelete(backup.name).catch((e: any) =>
-                      setActionError(e.message)
-                    )
-                  }
-                  onRename={(newName) =>
-                    onRename(backup.name, newName).catch((e: any) =>
-                      setActionError(e.message)
-                    )
-                  }
-                  onDownload={() => onDownload(backup.name)}
-                />
-              ))
-            )}
-          </TableBody>
-        </Table>
+        <DataTable data={backups} cols={columns as any} />
       </div>
-    </div>
-  );
-}
 
-function BackupRow({
-  backup,
-  onDelete,
-  onRename,
-  onDownload,
-}: {
-  backup: Backup;
-  onDelete: () => Promise<void>;
-  onRename: (newName: string) => Promise<void>;
-  onDownload: () => void;
-}) {
-  const [isRenameOpen, setIsRenameOpen] = React.useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
-  const shortName = backup.name.split("/").pop() || "";
-
-  return (
-    <TableRow>
-      <TableCell className="font-medium">{shortName}</TableCell>
-      <TableCell>{formatDate(backup.created_at)}</TableCell>
-      <TableCell>
-        {backup.expires_at ? formatDate(backup.expires_at) : "Never"}
-      </TableCell>
-      <TableCell>{backup.container_only ? "Yes" : "No"}</TableCell>
-      <TableCell>{backup.optimized_storage ? "Yes" : "No"}</TableCell>
-      <TableCell>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={onDownload}>
-              <DownloadIcon className="mr-2 h-4 w-4" />
-              Download
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setIsRenameOpen(true)}>
-              <PencilIcon className="mr-2 h-4 w-4" />
-              Rename
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => setIsDeleteOpen(true)}
-              className="text-destructive focus:text-destructive"
-            >
-              <TrashIcon className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
+      {renameBackup && (
         <RenameBackupDialog
-          currentName={shortName}
-          open={isRenameOpen}
-          onOpenChange={setIsRenameOpen}
-          onRename={onRename}
+          currentName={renameBackup.name.split("/").pop() || ""}
+          open={!!renameBackup}
+          onOpenChange={(open) => !open && setRenameBackup(null)}
+          onRename={(newName) =>
+            onRename(renameBackup.name, newName)
+              .then(() => setRenameBackup(null))
+              .catch((e: any) => setActionError(e.message))
+          }
         />
+      )}
 
+      {deleteBackup && (
         <DeleteBackupDialog
-          name={shortName}
-          open={isDeleteOpen}
-          onOpenChange={setIsDeleteOpen}
-          onConfirm={onDelete}
+          name={deleteBackup.name.split("/").pop() || ""}
+          open={!!deleteBackup}
+          onOpenChange={(open) => !open && setDeleteBackup(null)}
+          onConfirm={() =>
+            onDelete(deleteBackup.name)
+              .then(() => setDeleteBackup(null))
+              .catch((e: any) => setActionError(e.message))
+          }
         />
-      </TableCell>
-    </TableRow>
+      )}
+    </div>
   );
 }
 
@@ -236,17 +230,19 @@ function CreateBackupDialog({
   open,
   onOpenChange,
   onCreate,
+  canUseOptimizedStorage,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreate: (
     name: string,
-    containerOnly: boolean,
+    instanceOnly: boolean,
     optimizedStorage: boolean
   ) => Promise<void>;
+  canUseOptimizedStorage: boolean;
 }) {
   const [name, setName] = React.useState("");
-  const [containerOnly, setContainerOnly] = React.useState(false);
+  const [instanceOnly, setInstanceOnly] = React.useState(false);
   const [optimizedStorage, setOptimizedStorage] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -254,10 +250,10 @@ function CreateBackupDialog({
     e.preventDefault();
     setIsLoading(true);
     try {
-      await onCreate(name, containerOnly, optimizedStorage);
+      await onCreate(name, instanceOnly, optimizedStorage);
       onOpenChange(false);
       setName("");
-      setContainerOnly(false);
+      setInstanceOnly(false);
       setOptimizedStorage(false);
     } finally {
       setIsLoading(false);
@@ -291,20 +287,22 @@ function CreateBackupDialog({
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox
-              id="containerOnly"
-              checked={containerOnly}
-              onCheckedChange={(c: any) => setContainerOnly(!!c)}
+              id="instanceOnly"
+              checked={instanceOnly}
+              onCheckedChange={(c: any) => setInstanceOnly(!!c)}
             />
-            <Label htmlFor="containerOnly">Container Only</Label>
+            <Label htmlFor="instanceOnly">Exclude Snapshots</Label>
           </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="optimizedStorage"
-              checked={optimizedStorage}
-              onCheckedChange={(c: any) => setOptimizedStorage(!!c)}
-            />
-            <Label htmlFor="optimizedStorage">Optimized Storage</Label>
-          </div>
+          {canUseOptimizedStorage && (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="optimizedStorage"
+                checked={optimizedStorage}
+                onCheckedChange={(c: any) => setOptimizedStorage(!!c)}
+              />
+              <Label htmlFor="optimizedStorage">Optimized Storage</Label>
+            </div>
+          )}
           <DialogFooter>
             <Button type="submit" disabled={isLoading}>
               {isLoading && <Spinner className="mr-2 h-4 w-4" />}
@@ -331,12 +329,17 @@ function RenameBackupDialog({
   const [newName, setNewName] = React.useState(currentName);
   const [isLoading, setIsLoading] = React.useState(false);
 
+  // Update newName when currentName changes (e.g. when dialog opens with new backup)
+  React.useEffect(() => {
+    setNewName(currentName);
+  }, [currentName]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
       await onRename(newName);
-      onOpenChange(false);
+      // onOpenChange(false); // Handled by parent promise chain usually, but good to have
     } finally {
       setIsLoading(false);
     }
@@ -392,7 +395,7 @@ function DeleteBackupDialog({
     setIsLoading(true);
     try {
       await onConfirm();
-      onOpenChange(false);
+      // onOpenChange(false); // Handled by parent promise chain
     } finally {
       setIsLoading(false);
     }

@@ -16,6 +16,7 @@ export function formatBytes(value?: number) {
 
 export function formatDate(value?: string) {
     if (!value) return "—";
+    if (value === "0001-01-01T00:00:00Z") return "Never";
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
         return value;

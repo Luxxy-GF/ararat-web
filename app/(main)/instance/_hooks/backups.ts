@@ -1,4 +1,5 @@
 import useSWR, { mutate } from "swr";
+import { jsonFetcher } from "../../../_lib/fetcher";
 import {
     createBackup as apiCreateBackup,
     deleteBackup as apiDeleteBackup,
@@ -6,20 +7,14 @@ import {
     downloadBackup as apiDownloadBackup,
 } from "../_lib/backups";
 
-const fetcher = (url: string) =>
-    fetch(url).then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch backups");
-        return res.json();
-    });
-
 export function useBackups(instanceName: string) {
     const { data, error, isLoading } = useSWR(
         `/1.0/instances/${instanceName}/backups?recursion=1`,
-        fetcher
+        jsonFetcher
     );
 
-    const createBackup = async (name?: string, containerOnly?: boolean, optimizedStorage?: boolean) => {
-        await apiCreateBackup(instanceName, name, containerOnly, optimizedStorage);
+    const createBackup = async (name?: string, instanceOnly?: boolean, optimizedStorage?: boolean) => {
+        await apiCreateBackup(instanceName, name, instanceOnly, optimizedStorage);
         await mutate(`/1.0/instances/${instanceName}/backups?recursion=1`);
     };
 

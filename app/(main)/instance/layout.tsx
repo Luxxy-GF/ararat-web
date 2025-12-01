@@ -2,7 +2,7 @@
 
 import React, { Suspense } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useInstance } from "./_hooks/useInstance";
+import { useInstance } from "./_hooks/instance";
 import { Spinner } from "@/app/_components/ui/spinner";
 import {
   Alert,
@@ -174,7 +174,7 @@ function InstanceHeader({
     <div className="space-y-4">
       <div className="flex items-center gap-4">
         <div className="relative flex h-16 w-16 items-center justify-center rounded-lg border bg-muted">
-          <OSLogo brand={getBaseImage(instance)} className="h-8 w-8 text-muted-foreground" />
+          <OSLogo brand={getBaseImage(instance)} className="h-8 w-8" />
 
           {/* Pulsing Status Circle */}
           {isRunning && (

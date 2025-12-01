@@ -1,7 +1,7 @@
 export async function createBackup(
     instanceName: string,
     name?: string,
-    containerOnly?: boolean,
+    instanceOnly?: boolean,
     optimizedStorage?: boolean
 ) {
     const res = await fetch(`/1.0/instances/${instanceName}/backups`, {
@@ -9,7 +9,7 @@ export async function createBackup(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             name: name || undefined,
-            container_only: containerOnly,
+            container_only: instanceOnly,
             optimized_storage: optimizedStorage,
         }),
     });
@@ -52,7 +52,7 @@ export function downloadBackup(instanceName: string, backupName: string) {
     const url = `/1.0/instances/${instanceName}/backups/${shortName}/export`;
     const link = document.createElement("a");
     link.href = url;
-    link.download = shortName;
+    link.download = `${shortName}.tar.gz`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

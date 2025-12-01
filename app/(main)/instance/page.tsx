@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useSearchParams } from "next/navigation";
-import { useInstance } from "./_hooks/useInstance";
+import { useInstance } from "./_hooks/instance";
 import { Spinner } from "@/app/_components/ui/spinner";
 import {
     Card,
@@ -221,15 +221,11 @@ function Dashboard({ instance }: { instance: any }) {
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-wrap gap-2">
-                        {instance.profiles?.length ? (
-                            instance.profiles.map((profile: string) => (
-                                <Badge key={profile} variant="outline">
-                                    {profile}
-                                </Badge>
-                            ))
-                        ) : (
-                            <span className="text-sm text-muted-foreground">No profiles applied</span>
-                        )}
+                        {(instance.profiles || []).map((profile: string) => (
+                            <Badge key={profile} variant="outline">
+                                {profile}
+                            </Badge>
+                        ))}
                     </div>
                 </CardContent>
             </Card>

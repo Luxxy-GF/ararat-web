@@ -2,14 +2,6 @@
 
 import React from "react";
 import { Spinner } from "@/app/_components/ui/spinner";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/app/_components/ui/table";
 import { Button } from "@/app/_components/ui/button";
 import {
     DropdownMenu,
@@ -53,6 +45,8 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/app/_components/ui/alert";
 import Editor from "@monaco-editor/react";
+import DataTable from "@/app/_components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
 
 interface FileBrowserProps {
     files: string[];
@@ -64,8 +58,12 @@ interface FileBrowserProps {
     onCreateDirectory: (name: string) => Promise<void>;
     onDelete: (path: string) => Promise<void>;
     onDownload: (path: string) => void;
-    onFetchContent: (path: string) => Promise<string>;
-    onSaveContent: (path: string, content: string) => Promise<void>;
+    onFetchContent: (path: string) => Promise<{ content: string; mode?: string }>;
+    onSaveContent: (path: string, content: string, mode?: string) => Promise<void>;
+}
+
+interface FileItem {
+    name: string;
 }
 
 export function FileBrowser({
@@ -88,12 +86,19 @@ export function FileBrowser({
     // Editor State
     const [editingFile, setEditingFile] = React.useState<string | null>(null);
     const [fileContent, setFileContent] = React.useState<string>("");
+    const [fileMode, setFileMode] = React.useState<string | undefined>(undefined);
     const [isFetchingContent, setIsFetchingContent] = React.useState(false);
     const [isSaving, setIsSaving] = React.useState(false);
+
+    // Prepare data for DataTable
+    const fileData: FileItem[] = React.useMemo(() => {
+        return files.map((f) => ({ name: f }));
+    }, [files]);
 
     const handleUp = () => {
         if (editingFile) {
             setEditingFile(null);
+            setFileMode(undefined);
             return;
         }
         if (currentPath === "/") return;
@@ -107,11 +112,19 @@ export function FileBrowser({
         setIsFetchingContent(true);
         setActionError(null);
         try {
-            const content = await onFetchContent(filePath);
+            const { content, mode } = await onFetchContent(filePath);
             setFileContent(content);
+            setFileMode(mode);
         } catch (err: any) {
+            if (err.message === "IS_DIRECTORY") {
+                setEditingFile(null);
+                setFileMode(undefined);
+                onNavigate(filePath);
+                return;
+            }
             setActionError(err.message);
             setEditingFile(null);
+            setFileMode(undefined);
         } finally {
             setIsFetchingContent(false);
         }
@@ -122,8 +135,9 @@ export function FileBrowser({
         setIsSaving(true);
         setActionError(null);
         try {
-            await onSaveContent(editingFile, fileContent);
+            await onSaveContent(editingFile, fileContent, fileMode);
             setEditingFile(null);
+            setFileMode(undefined);
         } catch (err: any) {
             setActionError(err.message);
         } finally {
@@ -134,6 +148,7 @@ export function FileBrowser({
     const handleCancel = () => {
         setEditingFile(null);
         setFileContent("");
+        setFileMode(undefined);
     };
 
     const breadcrumbs = React.useMemo(() => {
@@ -144,6 +159,95 @@ export function FileBrowser({
             return { name: part, path: crumbPath };
         });
     }, [currentPath, editingFile]);
+
+    const columns: ColumnDef<FileItem>[] = [
+        {
+            accessorKey: "name",
+            header: "Name",
+            cell: ({ row }) => {
+                const name = row.original.name;
+                const isLikelyDirectory = !name.includes(".");
+                return (
+                    <div className="flex items-center gap-2">
+                        {isLikelyDirectory ? (
+                            <FolderIcon className="h-4 w-4 text-blue-500" />
+                        ) : (
+                            <FileIcon className="h-4 w-4 text-gray-500" />
+                        )}
+                        <span
+                            className="font-medium cursor-pointer hover:underline"
+                            onClick={() => {
+                                if (isLikelyDirectory) {
+                                    onNavigate(`${currentPath === "/" ? "" : currentPath}/${name}`);
+                                } else {
+                                    handleEdit(name);
+                                }
+                            }}
+                        >
+                            {name}
+                        </span>
+                    </div>
+                );
+            },
+        },
+        {
+            id: "size",
+            header: "Size",
+            cell: () => "—", // Placeholder as size is not available in simple listing
+        },
+        {
+            id: "type",
+            header: "Type",
+            cell: ({ row }) => {
+                const name = row.original.name;
+                return !name.includes(".") ? "Directory" : "File";
+            },
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => {
+                const name = row.original.name;
+                const isLikelyDirectory = !name.includes(".");
+                const fullPath = `${currentPath === "/" ? "" : currentPath}/${name}`;
+
+                return (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            {!isLikelyDirectory && (
+                                <DropdownMenuItem onClick={() => handleEdit(name)}>
+                                    <PencilIcon className="mr-2 h-4 w-4" />
+                                    Edit
+                                </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => onDownload(fullPath)}>
+                                <DownloadIcon className="mr-2 h-4 w-4" />
+                                Download
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onNavigate(fullPath)}>
+                                <FolderIcon className="mr-2 h-4 w-4" />
+                                Open
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                onClick={() => onDelete(fullPath).catch((e) => setActionError(e.message))}
+                                className="text-destructive focus:text-destructive"
+                            >
+                                <TrashIcon className="mr-2 h-4 w-4" />
+                                Delete
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                );
+            },
+        },
+    ];
 
     return (
         <div className="space-y-4">
@@ -234,126 +338,23 @@ export function FileBrowser({
                         )}
                     </div>
                 ) : (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[30px]"></TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead className="w-[70px]"></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={3} className="h-24 text-center">
-                                        <Spinner className="mx-auto h-6 w-6" />
-                                    </TableCell>
-                                </TableRow>
-                            ) : isError ? (
-                                <TableRow>
-                                    <TableCell colSpan={3} className="h-24 text-center text-destructive">
-                                        Failed to load files.
-                                    </TableCell>
-                                </TableRow>
-                            ) : files.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={3} className="h-24 text-center">
-                                        Empty directory.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                files.map((file: string) => (
-                                    <FileRow
-                                        key={file}
-                                        name={file}
-                                        currentPath={currentPath}
-                                        onNavigate={onNavigate}
-                                        onEdit={() => handleEdit(file)}
-                                        onDownload={() => onDownload(`${currentPath === "/" ? "" : currentPath}/${file}`)}
-                                        onDelete={() => onDelete(`${currentPath === "/" ? "" : currentPath}/${file}`).catch(e => setActionError(e.message))}
-                                    />
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                    <>
+                        {isLoading ? (
+                            <div className="flex justify-center p-8">
+                                <Spinner />
+                            </div>
+                        ) : isError ? (
+                            <Alert variant="destructive" className="m-4">
+                                <AlertTitle>Error</AlertTitle>
+                                <AlertDescription>Failed to load files.</AlertDescription>
+                            </Alert>
+                        ) : (
+                            <DataTable data={fileData} cols={columns as any} />
+                        )}
+                    </>
                 )}
             </div>
         </div>
-    );
-}
-
-function FileRow({
-    name,
-    currentPath,
-    onNavigate,
-    onEdit,
-    onDownload,
-    onDelete,
-}: {
-    name: string;
-    currentPath: string;
-    onNavigate: (path: string) => void;
-    onEdit: () => void;
-    onDownload: () => void;
-    onDelete: () => void;
-}) {
-    // Basic heuristic: if it has no extension, it MIGHT be a folder?
-    // Or we just let user try to navigate.
-    // Ideally we'd have type info.
-    const isLikelyDirectory = !name.includes(".");
-
-    const handlePrimaryAction = () => {
-        if (isLikelyDirectory) {
-            onNavigate(`${currentPath === "/" ? "" : currentPath}/${name}`);
-        } else {
-            onEdit();
-        }
-    };
-
-    return (
-        <TableRow>
-            <TableCell>
-                {isLikelyDirectory ? <FolderIcon className="h-4 w-4 text-blue-500" /> : <FileIcon className="h-4 w-4 text-gray-500" />}
-            </TableCell>
-            <TableCell className="font-medium cursor-pointer hover:underline" onClick={handlePrimaryAction}>
-                {name}
-            </TableCell>
-            <TableCell>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        {!isLikelyDirectory && (
-                            <DropdownMenuItem onClick={onEdit}>
-                                <PencilIcon className="mr-2 h-4 w-4" />
-                                Edit
-                            </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem onClick={onDownload}>
-                            <DownloadIcon className="mr-2 h-4 w-4" />
-                            Download
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onNavigate(`${currentPath === "/" ? "" : currentPath}/${name}`)}>
-                            <FolderIcon className="mr-2 h-4 w-4" />
-                            Open
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            onClick={onDelete}
-                            className="text-destructive focus:text-destructive"
-                        >
-                            <TrashIcon className="mr-2 h-4 w-4" />
-                            Delete
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </TableCell>
-        </TableRow>
     );
 }
 
