@@ -46,7 +46,7 @@ export async function createDirectory(
       headers: {
         "X-Incus-uid": "0",
         "X-Incus-gid": "0",
-        "X-Incus-mode": "0755",
+        "X-Incus-mode": "0644",
         "X-Incus-type": "directory",
       },
     }
