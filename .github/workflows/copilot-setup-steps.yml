@@ -129,10 +129,9 @@ jobs:
                   handle @api_v1 {
                           reverse_proxy https://127.0.0.1:8443 {
                                   transport http {
-                                          tls {
-                                                  client_certificate /etc/caddy/certs/client.pem /etc/caddy/certs/client.key
-                                                  insecure_skip_verify
-                                          }
+                                          tls
+                                          tls_client_auth /etc/caddy/certs/client.pem /etc/caddy/certs/client.key
+                                          tls_insecure_skip_verify
                                   }
                           }
                   }
@@ -149,6 +148,7 @@ jobs:
                   handle @api_v1 {
                           reverse_proxy https://127.0.0.1:8443 {
                                   transport http {
+                                          tls
                                           tls_insecure_skip_verify
                                   }
                           }
