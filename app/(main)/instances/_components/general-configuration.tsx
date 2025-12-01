@@ -11,7 +11,6 @@ import { ScrollArea } from '@/app/_components/ui/scroll-area';
 import { SearchIcon } from 'lucide-react';
 import { VerticalTabsLayout } from '@/app/_components/layout/vertical-tabs-layout';
 import { Field, FieldLabel, FieldDescription, FieldContent } from '@/app/_components/ui/field';
-import { useMobile } from '@/app/_components/ui/hooks/use-mobile';
 
 interface GeneralConfigurationProps {
   config: Record<string, string>;
@@ -39,7 +38,6 @@ export default function GeneralConfiguration({
   const { data: configurableOptions } = useConfigurableOptions();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
-  const { isMobile } = useMobile();
 
   // Parse and group configuration options
   const categories = React.useMemo(() => {
