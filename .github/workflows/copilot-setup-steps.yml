@@ -39,22 +39,14 @@ jobs:
     
     services:
       incus:
-        image: ghcr.io/lxc/incus:latest
+        image: ghcr.io/lxc/incus:6.19.1
         options: >-
           --privileged
+          --name incus-svc
+          -v /tmp/incus-data:/var/lib/incus
         ports:
           - 8443:8443
-        volumes:
-          - /tmp/incus-data:/var/lib/incus
       
-      caddy:
-        image: caddy:2
-        ports:
-          - 8080:80
-          - 8081:81
-        volumes:
-          - ${{ github.workspace }}/.caddy.Caddyfile:/etc/caddy/Caddyfile
-          - ${{ github.workspace }}/.certs:/etc/caddy/certs:ro
 
     env:
       NEXT_DEV_PORT: 3000
@@ -152,38 +144,29 @@ jobs:
       - name: Configure Incus service
         run: |
           set -euo pipefail
-          # Wait for Incus to be ready
-          for i in {1..30}; do
-            if curl -k https://localhost:8443 >/dev/null 2>&1; then break; fi
+          # Wait for Incus daemon inside service container
+          for i in {1..60}; do
+            if docker exec incus-svc incus version >/dev/null 2>&1; then break; fi
             sleep 1
           done
-          
-          # Configure Incus via API (using service container)
-          # Note: Service containers don't support docker exec, so we use the API directly
-          curl -k -X PATCH https://localhost:8443/1.0 \
-            --cert "$ARARAT_CERT_PEM" --key "$ARARAT_KEY_PEM" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "config": {
-                "core.https_address": "[::]:8443",
-                "core.https_allowed_headers": "Content-Type, Sec-Fetch-Site",
-                "core.https_allowed_methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD",
-                "core.https_allowed_origin": "http://localhost:8080"
-              }
-            }' || true
+          if ! docker exec incus-svc incus version >/dev/null 2>&1; then
+            echo "Incus service failed to become ready" >&2
+            docker logs incus-svc || true
+            exit 1
+          fi
+
+          # Configure Incus HTTPS and CORS
+          docker exec incus-svc incus config set core.https_address "[::]:8443"
+          docker exec incus-svc incus config set core.https_allowed_headers "Content-Type, Sec-Fetch-Site"
+          docker exec incus-svc incus config set core.https_allowed_methods "GET, POST, PUT, DELETE, OPTIONS, HEAD"
+          docker exec incus-svc incus config set core.https_allowed_origin "$DEV_ALLOWED_ORIGIN"
 
       - name: Trust Copilot client cert in Incus
         run: |
           set -euo pipefail
-          # Add the agent's client certificate to Incus trust store via API
-          CERT_CONTENT=$(cat "$ARARAT_CERT_PEM" | base64 -w 0)
-          curl -k -X POST https://localhost:8443/1.0/certificates \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"certificate\": \"$CERT_CONTENT\",
-              \"name\": \"ararat-copilot-agent\",
-              \"type\": \"client\"
-            }" || true
+          # Add the agent's client certificate to Incus trust store inside the service
+          docker cp "$ARARAT_CERT_PEM" incus-svc:/tmp/client.pem
+          docker exec incus-svc sh -c "incus config trust add-cert /tmp/client.pem || true"
 
       - name: Export environment for the agent and app
         run: |
@@ -194,11 +177,20 @@ jobs:
             echo "NEXT_PUBLIC_API_BASE=http://localhost:8080"
           } >> "$GITHUB_ENV"
 
-      - name: Reload Caddy with config
+      - name: Start Caddy with dev config
         run: |
-          # Caddy service should auto-load config, but ensure it's reloaded
-          sleep 2
-          curl -f http://localhost:8080 || echo "Caddy not ready yet"
+          set -euo pipefail
+          docker run -d --name caddy-dev \
+            -p ${CADDY_HTTP_PORT}:80 -p ${CADDY_ALT_PORT}:81 \
+            -v "$PWD/.caddy.Caddyfile":/etc/caddy/Caddyfile \
+            -v "$ARARAT_CERT_DIR":/etc/caddy/certs:ro \
+            caddy:2
+          # Quick health check
+          for i in {1..30}; do
+            if curl -sSf "http://localhost:${CADDY_HTTP_PORT}" >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -sSf "http://localhost:${CADDY_HTTP_PORT}" >/dev/null
 
       - name: Install Playwright browsers
         run: |
