@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, use, useEffect, useState } from 'react';
+import { createContext, use, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { useServerConfiguration } from '../_hooks/server';
