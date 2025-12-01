@@ -40,7 +40,7 @@ import InstanceProperties from "@/app/(main)/instances/_components/properties";
 import InstanceDevices from "./devices";
 import type { Device } from "@/app/(main)/instances/_lib/instances.d";
 import { hasValidRootDisk, createInstance } from "@/app/(main)/instances/_lib/instances";
-import { toYaml, fromYaml } from "@/app/_utils/yaml";
+import { toYaml, fromYaml } from "@/app/(main)/_lib/yaml";
 
 import GeneralConfiguration from "./general-configuration";
 import { useProfiles } from "@/app/(main)/_hooks/profiles";
@@ -163,6 +163,7 @@ export default function CreateInstance({ className }: { className?: string }) {
   });
 
   const [currentTab, setCurrentTab] = useState("properties");
+  const [showYamlEditor, setShowYamlEditor] = useState(false);
   const sourceType = useWatch({
     control: form.control,
     name: "source.type",
@@ -267,25 +268,29 @@ export default function CreateInstance({ className }: { className?: string }) {
     return payload;
   }, [form, instanceType, profilesSelected, devices, config]);
 
-  // Generate YAML only when switching to the YAML tab
+  // Generate YAML only when opening the YAML editor
   const generateYamlContent = useCallback(() => {
     const payload = buildPayload();
     return toYaml(payload);
   }, [buildPayload]);
 
-  // Update YAML content when switching to YAML tab
+  // Handle tab change (for main tabs, not YAML)
   const handleTabChange = useCallback(
     (tab: string) => {
-      if (tab === "yaml") {
-        setYamlContent(generateYamlContent());
-      } else {
-        // Clear YAML error when leaving the YAML tab to avoid stale error messages
-        setYamlError(null);
-      }
       setCurrentTab(tab);
     },
-    [generateYamlContent]
+    []
   );
+
+  // Toggle YAML editor visibility
+  const toggleYamlEditor = useCallback(() => {
+    if (!showYamlEditor) {
+      // Opening YAML editor - generate fresh content
+      setYamlContent(generateYamlContent());
+      setYamlError(null);
+    }
+    setShowYamlEditor(!showYamlEditor);
+  }, [showYamlEditor, generateYamlContent]);
 
   // Handle Monaco editor mount
   const handleEditorMount: OnMount = useCallback((editor) => {
@@ -404,6 +409,7 @@ export default function CreateInstance({ className }: { className?: string }) {
         setYamlContent("");
         setCurrentTab("properties");
         setYamlError(null);
+        setShowYamlEditor(false);
       }
     } catch (error) {
       toast.error(
@@ -425,12 +431,7 @@ export default function CreateInstance({ className }: { className?: string }) {
         }}
       >
         <Form {...form}>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSubmit();
-            }}
-          >
+          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
             <DialogTrigger asChild>
               <Button className={className} onClick={() => setDialogOpen(true)}>Create Instance</Button>
             </DialogTrigger>
@@ -440,7 +441,7 @@ export default function CreateInstance({ className }: { className?: string }) {
                   ? "sm:max-w-5xl"
                   : currentTab === "devices" ||
                     currentTab === "general" ||
-                    currentTab === "yaml"
+                    showYamlEditor
                   ? "sm:max-w-6xl h-[90vh]"
                   : "sm:max-w-xl"
               }`}
@@ -450,105 +451,21 @@ export default function CreateInstance({ className }: { className?: string }) {
                 <DialogDescription>Create a new instance</DialogDescription>
               </DialogHeader>
               <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-                <Tabs
-                  className="w-full flex flex-col flex-1 min-h-0"
-                  value={currentTab}
-                  onValueChange={handleTabChange}
-                >
-                  <TabsList
-                    className="w-full shrink-0"
-                    defaultValue="properties"
-                  >
-                    <TabsTrigger value="properties">Properties</TabsTrigger>
-                    <TabsTrigger value="source">Source</TabsTrigger>
-                    <TabsTrigger value="devices">Devices</TabsTrigger>
-                    <TabsTrigger value="general">Configuration</TabsTrigger>
-                    <TabsTrigger value="yaml">YAML</TabsTrigger>
-                  </TabsList>
-                  <TabsContent
-                    value="properties"
-                    className="overflow-auto flex-1 min-h-0 px-1"
-                  >
-                    <InstanceProperties
-                      form={form}
-                      profilesSelected={profilesSelected}
-                      setProfilesSelected={setProfilesSelected}
-                      instanceType={instanceType}
-                      setInstanceType={setInstanceType}
-                    />
-                  </TabsContent>
-                  <TabsContent
-                    value="source"
-                    className="overflow-auto flex-1 min-h-0"
-                  >
-                    <FormField
-                      control={form.control}
-                      name="source.type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Source Type</FormLabel>
-                          <FormControl>
-                            <Select
-                              onValueChange={(value) => {
-                                field.onChange(value);
-                                if (value === "none") {
-                                  setSelectedImage(null);
-                                  resetSourceFields();
-                                }
-                              }}
-                              value={field.value}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select source type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="image">Image</SelectItem>
-                                <SelectItem value="none">None</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    {selectingImage ? (
-                      <ImageSelector
-                        selectedImage={selectedImage}
-                        onSelect={handleImageSelect}
-                        instanceType={instanceType}
-                      />
-                    ) : null}
-                  </TabsContent>
-                  <TabsContent
-                    value="devices"
-                    className="flex-1 min-h-0 overflow-hidden"
-                  >
-                    <InstanceDevices
-                      profiles={profilesSelected}
-                      devices={devices}
-                      onDevicesChange={setDevices}
-                      instanceType={instanceType}
-                    />
-                  </TabsContent>
-                  <TabsContent
-                    value="general"
-                    className="flex-1 min-h-0 overflow-hidden"
-                  >
-                    <GeneralConfiguration
-                      config={config}
-                      expandedConfig={memoizedExpandedConfig}
-                      onConfigChange={setConfig}
-                      instanceType={instanceType}
-                    />
-                  </TabsContent>
-                  <TabsContent
-                    value="yaml"
-                    className="flex-1 min-h-0 overflow-hidden flex flex-col"
-                  >
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Edit the raw YAML configuration. Changes will be synced
-                      with the form fields.
-                    </p>
+                {showYamlEditor ? (
+                  <div className="flex flex-col flex-1 min-h-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm text-muted-foreground">
+                        Edit the raw YAML configuration. Changes will be synced
+                        with the form fields.
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={toggleYamlEditor}
+                      >
+                        Back to form
+                      </Button>
+                    </div>
                     {yamlError && (
                       <p className="text-sm text-destructive mb-2">
                         {yamlError}
@@ -572,20 +489,127 @@ export default function CreateInstance({ className }: { className?: string }) {
                         }}
                       />
                     </div>
-                  </TabsContent>
-                </Tabs>
+                  </div>
+                ) : (
+                  <Tabs
+                    className="w-full flex flex-col flex-1 min-h-0"
+                    value={currentTab}
+                    onValueChange={handleTabChange}
+                  >
+                    <TabsList
+                      className="w-full shrink-0"
+                      defaultValue="properties"
+                    >
+                      <TabsTrigger value="properties">Properties</TabsTrigger>
+                      <TabsTrigger value="source">Source</TabsTrigger>
+                      <TabsTrigger value="devices">Devices</TabsTrigger>
+                      <TabsTrigger value="general">Configuration</TabsTrigger>
+                    </TabsList>
+                    <TabsContent
+                      value="properties"
+                      className="overflow-auto flex-1 min-h-0 px-1"
+                    >
+                      <InstanceProperties
+                        form={form}
+                        profilesSelected={profilesSelected}
+                        setProfilesSelected={setProfilesSelected}
+                        instanceType={instanceType}
+                        setInstanceType={setInstanceType}
+                      />
+                    </TabsContent>
+                    <TabsContent
+                      value="source"
+                      className="overflow-auto flex-1 min-h-0"
+                    >
+                      <FormField
+                        control={form.control}
+                        name="source.type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Source Type</FormLabel>
+                            <FormControl>
+                              <Select
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                  if (value === "none") {
+                                    setSelectedImage(null);
+                                    resetSourceFields();
+                                  }
+                                }}
+                                value={field.value}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select source type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="image">Image</SelectItem>
+                                  <SelectItem value="none">None</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      {selectingImage ? (
+                        <ImageSelector
+                          selectedImage={selectedImage}
+                          onSelect={handleImageSelect}
+                          instanceType={instanceType}
+                        />
+                      ) : null}
+                    </TabsContent>
+                    <TabsContent
+                      value="devices"
+                      className="flex-1 min-h-0 overflow-hidden"
+                    >
+                      <InstanceDevices
+                        profiles={profilesSelected}
+                        devices={devices}
+                        onDevicesChange={setDevices}
+                        instanceType={instanceType}
+                      />
+                    </TabsContent>
+                    <TabsContent
+                      value="general"
+                      className="flex-1 min-h-0 overflow-hidden"
+                    >
+                      <GeneralConfiguration
+                        config={config}
+                        expandedConfig={memoizedExpandedConfig}
+                        onConfigChange={setConfig}
+                        instanceType={instanceType}
+                      />
+                    </TabsContent>
+                  </Tabs>
+                )}
               </div>
               <DialogFooter className="shrink-0">
-                <Button type="submit" disabled={!isFormValid || isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <Spinner className="mr-2 h-4 w-4" />
-                      Creating...
-                    </>
-                  ) : (
-                    "Create Instance"
-                  )}
-                </Button>
+                <div className="flex items-center justify-between w-full">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground"
+                    onClick={toggleYamlEditor}
+                  >
+                    {showYamlEditor ? "Back to form" : "Edit YAML"}
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={!isFormValid || isSubmitting}
+                    onClick={handleSubmit}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Spinner className="mr-2 h-4 w-4" />
+                        Creating...
+                      </>
+                    ) : (
+                      "Create Instance"
+                    )}
+                  </Button>
+                </div>
               </DialogFooter>
             </DialogContent>
           </form>
