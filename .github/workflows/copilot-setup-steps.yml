@@ -37,16 +37,6 @@ jobs:
     permissions:
       contents: read
     
-    services:
-      incus:
-        image: ghcr.io/lxc/incus:6.19.1
-        options: >-
-          --privileged
-          --name incus-svc
-          -v /tmp/incus-data:/var/lib/incus
-        ports:
-          - 8443:8443
-      
 
     env:
       NEXT_DEV_PORT: 3000
@@ -79,6 +69,36 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bun-
 
+      - name: Install Incus (APT)
+        run: |
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update -y
+          # Add Zabbly Incus stable repo
+          . /etc/os-release
+          curl -fsSL https://pkgs.zabbly.com/key.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/zabbly.gpg
+          echo "deb [arch=amd64] https://pkgs.zabbly.com/incus/stable ${VERSION_CODENAME} main" | sudo tee /etc/apt/sources.list.d/zabbly-incus-stable.list
+          sudo apt-get update -y
+          sudo apt-get install -y incus incus-client uidmap dnsmasq-base squashfs-tools btrfs-progs xfsprogs lvm2
+
+      - name: Initialize Incus daemon
+        run: |
+          set -euo pipefail
+          # Ensure subuid/subgid ranges for root
+          echo "root:1000000:1000000000" | sudo tee -a /etc/subuid /etc/subgid >/dev/null
+          # Start incusd and allow sudo group access
+          nohup sudo incusd --group sudo >/tmp/incusd.log 2>&1 &
+          # Wait for daemon to respond
+          for i in {1..90}; do
+            if sudo incus version >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          if ! sudo incus version >/dev/null 2>&1; then
+            echo "incusd failed to start" >&2
+            sudo tail -n +1 /tmp/incusd.log || true
+            exit 1
+          fi
+
       - name: Install dependencies
         run: |
           bun install --frozen-lockfile || bun install
@@ -107,7 +127,7 @@ jobs:
                   }
                   # Proxy API to Incus with client TLS so browser doesn't need a cert
                   handle @api_v1 {
-                          reverse_proxy https://incus:8443 {
+                          reverse_proxy https://127.0.0.1:8443 {
                                   transport http {
                                           tls {
                                                   client_certificate /etc/caddy/certs/client.pem /etc/caddy/certs/client.key
@@ -127,7 +147,7 @@ jobs:
                           path /1.0/*
                   }
                   handle @api_v1 {
-                          reverse_proxy https://incus:8443 {
+                          reverse_proxy https://127.0.0.1:8443 {
                                   transport http {
                                           tls_insecure_skip_verify
                                   }
@@ -141,32 +161,20 @@ jobs:
           }
           CADDY
 
-      - name: Configure Incus service
+      - name: Configure Incus
         run: |
           set -euo pipefail
-          # Wait for Incus daemon inside service container
-          for i in {1..60}; do
-            if docker exec incus-svc incus version >/dev/null 2>&1; then break; fi
-            sleep 1
-          done
-          if ! docker exec incus-svc incus version >/dev/null 2>&1; then
-            echo "Incus service failed to become ready" >&2
-            docker logs incus-svc || true
-            exit 1
-          fi
-
           # Configure Incus HTTPS and CORS
-          docker exec incus-svc incus config set core.https_address "[::]:8443"
-          docker exec incus-svc incus config set core.https_allowed_headers "Content-Type, Sec-Fetch-Site"
-          docker exec incus-svc incus config set core.https_allowed_methods "GET, POST, PUT, DELETE, OPTIONS, HEAD"
-          docker exec incus-svc incus config set core.https_allowed_origin "$DEV_ALLOWED_ORIGIN"
+          sudo incus config set core.https_address "[::]:8443"
+          sudo incus config set core.https_allowed_headers "Content-Type, Sec-Fetch-Site"
+          sudo incus config set core.https_allowed_methods "GET, POST, PUT, DELETE, OPTIONS, HEAD"
+          sudo incus config set core.https_allowed_origin "$DEV_ALLOWED_ORIGIN"
 
       - name: Trust Copilot client cert in Incus
         run: |
           set -euo pipefail
-          # Add the agent's client certificate to Incus trust store inside the service
-          docker cp "$ARARAT_CERT_PEM" incus-svc:/tmp/client.pem
-          docker exec incus-svc sh -c "incus config trust add-cert /tmp/client.pem || true"
+          # Add the agent's client certificate to Incus trust store
+          sudo incus config trust add-cert "$ARARAT_CERT_PEM" || true
 
       - name: Export environment for the agent and app
         run: |
@@ -199,8 +207,8 @@ jobs:
       - name: Summary
         run: |
           echo "✓ Dev environment ready"
-          echo "  - Incus API: https://localhost:8443 (service)"
-          echo "  - Caddy proxy: http://localhost:8080 (service)"
+          echo "  - Incus API: https://localhost:8443"
+          echo "  - Caddy proxy: http://localhost:8080"
           echo "  - Client cert: $ARARAT_CERT_PEM"
           echo "  - Dependencies installed"
           echo ""
