@@ -1,5 +1,8 @@
 import useSWR from 'swr';
 import { jsonFetcher } from '@/app/_lib/fetcher';
+import { useContext, useMemo } from 'react';
+import ProjectsContext from '@/app/(main)/_context/projects';
+import { buildApiPath } from '@/app/_lib/url';
 
 export interface NetworkAddress {
   family: string;
@@ -19,20 +22,25 @@ export interface Network {
 }
 
 export function useNetworks(project?: string | null) {
-  const projectParam = project && project !== 'all' ? `?project=${project}` : '';
+  // Default to globally selected project when not explicitly provided
+  const { effectiveProject } = useContext(ProjectsContext);
+  const scopedProject = useMemo(
+    () => (project === undefined ? effectiveProject : project),
+    [project, effectiveProject]
+  );
 
-  const fetcher = async (url: string): Promise<Network[]> => {
-    const res = await jsonFetcher(url);
-    // jsonFetcher returns StandardResponse | ErrorResponse; we need the metadata field
-    // Assuming the successful shape has { metadata: T }
-    // Cast defensively; caller handles undefined data if shape unexpected.
+  const url = useMemo(
+    () =>
+      buildApiPath('/1.0/networks', { project: scopedProject ?? null, params: { recursion: 1 } }),
+    [scopedProject]
+  );
+
+  const fetcher = async (u: string): Promise<Network[]> => {
+    const res = await jsonFetcher(u);
     return (res as any)?.metadata ?? [];
   };
 
-  const { data, error, isLoading, isValidating, mutate } = useSWR<Network[]>(
-    `/1.0/networks?recursion=1${projectParam}`,
-    fetcher
-  );
+  const { data, error, isLoading, isValidating, mutate } = useSWR<Network[]>(url, fetcher);
 
   return {
     data,

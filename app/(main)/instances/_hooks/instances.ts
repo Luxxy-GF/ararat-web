@@ -1,21 +1,16 @@
 import type { InstancesResponse } from '../_lib/instances.d';
 import useSWR from 'swr';
+import { buildApiPath } from '@/app/_lib/url';
 
 const fetcher = (...args: Parameters<typeof fetch>) =>
   fetch(...args)
     .then((res) => res.json())
     .then((data: InstancesResponse) => data.metadata);
 
-const buildInstancesPath = (project?: string | null) => {
-  const params = new URLSearchParams({ recursion: '2' });
-  if (project === 'all') {
-    params.set('all-projects', 'true');
-  } else if (project) {
-    params.set('project', project);
-  }
-  return `/1.0/instances?${params.toString()}`;
-};
-
 export function useInstances(project?: string | null) {
-  return useSWR(buildInstancesPath(project), fetcher);
+  const url = buildApiPath('/1.0/instances', {
+    project: project ?? null,
+    params: { recursion: 2 },
+  });
+  return useSWR(url, fetcher);
 }
