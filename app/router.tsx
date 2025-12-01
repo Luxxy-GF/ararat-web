@@ -7,13 +7,12 @@ export default function Router({ children }: { children: React.ReactNode }) {
   const runRef = useRef(false);
   const pathname = usePathname();
   const router = useRouter();
-  // Removed problematic useEffect that stripped query params
-  // useEffect(() => {
-  //   if (!runRef.current && pathname != "/") {
-  //     runRef.current = true;
-  //     router.push(pathname);
-  //   }
-  // }, [pathname, router]);
+  useEffect(() => {
+    if (!runRef.current && window.location.pathname !== "/") {
+      runRef.current = true;
+      router.push(window.location.href);
+    }
+  }, [router]);
 
   return <>{children}</>;
 }
