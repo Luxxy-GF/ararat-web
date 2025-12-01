@@ -20,20 +20,20 @@ export type StatusCode =
   | 401;
 
 export interface StandardResponse<T> {
-  type: "sync";
+  type: 'sync';
   status: string;
   status_code: StatusCode;
   metadata: T;
 }
 
 export interface BackgroundOperationResponse {
-  type: "async";
+  type: 'async';
   status: string;
   status_code: number;
   operation: string;
   metadata: {
     id: string;
-    class: "websocket" | "task" | "token";
+    class: 'websocket' | 'task' | 'token';
     created_at: string;
     updated_at: string;
     status: string;
@@ -43,7 +43,7 @@ export interface BackgroundOperationResponse {
 }
 
 export interface ErrorResponse<T> {
-  type: "error";
+  type: 'error';
   error: string;
   error_code: number;
   metadata: T;

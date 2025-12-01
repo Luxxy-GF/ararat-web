@@ -1,5 +1,5 @@
-import type { CertificateResponse } from "../_lib/certificate.d";
-import useSWR from "swr";
+import type { CertificateResponse } from '../_lib/certificate.d';
+import useSWR from 'swr';
 
 const fetcher = (...args: Parameters<typeof fetch>) =>
   fetch(...args)
@@ -9,7 +9,7 @@ const fetcher = (...args: Parameters<typeof fetch>) =>
 export function useClientCertificate(id: string | undefined) {
   const { data, error, isLoading, isValidating } = useSWR(
     id ? `/1.0/certificates/${id}` : null,
-    fetcher
+    fetcher,
   );
   return {
     data,

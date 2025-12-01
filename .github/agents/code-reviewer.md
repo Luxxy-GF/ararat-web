@@ -1,6 +1,6 @@
 ---
-description: "Review code for quality and adherence to best practices."
-tools: ["usages", "vscodeAPI", "problems", "fetch", "githubRepo", "search"]
+description: 'Review code for quality and adherence to best practices.'
+tools: ['usages', 'vscodeAPI', 'problems', 'fetch', 'githubRepo', 'search']
 ---
 
 # Code Reviewer agent

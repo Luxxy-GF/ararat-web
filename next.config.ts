@@ -1,8 +1,8 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  output: "export",
-  basePath: "/ui",
+  output: 'export',
+  basePath: '/ui',
 };
 
 export default nextConfig;

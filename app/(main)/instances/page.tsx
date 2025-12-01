@@ -1,27 +1,27 @@
-"use client";
+'use client';
 
-import React, { use } from "react";
-import { ColumnDef, Row } from "@tanstack/react-table";
+import React, { use } from 'react';
+import { ColumnDef, Row } from '@tanstack/react-table';
 import {
   PlayIcon,
   RotateCcwIcon,
   SnowflakeIcon,
   SquareIcon,
-} from "lucide-react";
+} from 'lucide-react';
 
-import CreateInstance from "./_components/create";
-import DataTable from "@/app/_components/ui/data-table";
-import { Input } from "@/app/_components/ui/input";
-import { Skeleton } from "@/app/_components/ui/skeleton";
-import { useInstances } from "@/app/(main)/instances/_hooks/instances";
-import type { Instance, InstanceState } from "./_lib/instances.d";
-import { Badge } from "@/app/_components/ui/badge";
-import { Button } from "@/app/_components/ui/button";
+import CreateInstance from './_components/create';
+import DataTable from '@/app/_components/ui/data-table';
+import { Input } from '@/app/_components/ui/input';
+import { Skeleton } from '@/app/_components/ui/skeleton';
+import { useInstances } from '@/app/(main)/instances/_hooks/instances';
+import type { Instance, InstanceState } from './_lib/instances.d';
+import { Badge } from '@/app/_components/ui/badge';
+import { Button } from '@/app/_components/ui/button';
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from "@/app/_components/ui/alert";
+} from '@/app/_components/ui/alert';
 import {
   Sheet,
   SheetContent,
@@ -35,16 +35,16 @@ import { Progress } from "@/app/_components/ui/progress";
 import IsClientContext from "@/app/_context/isClient";
 import { useRouter } from "next/navigation";
 
-type InstanceAction = "start" | "stop" | "restart" | "freeze";
+type InstanceAction = 'start' | 'stop' | 'restart' | 'freeze';
 
 const instanceActionDetails: Record<
   InstanceAction,
   { label: string; Icon: React.ComponentType<{ className?: string }> }
 > = {
-  start: { label: "Start", Icon: PlayIcon },
-  stop: { label: "Stop", Icon: SquareIcon },
-  restart: { label: "Restart", Icon: RotateCcwIcon },
-  freeze: { label: "Freeze", Icon: SnowflakeIcon },
+  start: { label: 'Start', Icon: PlayIcon },
+  stop: { label: 'Stop', Icon: SquareIcon },
+  restart: { label: 'Restart', Icon: RotateCcwIcon },
+  freeze: { label: 'Freeze', Icon: SnowflakeIcon },
 };
 
 async function performInstanceAction({
@@ -59,13 +59,13 @@ async function performInstanceAction({
   const instanceProject = project ?? instance.project ?? null;
   const projectSuffix = instanceProject
     ? `?project=${encodeURIComponent(instanceProject)}`
-    : "";
+    : '';
   const res = await fetch(
     `/1.0/instances/${encodeURIComponent(instance.name)}/state${projectSuffix}`,
     {
-      method: "PUT",
+      method: 'PUT',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         action,
@@ -73,12 +73,12 @@ async function performInstanceAction({
         force: false,
         stateful: false,
       }),
-    }
+    },
   );
   if (!res.ok) {
     const payload = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(
-      payload?.error || `Unable to ${action} instance ${instance.name}`
+      payload?.error || `Unable to ${action} instance ${instance.name}`,
     );
   }
 }
@@ -87,9 +87,9 @@ export default function Instances() {
   const { currentProject } = use(ProjectsContext);
   const { data, error, isLoading, isValidating, mutate } =
     useInstances(currentProject);
-  const [search, setSearch] = React.useState("");
+  const [search, setSearch] = React.useState('');
   const [selectedInstances, setSelectedInstances] = React.useState<Instance[]>(
-    []
+    [],
   );
   const [actionError, setActionError] = React.useState<string | null>(null);
   const [actionInFlight, setActionInFlight] =
@@ -102,8 +102,8 @@ export default function Instances() {
   const columns = React.useMemo(() => {
     const baseColumns = [
       {
-        header: "Name",
-        accessorKey: "name",
+        header: 'Name',
+        accessorKey: 'name',
         cell: ({ row }: { row: Row<object> }) => {
           const instance = row.original as Instance;
           return (
@@ -121,56 +121,56 @@ export default function Instances() {
         },
       },
       {
-        header: "Description",
-        accessorKey: "description",
+        header: 'Description',
+        accessorKey: 'description',
         cell: ({ row }: { row: Row<object> }) => {
           const instance = row.original as Instance;
           return (
             <span className="text-muted-foreground">
-              {instance.description || "—"}
+              {instance.description || '—'}
             </span>
           );
         },
       },
       {
-        header: "Status",
-        accessorKey: "status",
+        header: 'Status',
+        accessorKey: 'status',
         cell: ({ row }: { row: Row<object> }) => {
           const instance = row.original as Instance;
           const isRunning =
-            instance.status?.toLowerCase() === "running" ||
-            instance.status?.toLowerCase() === "started";
+            instance.status?.toLowerCase() === 'running' ||
+            instance.status?.toLowerCase() === 'started';
           return (
-            <Badge variant={isRunning ? "default" : "secondary"}>
+            <Badge variant={isRunning ? 'default' : 'secondary'}>
               {instance.status}
             </Badge>
           );
         },
       },
       {
-        header: "Type",
-        accessorKey: "type",
+        header: 'Type',
+        accessorKey: 'type',
         cell: ({ row }: { row: Row<object> }) => {
           const instance = row.original as Instance;
-          return instance.type === "virtual-machine"
-            ? "Virtual Machine"
-            : "Container";
+          return instance.type === 'virtual-machine'
+            ? 'Virtual Machine'
+            : 'Container';
         },
       },
       {
-        header: "Usage",
-        id: "usage",
+        header: 'Usage',
+        id: 'usage',
         cell: ({ row }: { row: Row<object> }) => {
           const instance = row.original as Instance;
           const memoryUsage = instance.state?.memory?.usage ?? 0;
           const diskUsage = getRootDiskUsage(instance.state) ?? 0;
           const memoryPercent = calcResourcePercent(
             memoryUsage,
-            instance.state?.memory?.total ?? instance.state?.memory?.usage_peak
+            instance.state?.memory?.total ?? instance.state?.memory?.usage_peak,
           );
           const diskPercent = calcResourcePercent(
             diskUsage,
-            instance.state?.disk?.root?.total
+            instance.state?.disk?.root?.total,
           );
           return (
             <div className="flex flex-col gap-1.5">
@@ -180,7 +180,7 @@ export default function Instances() {
                   {formatBytes(memoryUsage)}
                   {instance.state?.memory?.total
                     ? ` / ${formatBytes(instance.state.memory.total)}`
-                    : ""}
+                    : ''}
                 </span>
               </div>
               <Progress value={memoryPercent} className="h-1.5" />
@@ -190,7 +190,7 @@ export default function Instances() {
                   {formatBytes(diskUsage)}
                   {instance.state?.disk?.root?.total
                     ? ` / ${formatBytes(instance.state.disk.root.total)}`
-                    : ""}
+                    : ''}
                 </span>
               </div>
               <Progress value={diskPercent} className="h-1.5 bg-muted" />
@@ -200,13 +200,13 @@ export default function Instances() {
       },
     ] as ColumnDef<object, unknown>[];
 
-    if (currentProject === "all") {
+    if (currentProject === 'all') {
       baseColumns.splice(1, 0, {
-        header: "Project",
-        accessorKey: "project",
+        header: 'Project',
+        accessorKey: 'project',
         cell: ({ row }: { row: Row<object> }) => {
           const instance = row.original as Instance;
-          return instance.project ?? "default";
+          return instance.project ?? 'default';
         },
       });
     }
@@ -228,22 +228,22 @@ export default function Instances() {
               action,
               instance,
               project:
-                currentProject === "all"
-                  ? instance.project ?? null
-                  : currentProject ?? instance.project ?? null,
-            })
-          )
+                currentProject === 'all'
+                  ? (instance.project ?? null)
+                  : (currentProject ?? instance.project ?? null),
+            }),
+          ),
         );
         await mutate();
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : "Unable to update instances.";
+          err instanceof Error ? err.message : 'Unable to update instances.';
         setActionError(message);
       } finally {
         setActionInFlight(null);
       }
     },
-    [currentProject, mutate, selectedInstances]
+    [currentProject, mutate, selectedInstances],
   );
 
   const handleSelectionChange = React.useCallback((rows: Row<object>[]) => {
@@ -290,7 +290,7 @@ export default function Instances() {
                     {
                       label: string;
                       Icon: React.ComponentType<{ className?: string }>;
-                    }
+                    },
                   ][]
                 ).map(([action, { label, Icon }]) => (
                   <Button
@@ -325,7 +325,7 @@ export default function Instances() {
             <AlertTitle>Unable to load instances</AlertTitle>
             <AlertDescription>
               {error.message ||
-                "Check your Incus API connection and try again."}
+                'Check your Incus API connection and try again.'}
             </AlertDescription>
           </Alert>
         ) : null}
@@ -337,7 +337,7 @@ export default function Instances() {
           enableSelection
           data={(data as Instance[]) ?? []}
           cols={columns}
-          className={isValidating ? "animate-pulse" : ""}
+          className={isValidating ? 'animate-pulse' : ''}
           stringFilter={search}
           onSelectionChange={handleSelectionChange}
           onRowClick={(row) => handleRowClick(row)}
@@ -376,7 +376,7 @@ function InstanceDetails({ instance }: { instance: Instance }) {
   const diskUsage = getRootDiskUsage(instance.state);
   const networkDetails = React.useMemo(
     () => getNetworkDetails(instance),
-    [instance]
+    [instance],
   );
   const baseImage = getBaseImage(instance);
   const rootDiskPool = getRootDiskPool(instance);
@@ -391,7 +391,7 @@ function InstanceDetails({ instance }: { instance: Instance }) {
       <SheetHeader className="px-4 pt-4">
         <SheetTitle>{instance.name}</SheetTitle>
         <SheetDescription>
-          {instance.description || "No description available."}
+          {instance.description || 'No description available.'}
         </SheetDescription>
         <div className="flex flex-wrap gap-2 pt-2">
           <Badge>{instance.status}</Badge>
@@ -406,48 +406,46 @@ function InstanceDetails({ instance }: { instance: Instance }) {
             label="Instance Memory"
             value={
               instance.state?.memory?.total
-                ? `${formatBytes(memoryUsage)} / ${formatBytes(
-                  instance.state.memory.total
-                )}`
+                ? `${formatBytes(memoryUsage)} / ${formatBytes(instance.state.memory.total)}`
                 : formatBytes(memoryUsage)
             }
-            hidden={!hasStateData || typeof memoryUsage !== "number"}
+            hidden={!hasStateData || typeof memoryUsage !== 'number'}
           />
           <DetailRow
             label="Instance Root Disk Usage"
             value={formatBytes(diskUsage)}
-            hidden={!hasStateData || typeof diskUsage !== "number"}
+            hidden={!hasStateData || typeof diskUsage !== 'number'}
           />
         </Section>
         <Section title="Metadata">
           <DetailRow
             label="Project"
-            value={instance.project ?? "default"}
+            value={instance.project ?? 'default'}
             hidden={false}
           />
           <DetailRow
             label="Base Image"
-            value={baseImage ?? "—"}
+            value={baseImage ?? '—'}
             hidden={false}
           />
           <DetailRow
             label="Architecture"
-            value={instance.architecture ?? "—"}
+            value={instance.architecture ?? '—'}
             hidden={false}
           />
           <DetailRow
             label="Cluster Member"
-            value={instance.location ?? "—"}
+            value={instance.location ?? '—'}
             hidden={false}
           />
           <DetailRow
             label="Root Disk Storage Pool"
-            value={rootDiskPool ?? "—"}
+            value={rootDiskPool ?? '—'}
             hidden={false}
           />
           <DetailRow
             label="Process ID"
-            value={instance.state?.pid?.toString() ?? "—"}
+            value={instance.state?.pid?.toString() ?? '—'}
             hidden={!instance.state?.pid}
           />
           <DetailRow
@@ -519,7 +517,7 @@ function InstanceDetails({ instance }: { instance: Instance }) {
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium">{snapshot.name}</span>
                     <Badge variant="outline">
-                      {snapshot.stateful ? "Stateful" : "Stateless"}
+                      {snapshot.stateful ? 'Stateful' : 'Stateless'}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -606,36 +604,36 @@ function TagList({
 }
 
 function formatBytes(value?: number) {
-  if (typeof value !== "number" || Number.isNaN(value)) {
-    return "—";
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return '—';
   }
-  const units = ["B", "KiB", "MiB", "GiB", "TiB", "PiB"];
-  if (value === 0) return "0 B";
+  const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
+  if (value === 0) return '0 B';
   const exponent = Math.min(
     Math.max(Math.floor(Math.log(value) / Math.log(1024)), 0),
-    units.length - 1
+    units.length - 1,
   );
   const num = value / Math.pow(1024, exponent);
   return `${num.toFixed(num >= 10 ? 0 : 1)} ${units[exponent]}`;
 }
 
 function formatDate(value?: string) {
-  if (!value) return "—";
+  if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return value;
   }
   return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
+    dateStyle: 'medium',
+    timeStyle: 'short',
   }).format(date);
 }
 
 function getRootDiskUsage(state?: InstanceState) {
   if (!state?.disk) return undefined;
   const rootDisk =
-    state.disk["root"] ||
-    state.disk["/"] ||
+    state.disk['root'] ||
+    state.disk['/'] ||
     Object.values(state.disk)[0] ||
     null;
   return rootDisk?.usage;
@@ -649,9 +647,9 @@ function getNetworkDetails(instance: Instance) {
   Object.values(network).forEach((iface) => {
     iface.addresses?.forEach((address) => {
       if (!address.address) return;
-      if (address.family === "inet") {
+      if (address.family === 'inet') {
         ipv4.add(address.address);
-      } else if (address.family === "inet6" && address.scope !== "link") {
+      } else if (address.family === 'inet6' && address.scope !== 'link') {
         ipv6.add(address.address);
       }
     });
@@ -668,11 +666,11 @@ function getNetworkDetails(instance: Instance) {
 
 function getBaseImage(instance: Instance) {
   return (
-    instance.config?.["image.description"] ||
-    instance.config?.["image.alias"] ||
-    instance.config?.["image.os"] ||
-    instance.expanded_config?.["volatile.base_image"] ||
-    instance.config?.["volatile.base_image"] ||
+    instance.config?.['image.description'] ||
+    instance.config?.['image.alias'] ||
+    instance.config?.['image.os'] ||
+    instance.expanded_config?.['volatile.base_image'] ||
+    instance.config?.['volatile.base_image'] ||
     null
   );
 }

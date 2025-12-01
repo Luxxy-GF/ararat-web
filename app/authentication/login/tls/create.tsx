@@ -1,37 +1,37 @@
-"use client";
+'use client';
 
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/app/_components/ui/accordion";
-import { Button } from "@/app/_components/ui/button";
+} from '@/app/_components/ui/accordion';
+import { Button } from '@/app/_components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-} from "@/app/_components/ui/dialog";
-import { Input } from "@/app/_components/ui/input";
-import { Label } from "@/app/_components/ui/label";
+} from '@/app/_components/ui/dialog';
+import { Input } from '@/app/_components/ui/input';
+import { Label } from '@/app/_components/ui/label';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@/app/_components/ui/tabs";
-import { DialogTitle } from "@radix-ui/react-dialog";
-import { useEffect, useRef, useState } from "react";
+} from '@/app/_components/ui/tabs';
+import { DialogTitle } from '@radix-ui/react-dialog';
+import { useEffect, useRef, useState } from 'react';
 
 export default function CreateCertificate() {
   const workerRef = useRef<Worker | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [createStep, setCreateStep] = useState("download");
+  const [createStep, setCreateStep] = useState('download');
   const [settingPassword, setSettingPassword] = useState(false);
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordsMatch, setPasswordsMatch] = useState(true);
 
   useEffect(() => {
@@ -48,9 +48,9 @@ export default function CreateCertificate() {
   }, []);
 
   function download(filename: string, content: string) {
-    const blob = new Blob([content], { type: "application/x-pem-file" });
+    const blob = new Blob([content], { type: 'application/x-pem-file' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
@@ -72,10 +72,10 @@ export default function CreateCertificate() {
       // Note: Next.js / bundlers that support the `new URL(..., import.meta.url)` pattern will bundle this.
       // If your bundler doesn't support it, consider using an inline blob worker or configure worker handling.
       workerRef.current = new Worker(
-        new URL("./certWorker.ts", import.meta.url),
+        new URL('./certWorker.ts', import.meta.url),
         {
-          type: "module",
-        }
+          type: 'module',
+        },
       );
     }
 
@@ -86,7 +86,7 @@ export default function CreateCertificate() {
       const data = ev.data || {};
       if (data.id !== id) return; // ignore messages from other requests (if any)
       if (data.error) {
-        console.error("Certificate generation error:", data.error);
+        console.error('Certificate generation error:', data.error);
         setGenerating(false);
         return;
       }
@@ -104,10 +104,10 @@ export default function CreateCertificate() {
           const bytes = new Uint8Array(len);
           for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
           const pfxBlob = new Blob([bytes.buffer], {
-            type: "application/x-pkcs12",
+            type: 'application/x-pkcs12',
           });
           const pfxUrl = URL.createObjectURL(pfxBlob);
-          const a = document.createElement("a");
+          const a = document.createElement('a');
           a.href = pfxUrl;
           a.download = `ararat.pfx`;
           document.body.appendChild(a);
@@ -115,18 +115,18 @@ export default function CreateCertificate() {
           a.remove();
           URL.revokeObjectURL(pfxUrl);
         } catch (err) {
-          console.error("Error creating PFX file from worker base64:", err);
+          console.error('Error creating PFX file from worker base64:', err);
         }
       } else if (data.pfxError) {
-        console.warn("Worker failed to create PFX:", data.pfxError);
+        console.warn('Worker failed to create PFX:', data.pfxError);
       }
       setGenerating(false);
       // detach this one-time listener
-      worker?.removeEventListener("message", onMessage);
-      setCreateStep("trust");
+      worker?.removeEventListener('message', onMessage);
+      setCreateStep('trust');
     };
 
-    worker.addEventListener("message", onMessage);
+    worker.addEventListener('message', onMessage);
     // send the password (may be empty string) so worker can create the PFX with it
     worker.postMessage({ id, password });
   }

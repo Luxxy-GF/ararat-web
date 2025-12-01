@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useProfiles } from "../../_hooks/profiles";
-import Devices from "../../_components/devices";
-import type { Device } from "../_lib/instances.d";
+import * as React from 'react';
+import { useProfiles } from '../../_hooks/profiles';
+import Devices from '../../_components/devices';
+import type { Device } from '../_lib/instances.d';
 
 /**
  * Props for the InstanceDevices component
@@ -16,7 +16,7 @@ export interface InstanceDevicesProps {
   /** Callback when devices change */
   onDevicesChange?: (devices: Record<string, Device>) => void;
   /** Instance type for device filtering */
-  instanceType?: "virtual-machine" | "container";
+  instanceType?: 'virtual-machine' | 'container';
 }
 
 /**
@@ -58,14 +58,14 @@ export default function InstanceDevices({
       inheritedDevices.root &&
       devices.root &&
       Object.keys(devices.root).length === 1 &&
-      devices.root.type === "disk"
+      devices.root.type === 'disk'
     ) {
       delete result.root;
     }
 
     // Only add root disk if not inherited and not already present
     if (!inheritedDevices.root && !devices.root) {
-      result.root = { type: "disk", path: "/" };
+      result.root = { type: 'disk', path: '/' };
     }
     return result;
   }, [devices, inheritedDevices]);
@@ -86,7 +86,7 @@ export default function InstanceDevices({
       inheritedDevices.root &&
       devices.root &&
       Object.keys(devices.root).length === 1 &&
-      devices.root.type === "disk" &&
+      devices.root.type === 'disk' &&
       onDevicesChange
     ) {
       const { root, ...rest } = devices;

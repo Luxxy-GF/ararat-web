@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
+import * as React from 'react';
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
 
 export default function ThemeProvider({
   children,
@@ -11,7 +11,7 @@ export default function ThemeProvider({
     <NextThemesProvider
       {...props}
       attribute="class"
-      defaultTheme={"system"}
+      defaultTheme={'system'}
       enableSystem={true}
     >
       {children}

@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Row } from "@tanstack/react-table";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Row } from '@tanstack/react-table';
 
-import { Badge } from "@/app/_components/ui/badge";
-import { Button } from "@/app/_components/ui/button";
-import DataTable from "@/app/_components/ui/data-table";
+import { Badge } from '@/app/_components/ui/badge';
+import { Button } from '@/app/_components/ui/button';
+import DataTable from '@/app/_components/ui/data-table';
 import {
   Dialog,
   DialogContent,
@@ -14,29 +14,29 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/app/_components/ui/dialog";
-import { Input } from "@/app/_components/ui/input";
-import { Label } from "@/app/_components/ui/label";
+} from '@/app/_components/ui/dialog';
+import { Input } from '@/app/_components/ui/input';
+import { Label } from '@/app/_components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/app/_components/ui/select";
-import { Spinner } from "@/app/_components/ui/spinner";
-import { useImages } from "@/app/(main)/images/_hooks/images";
-import { Image } from "@/app/(main)/images/_lib/images";
-import ProjectsContext from "@/app/(main)/_context/projects";
+} from '@/app/_components/ui/select';
+import { Spinner } from '@/app/_components/ui/spinner';
+import { useImages } from '@/app/(main)/images/_hooks/images';
+import { Image } from '@/app/(main)/images/_lib/images';
+import ProjectsContext from '@/app/(main)/_context/projects';
 
-type RemoteProtocol = "simplestreams";
+type RemoteProtocol = 'simplestreams';
 
 type RemoteServer = {
   server: string;
   protocol: RemoteProtocol;
 };
 
-type ImageKind = "container" | "virtual-machine";
+type ImageKind = 'container' | 'virtual-machine';
 
 type SimplestreamItem = {
   ftype?: string;
@@ -70,7 +70,7 @@ export type SelectableImage = {
   remote?: {
     server: string;
     alias: string;
-    protocol: "simplestreams" | "oci";
+    protocol: 'simplestreams' | 'oci';
   };
 };
 
@@ -81,7 +81,7 @@ export default function ImageSelector({
 }: {
   selectedImage: SelectableImage | null;
   onSelect: (image: SelectableImage) => void;
-  instanceType?: "virtual-machine" | "container";
+  instanceType?: 'virtual-machine' | 'container';
 }) {
   const { currentProject } = use(ProjectsContext);
   const {
@@ -95,12 +95,12 @@ export default function ImageSelector({
   const [remoteImages, setRemoteImages] = useState<SelectableImage[]>([]);
   const [loadingRemotes, setLoadingRemotes] = useState(false);
   const [addingRemote, setAddingRemote] = useState(false);
-  const [remoteProtocol, setRemoteProtocol] = useState<"simplestreams" | "oci">(
-    "simplestreams"
+  const [remoteProtocol, setRemoteProtocol] = useState<'simplestreams' | 'oci'>(
+    'simplestreams',
   );
-  const [remoteURL, setRemoteURL] = useState("");
-  const [ociImage, setOciImage] = useState("");
-  const [stringFilter, setStringFilter] = useState("");
+  const [remoteURL, setRemoteURL] = useState('');
+  const [ociImage, setOciImage] = useState('');
+  const [stringFilter, setStringFilter] = useState('');
   const fetchedRemotesRef = useRef(new Set<string>());
 
   const localImages = useMemo<SelectableImage[]>(() => {
@@ -129,7 +129,7 @@ export default function ImageSelector({
       if (!normalized || map.has(normalized)) return;
       map.set(normalized, {
         server: normalized,
-        protocol: "simplestreams",
+        protocol: 'simplestreams',
       });
     });
     return Array.from(map.values());
@@ -140,14 +140,14 @@ export default function ImageSelector({
     [...derivedRemoteServers, ...userAddedRemoteServers].forEach((remote) => {
       const normalized = normalizeRemoteURL(remote.server);
       if (!normalized || map.has(normalized)) return;
-      map.set(normalized, { server: normalized, protocol: "simplestreams" });
+      map.set(normalized, { server: normalized, protocol: 'simplestreams' });
     });
     return Array.from(map.values());
   }, [derivedRemoteServers, userAddedRemoteServers]);
 
   useEffect(() => {
     const serversToFetch = remoteServers.filter(
-      (remote) => !fetchedRemotesRef.current.has(remote.server)
+      (remote) => !fetchedRemotesRef.current.has(remote.server),
     );
     if (!serversToFetch.length) return;
     let cancelled = false;
@@ -160,13 +160,13 @@ export default function ImageSelector({
             if (cancelled) return;
             fetchedRemotesRef.current.add(remote.server);
             setRemoteImages((prev) =>
-              mergeImageLists(prev, remoteImagesForServer)
+              mergeImageLists(prev, remoteImagesForServer),
             );
           } catch (error) {
             console.error(
-              "Unable to fetch remote images",
+              'Unable to fetch remote images',
               remote.server,
-              error
+              error,
             );
           }
         }
@@ -193,55 +193,55 @@ export default function ImageSelector({
     (image: SelectableImage) => {
       onSelect(image);
     },
-    [onSelect]
+    [onSelect],
   );
 
   const handleRowClick = useCallback(
     (row: Row<object>) => {
       handleSelect(row.original as SelectableImage);
     },
-    [handleSelect]
+    [handleSelect],
   );
 
   const handleAddRemote = () => {
     const normalized = normalizeRemoteURL(remoteURL);
     if (!normalized) return;
-    if (remoteProtocol === "simplestreams") {
+    if (remoteProtocol === 'simplestreams') {
       setUserAddedRemoteServers((prev) => {
         if (prev.some((remote) => remote.server === normalized)) return prev;
-        return [...prev, { server: normalized, protocol: "simplestreams" }];
+        return [...prev, { server: normalized, protocol: 'simplestreams' }];
       });
-    } else if (remoteProtocol === "oci" && ociImage) {
+    } else if (remoteProtocol === 'oci' && ociImage) {
       const ociEntry = buildOciImage(normalized, ociImage);
       setRemoteImages((prev) => [
         ociEntry,
         ...prev.filter((image) => image.id !== ociEntry.id),
       ]);
     }
-    setRemoteURL("");
-    setOciImage("");
+    setRemoteURL('');
+    setOciImage('');
     setAddingRemote(false);
   };
 
   const columns = useMemo(
     () => [
       {
-        header: "Image",
-        accessorKey: "label",
+        header: 'Image',
+        accessorKey: 'label',
         cell: ({ row }: { row: Row<object> }) => {
           const image = row.original as SelectableImage;
           return (
             <div className="flex min-w-0 flex-col gap-0.5">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="font-semibold truncate" title={image.os}>
-                  {image.os ?? "Unknown OS"}
-                  {image.release ? ` ${image.release}` : ""}
+                  {image.os ?? 'Unknown OS'}
+                  {image.release ? ` ${image.release}` : ''}
                 </span>
                 <Badge
-                  variant={image.local ? "secondary" : "outline"}
+                  variant={image.local ? 'secondary' : 'outline'}
                   className="text-[10px] uppercase shrink-0"
                 >
-                  {image.local ? "Local" : "Remote"}
+                  {image.local ? 'Local' : 'Remote'}
                 </Badge>
               </div>
               <span
@@ -263,17 +263,17 @@ export default function ImageSelector({
         },
       },
       {
-        header: "Type",
-        id: "types",
+        header: 'Type',
+        id: 'types',
         cell: ({ row }: { row: Row<object> }) => {
           const image = row.original as SelectableImage;
           const typeText = image.types.length
             ? image.types
                 .map((type) =>
-                  type === "virtual-machine" ? "Virtual Machine" : "Container"
+                  type === 'virtual-machine' ? 'Virtual Machine' : 'Container',
                 )
-                .join(", ")
-            : "—";
+                .join(', ')
+            : '—';
           return (
             <div className="truncate" title={typeText}>
               {typeText}
@@ -282,19 +282,19 @@ export default function ImageSelector({
         },
       },
       {
-        header: "Architecture",
-        accessorKey: "arch",
+        header: 'Architecture',
+        accessorKey: 'arch',
         cell: ({ getValue }: { getValue: () => unknown }) => {
           const arch = getValue() as string | undefined;
           return (
             <div className="truncate" title={arch}>
-              {arch ?? "—"}
+              {arch ?? '—'}
             </div>
           );
         },
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -306,8 +306,8 @@ export default function ImageSelector({
             {selectedImage ? (
               <>
                 <p className="font-medium">
-                  {selectedImage.os ?? "Unknown OS"}
-                  {selectedImage.release ? ` · ${selectedImage.release}` : ""}
+                  {selectedImage.os ?? 'Unknown OS'}
+                  {selectedImage.release ? ` · ${selectedImage.release}` : ''}
                 </p>
                 <p className="text-muted-foreground text-xs">
                   {selectedImage.label}
@@ -315,9 +315,9 @@ export default function ImageSelector({
                 <p className="text-xs text-muted-foreground">
                   {selectedImage.remote
                     ? `${formatProtocol(
-                        selectedImage.remote.protocol
+                        selectedImage.remote.protocol,
                       )} · ${formatSource(selectedImage.remote.server)}`
-                    : "Local image"}
+                    : 'Local image'}
                 </p>
               </>
             ) : (
@@ -330,8 +330,8 @@ export default function ImageSelector({
             <div>
               <p className="font-medium text-md my-auto">Available Images</p>
               <p className="text-xs text-muted-foreground">
-                {currentProject === "all"
-                  ? "All projects"
+                {currentProject === 'all'
+                  ? 'All projects'
                   : `Project · ${currentProject}`}
               </p>
             </div>
@@ -360,7 +360,7 @@ export default function ImageSelector({
                     <Select
                       value={remoteProtocol}
                       onValueChange={(value) =>
-                        setRemoteProtocol(value as "simplestreams" | "oci")
+                        setRemoteProtocol(value as 'simplestreams' | 'oci')
                       }
                     >
                       <SelectTrigger>
@@ -379,7 +379,7 @@ export default function ImageSelector({
                       onChange={(event) => setRemoteURL(event.target.value)}
                     />
                   </div>
-                  {remoteProtocol === "oci" ? (
+                  {remoteProtocol === 'oci' ? (
                     <>
                       <Label htmlFor="ociImage">OCI Image</Label>
                       <Input
@@ -395,13 +395,13 @@ export default function ImageSelector({
                     <Button
                       disabled={
                         !remoteURL ||
-                        (remoteProtocol === "oci" && !ociImage.trim().length)
+                        (remoteProtocol === 'oci' && !ociImage.trim().length)
                       }
                       onClick={handleAddRemote}
                     >
-                      {remoteProtocol === "oci"
-                        ? "Add OCI Image"
-                        : "Add Remote Server"}
+                      {remoteProtocol === 'oci'
+                        ? 'Add OCI Image'
+                        : 'Add Remote Server'}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -410,7 +410,7 @@ export default function ImageSelector({
           </div>
           <div
             className={`mt-2 flex-1 min-h-0 overflow-hidden ${
-              isValidating || loadingRemotes ? "animate-pulse" : ""
+              isValidating || loadingRemotes ? 'animate-pulse' : ''
             }`}
           >
             <DataTable
@@ -421,8 +421,8 @@ export default function ImageSelector({
               onRowClick={handleRowClick}
               getRowClassName={(row) =>
                 (row.original as SelectableImage).id === selectedImageId
-                  ? "bg-muted/30"
-                  : ""
+                  ? 'bg-muted/30'
+                  : ''
               }
             />
           </div>
@@ -433,15 +433,15 @@ export default function ImageSelector({
 }
 
 function normalizeRemoteURL(url: string) {
-  if (!url) return "";
+  if (!url) return '';
   const trimmed = url.trim();
-  if (!trimmed) return "";
-  return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed;
+  if (!trimmed) return '';
+  return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
 }
 
 function mergeImageLists(
   current: SelectableImage[],
-  incoming: SelectableImage[]
+  incoming: SelectableImage[],
 ) {
   const map = new Map<string, SelectableImage>();
   current.forEach((image) => map.set(image.id, image));
@@ -456,10 +456,10 @@ async function fetchSimplestreamImages(remote: RemoteServer) {
     throw new Error(`Unable to fetch index from ${base}`);
   }
   const indexJson = await indexRes.json();
-  const imagesPath = indexJson.index?.images?.path ?? "streams/v1/images.json";
-  const path = imagesPath.startsWith("http")
+  const imagesPath = indexJson.index?.images?.path ?? 'streams/v1/images.json';
+  const path = imagesPath.startsWith('http')
     ? imagesPath
-    : `${base}/${imagesPath.replace(/^\//, "")}`;
+    : `${base}/${imagesPath.replace(/^\//, '')}`;
   const imagesRes = await fetch(path);
   if (!imagesRes.ok) {
     throw new Error(`Unable to fetch images from ${base}`);
@@ -477,20 +477,18 @@ async function fetchSimplestreamImages(remote: RemoteServer) {
       versionKey ? product.versions?.[versionKey]?.items : undefined;
     const types = deriveImageTypes(versionItems);
     remoteImages.push({
-      id: `remote-${base}-${alias}-${product.arch ?? ""}-${
-        product.variant ?? ""
-      }`,
+      id: `remote-${base}-${alias}-${product.arch ?? ''}-${product.variant ?? ''}`,
       local: false,
       label: alias,
       os: product.os,
       release: product.release,
       variant: product.variant,
-      arch: product.arch === "amd64" ? "x86_64" : product.arch,
+      arch: product.arch === 'amd64' ? 'x86_64' : product.arch,
       types,
       remote: {
         server: base,
         alias,
-        protocol: "simplestreams",
+        protocol: 'simplestreams',
       },
     });
   });
@@ -502,8 +500,8 @@ function extractPrimaryAlias(aliases?: unknown) {
   if (Array.isArray(aliases)) {
     return aliases[0]?.name;
   }
-  if (typeof aliases === "string") {
-    return aliases.split(",")[0];
+  if (typeof aliases === 'string') {
+    return aliases.split(',')[0];
   }
   return undefined;
 }
@@ -518,22 +516,22 @@ function deriveImageTypes(items?: Record<string, SimplestreamItem>) {
   const values = Object.values(items);
   const types = new Set<ImageKind>();
   const containerMatch = values.some((item) =>
-    ["squashfs", "lxd", "rootfs"].some(
+    ['squashfs', 'lxd', 'rootfs'].some(
       (token) =>
-        (item.ftype ?? "").includes(token) || (item.path ?? "").includes(token)
-    )
+        (item.ftype ?? '').includes(token) || (item.path ?? '').includes(token),
+    ),
   );
   if (containerMatch) {
-    types.add("container");
+    types.add('container');
   }
   const vmMatch = values.some((item) =>
-    ["disk", "qcow", "uefi"].some(
+    ['disk', 'qcow', 'uefi'].some(
       (token) =>
-        (item.ftype ?? "").includes(token) || (item.path ?? "").includes(token)
-    )
+        (item.ftype ?? '').includes(token) || (item.path ?? '').includes(token),
+    ),
   );
   if (vmMatch) {
-    types.add("virtual-machine");
+    types.add('virtual-machine');
   }
   return Array.from(types);
 }
@@ -545,21 +543,21 @@ function buildOciImage(server: string, alias: string): SelectableImage {
     local: false,
     label: trimmedAlias,
     os: trimmedAlias,
-    types: ["container", "virtual-machine"],
+    types: ['container', 'virtual-machine'],
     remote: {
       server,
       alias: trimmedAlias,
-      protocol: "oci",
+      protocol: 'oci',
     },
   };
 }
 
-function formatProtocol(protocol: "simplestreams" | "oci") {
-  return protocol === "simplestreams" ? "Simplestreams" : "OCI";
+function formatProtocol(protocol: 'simplestreams' | 'oci') {
+  return protocol === 'simplestreams' ? 'Simplestreams' : 'OCI';
 }
 
 function formatSource(server?: string) {
-  if (!server) return "Remote";
+  if (!server) return 'Remote';
   try {
     const parsed = new URL(server);
     return parsed.hostname;
