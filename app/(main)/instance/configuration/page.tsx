@@ -3,9 +3,9 @@
 import React from "react";
 
 export default function ConfigurationPage() {
-    return (
-        <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-            Configuration Content
-        </div>
-    );
+  return (
+    <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+      Instance Configuration Under Construction
+    </div>
+  );
 }
