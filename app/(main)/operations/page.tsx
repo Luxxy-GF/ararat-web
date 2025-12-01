@@ -268,21 +268,25 @@ function OperationInspector({ operation }: { operation: IncusOperation }) {
   );
 }
 
+function isPlainObject(obj: unknown): obj is Record<string, unknown> {
+  return (
+    !!obj &&
+    typeof obj === 'object' &&
+    Object.prototype.toString.call(obj) === '[object Object]'
+  );
+}
+
 function MetadataSection({ title, metadata }: { title: string; metadata: unknown }) {
   if (
     !metadata ||
-    (typeof metadata === 'object' &&
-      metadata !== null &&
-      !Array.isArray(metadata) &&
-      Object.prototype.toString.call(metadata) === '[object Object]' &&
-      !Object.keys(metadata as object).length)
+    (isPlainObject(metadata) && Object.keys(metadata).length === 0)
   ) {
     return null;
   }
 
   const entries = (
-    typeof metadata === 'object' && metadata !== null
-      ? Object.entries(metadata as Record<string, unknown>)
+    isPlainObject(metadata)
+      ? Object.entries(metadata)
       : [['value', metadata]]
   ) as [string, unknown][];
 
@@ -326,10 +330,10 @@ function renderValue(value: unknown): React.ReactNode {
       </ul>
     );
   }
-  if (typeof value === 'object') {
+  if (isPlainObject(value)) {
     return (
       <div className="space-y-2 pl-1">
-        {Object.entries(value as Record<string, unknown>).map(([k, v]) => (
+        {Object.entries(value).map(([k, v]) => (
           <KeyValueCard key={`nested-${k}`} label={k}>
             {renderValue(v)}
           </KeyValueCard>
