@@ -59,7 +59,7 @@ jobs:
 
       - name: Commit formatting changes
         if: steps.verify_diff.outputs.has_changes == 'true'
-        uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8e3bfe8db3b5d91dc
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(format): apply Prettier formatting"
           skip_ci: true
