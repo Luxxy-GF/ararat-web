@@ -1,0 +1,11 @@
+# Ignore build output
+.next/
+out/
+node_modules/
+
+# Generated files
+coverage/
+*.log
+
+# Workflow files have specialized formatting
+.github/workflows/
