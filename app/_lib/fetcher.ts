@@ -1,16 +1,11 @@
-import type { StandardResponse, ErrorResponse } from "@/app/_lib/response.d";
+import type { StandardResponse, ErrorResponse } from '@/app/_lib/response.d';
 
 export async function jsonFetcher(url: string) {
   const endpoint = new URL(window.location.origin + url);
   return fetch(endpoint.toString())
-    .then(
-      (res) =>
-        res.json() as Promise<
-          StandardResponse<unknown> | ErrorResponse<unknown>
-        >
-    )
+    .then((res) => res.json() as Promise<StandardResponse<unknown> | ErrorResponse<unknown>>)
     .then((data) => {
-      if (data.type == "error") {
+      if (data.type == 'error') {
         throw {
           ...data,
         } as ErrorResponse<unknown>;

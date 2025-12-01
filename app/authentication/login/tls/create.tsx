@@ -1,37 +1,32 @@
-"use client";
+'use client';
 
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/app/_components/ui/accordion";
-import { Button } from "@/app/_components/ui/button";
+} from '@/app/_components/ui/accordion';
+import { Button } from '@/app/_components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-} from "@/app/_components/ui/dialog";
-import { Input } from "@/app/_components/ui/input";
-import { Label } from "@/app/_components/ui/label";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/app/_components/ui/tabs";
-import { DialogTitle } from "@radix-ui/react-dialog";
-import { useEffect, useRef, useState } from "react";
+} from '@/app/_components/ui/dialog';
+import { Input } from '@/app/_components/ui/input';
+import { Label } from '@/app/_components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/_components/ui/tabs';
+import { DialogTitle } from '@radix-ui/react-dialog';
+import { useEffect, useRef, useState } from 'react';
 
 export default function CreateCertificate() {
   const workerRef = useRef<Worker | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [createStep, setCreateStep] = useState("download");
+  const [createStep, setCreateStep] = useState('download');
   const [settingPassword, setSettingPassword] = useState(false);
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordsMatch, setPasswordsMatch] = useState(true);
 
   useEffect(() => {
@@ -48,9 +43,9 @@ export default function CreateCertificate() {
   }, []);
 
   function download(filename: string, content: string) {
-    const blob = new Blob([content], { type: "application/x-pem-file" });
+    const blob = new Blob([content], { type: 'application/x-pem-file' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
@@ -71,12 +66,9 @@ export default function CreateCertificate() {
       // The `type: 'module'` option lets the worker use ES module imports (node-forge in our case).
       // Note: Next.js / bundlers that support the `new URL(..., import.meta.url)` pattern will bundle this.
       // If your bundler doesn't support it, consider using an inline blob worker or configure worker handling.
-      workerRef.current = new Worker(
-        new URL("./certWorker.ts", import.meta.url),
-        {
-          type: "module",
-        }
-      );
+      workerRef.current = new Worker(new URL('./certWorker.ts', import.meta.url), {
+        type: 'module',
+      });
     }
 
     const worker = workerRef.current;
@@ -86,7 +78,7 @@ export default function CreateCertificate() {
       const data = ev.data || {};
       if (data.id !== id) return; // ignore messages from other requests (if any)
       if (data.error) {
-        console.error("Certificate generation error:", data.error);
+        console.error('Certificate generation error:', data.error);
         setGenerating(false);
         return;
       }
@@ -104,10 +96,10 @@ export default function CreateCertificate() {
           const bytes = new Uint8Array(len);
           for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
           const pfxBlob = new Blob([bytes.buffer], {
-            type: "application/x-pkcs12",
+            type: 'application/x-pkcs12',
           });
           const pfxUrl = URL.createObjectURL(pfxBlob);
-          const a = document.createElement("a");
+          const a = document.createElement('a');
           a.href = pfxUrl;
           a.download = `ararat.pfx`;
           document.body.appendChild(a);
@@ -115,18 +107,18 @@ export default function CreateCertificate() {
           a.remove();
           URL.revokeObjectURL(pfxUrl);
         } catch (err) {
-          console.error("Error creating PFX file from worker base64:", err);
+          console.error('Error creating PFX file from worker base64:', err);
         }
       } else if (data.pfxError) {
-        console.warn("Worker failed to create PFX:", data.pfxError);
+        console.warn('Worker failed to create PFX:', data.pfxError);
       }
       setGenerating(false);
       // detach this one-time listener
-      worker?.removeEventListener("message", onMessage);
-      setCreateStep("trust");
+      worker?.removeEventListener('message', onMessage);
+      setCreateStep('trust');
     };
 
-    worker.addEventListener("message", onMessage);
+    worker.addEventListener('message', onMessage);
     // send the password (may be empty string) so worker can create the PFX with it
     worker.postMessage({ id, password });
   }
@@ -151,9 +143,7 @@ export default function CreateCertificate() {
                   type="password"
                   value={password}
                 />
-                <div className="text-sm text-gray-400">
-                  Password is required for macOS clients
-                </div>
+                <div className="text-sm text-gray-400">Password is required for macOS clients</div>
               </div>
               <div className="grid gap-3">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -165,9 +155,7 @@ export default function CreateCertificate() {
                   value={confirmPassword}
                 />
                 {!passwordsMatch ? (
-                  <div className="text-sm text-gray-400">
-                    Passwords do not match.
-                  </div>
+                  <div className="text-sm text-gray-400">Passwords do not match.</div>
                 ) : null}
               </div>
             </div>
@@ -195,11 +183,7 @@ export default function CreateCertificate() {
           </DialogContent>
         </form>
       </Dialog>
-      <Accordion
-        type="single"
-        value={createStep}
-        onValueChange={(val) => setCreateStep(val)}
-      >
+      <Accordion type="single" value={createStep} onValueChange={(val) => setCreateStep(val)}>
         <AccordionItem value="download">
           <AccordionTrigger>Generate & Download</AccordionTrigger>
           <AccordionContent>
@@ -219,9 +203,7 @@ export default function CreateCertificate() {
           <AccordionContent>
             <p>Add the .crt to Incus&apos;s trust store:</p>
             <pre className="bg-gray-800 text-white p-2 rounded-md overflow-x-auto">
-              <code>
-                incus config trust add-certificate Downloads/ararat.crt
-              </code>
+              <code>incus config trust add-certificate Downloads/ararat.crt</code>
             </pre>
           </AccordionContent>
         </AccordionItem>
@@ -236,12 +218,7 @@ export default function CreateCertificate() {
                 <TabsTrigger value="macOS">macOS</TabsTrigger>
               </TabsList>
               <TabsContent value="chrome">
-                <Accordion
-                  type="single"
-                  collapsible
-                  className="px-4"
-                  defaultValue="windows"
-                >
+                <Accordion type="single" collapsible className="px-4" defaultValue="windows">
                   <AccordionItem value="windows">
                     <AccordionTrigger>Windows</AccordionTrigger>
                     <AccordionContent>
@@ -250,17 +227,15 @@ export default function CreateCertificate() {
                         <code>chrome://settings/security</code>
                       </pre>
                       <p>
-                        2. Under &quot;Advanced Settings&quot;, press
-                        &quot;Manage device certificates&quot;
+                        2. Under &quot;Advanced Settings&quot;, press &quot;Manage device
+                        certificates&quot;
                       </p>
                       <p>
-                        3. Click &quot;Import...&quot; then &quot;Next&quot; and
-                        select the &quot;ararat.pfx&quot; file previously
-                        downloaded.
+                        3. Click &quot;Import...&quot; then &quot;Next&quot; and select the
+                        &quot;ararat.pfx&quot; file previously downloaded.
                       </p>
                       <p>
-                        4. Restart Chrome and navigate to Hye Ararat. Select the
-                        Ararat certificate.
+                        4. Restart Chrome and navigate to Hye Ararat. Select the Ararat certificate.
                       </p>
                     </AccordionContent>
                   </AccordionItem>
@@ -272,13 +247,12 @@ export default function CreateCertificate() {
                         <code>chrome://settings/security</code>
                       </pre>
                       <p>
-                        2. Click &quot;Import&quot; and select the
-                        &quot;ararat.pfx&quot; file previously downloaded. Enter
-                        your password, or leave blank if one has not been set.
+                        2. Click &quot;Import&quot; and select the &quot;ararat.pfx&quot; file
+                        previously downloaded. Enter your password, or leave blank if one has not
+                        been set.
                       </p>
                       <p>
-                        3. Restart Chrome and navigate to Hye Ararat. Select the
-                        Ararat certificate.
+                        3. Restart Chrome and navigate to Hye Ararat. Select the Ararat certificate.
                       </p>
                     </AccordionContent>
                   </AccordionItem>
@@ -290,55 +264,40 @@ export default function CreateCertificate() {
                   <code>about:preferences#privacy</code>
                 </pre>
                 <p>
-                  2. Scroll down to &quot;Certificates&quot; and click
-                  &quot;View Certificates&quot;.
+                  2. Scroll down to &quot;Certificates&quot; and click &quot;View
+                  Certificates&quot;.
                 </p>
                 <p>
-                  3. Under the &quot;Your Certificates&quot; tab, click
-                  &quot;Import...&quot; and select the previously downloaded
-                  &quot;ararat.pfx&quot; file. Enter your password when
-                  prompted, or leave blank if one has not been set.
+                  3. Under the &quot;Your Certificates&quot; tab, click &quot;Import...&quot; and
+                  select the previously downloaded &quot;ararat.pfx&quot; file. Enter your password
+                  when prompted, or leave blank if one has not been set.
                 </p>
-                <p>
-                  4. Restart Firefox and navigate to Hye Ararat. Select the
-                  Ararat certificate.
-                </p>
+                <p>4. Restart Firefox and navigate to Hye Ararat. Select the Ararat certificate.</p>
               </TabsContent>
               <TabsContent value="edge">
                 <p>1. Go to the following address:</p>
                 <pre className="bg-gray-800 text-white p-2 rounded-md overflow-x-auto">
                   <code>edge://settings/privacy</code>
                 </pre>
+                <p>2. Under &quot;Security&quot;, press &quot;Manage certificates&quot;.</p>
                 <p>
-                  2. Under &quot;Security&quot;, press &quot;Manage
-                  certificates&quot;.
+                  3. Click &quot;Import...&quot; then &quot;Next&quot; and select the
+                  &quot;ararat.pfx&quot; file previously downloaded.
                 </p>
                 <p>
-                  3. Click &quot;Import...&quot; then &quot;Next&quot; and
-                  select the &quot;ararat.pfx&quot; file previously downloaded.
+                  4. Select &quot;Automatically select the certificate store&quot;, then click
+                  &quot;Next&quot; then &quot;Finish&quot;.
                 </p>
-                <p>
-                  4. Select &quot;Automatically select the certificate
-                  store&quot;, then click &quot;Next&quot; then
-                  &quot;Finish&quot;.
-                </p>
-                <p>
-                  5. Restart Edge and navigate to Hye Ararat. Select the Ararat
-                  certificate.
-                </p>
+                <p>5. Restart Edge and navigate to Hye Ararat. Select the Ararat certificate.</p>
               </TabsContent>
               <TabsContent value="macOS">
+                <p>1. Open &quot;Keychain Access&quot; from Applications &gt; Utilities.</p>
                 <p>
-                  1. Open &quot;Keychain Access&quot; from Applications &gt;
-                  Utilities.
+                  2. Select the &quot;login&quot; keychain, and drag and drop the downloaded
+                  &quot;ararat.pfx&quot; file.
                 </p>
                 <p>
-                  2. Select the &quot;login&quot; keychain, and drag and drop
-                  the downloaded &quot;ararat.pfx&quot; file.
-                </p>
-                <p>
-                  3. Restart your browser and navigate to Hye Ararat. Select the
-                  Ararat certificate.
+                  3. Restart your browser and navigate to Hye Ararat. Select the Ararat certificate.
                 </p>
               </TabsContent>
             </Tabs>

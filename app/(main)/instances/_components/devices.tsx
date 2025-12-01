@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useProfiles } from "../../_hooks/profiles";
-import Devices from "../../_components/devices";
-import type { Device } from "../_lib/instances.d";
+import * as React from 'react';
+import { useProfiles } from '../../_hooks/profiles';
+import Devices from '../../_components/devices';
+import type { Device } from '../_lib/instances.d';
 
 /**
  * Props for the InstanceDevices component
@@ -16,7 +16,7 @@ export interface InstanceDevicesProps {
   /** Callback when devices change */
   onDevicesChange?: (devices: Record<string, Device>) => void;
   /** Instance type for device filtering */
-  instanceType?: "virtual-machine" | "container";
+  instanceType?: 'virtual-machine' | 'container';
 }
 
 /**
@@ -58,14 +58,14 @@ export default function InstanceDevices({
       inheritedDevices.root &&
       devices.root &&
       Object.keys(devices.root).length === 1 &&
-      devices.root.type === "disk"
+      devices.root.type === 'disk'
     ) {
       delete result.root;
     }
 
     // Only add root disk if not inherited and not already present
     if (!inheritedDevices.root && !devices.root) {
-      result.root = { type: "disk", path: "/" };
+      result.root = { type: 'disk', path: '/' };
     }
     return result;
   }, [devices, inheritedDevices]);
@@ -73,12 +73,7 @@ export default function InstanceDevices({
   // Sync effectiveDevices changes to parent
   React.useEffect(() => {
     // Add root disk when needed (not inherited and not present)
-    if (
-      !inheritedDevices.root &&
-      effectiveDevices.root &&
-      !devices.root &&
-      onDevicesChange
-    ) {
+    if (!inheritedDevices.root && effectiveDevices.root && !devices.root && onDevicesChange) {
       onDevicesChange(effectiveDevices);
     }
     // Remove auto-created root disk when profile now provides one
@@ -86,7 +81,7 @@ export default function InstanceDevices({
       inheritedDevices.root &&
       devices.root &&
       Object.keys(devices.root).length === 1 &&
-      devices.root.type === "disk" &&
+      devices.root.type === 'disk' &&
       onDevicesChange
     ) {
       const { root, ...rest } = devices;
@@ -98,9 +93,7 @@ export default function InstanceDevices({
     return (
       <div className="flex items-center justify-center h-full p-8">
         <div className="rounded-md bg-destructive/10 border border-destructive/20 p-4 max-w-md">
-          <p className="text-sm text-destructive font-medium">
-            Failed to load profiles
-          </p>
+          <p className="text-sm text-destructive font-medium">Failed to load profiles</p>
           <p className="text-xs text-destructive/80 mt-1">
             Unable to fetch device configurations from selected profiles.
           </p>
@@ -112,9 +105,7 @@ export default function InstanceDevices({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full p-8">
-        <div className="text-sm text-muted-foreground">
-          Loading device configurations...
-        </div>
+        <div className="text-sm text-muted-foreground">Loading device configurations...</div>
       </div>
     );
   }

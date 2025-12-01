@@ -1,5 +1,5 @@
-import type { CertificateResponse } from "../_lib/certificate.d";
-import useSWR from "swr";
+import type { CertificateResponse } from '../_lib/certificate.d';
+import useSWR from 'swr';
 
 const fetcher = (...args: Parameters<typeof fetch>) =>
   fetch(...args)

@@ -1,4 +1,4 @@
-import { StandardResponse, StatusCode } from "../../../app/_lib/response";
+import { StandardResponse, StatusCode } from '../../../app/_lib/response';
 
 export interface InstanceStateDiskUsage {
   usage?: number;
@@ -14,7 +14,7 @@ export interface InstanceStateMemory {
 }
 
 export interface InstanceStateNetworkAddress {
-  family: "inet" | "inet6" | string;
+  family: 'inet' | 'inet6' | string;
   address: string;
   scope?: string;
 }
@@ -56,7 +56,7 @@ export interface Device extends Record<string, string> {
 export interface Instance {
   name: string;
   description?: string;
-  type: "container" | "virtual-machine" | string;
+  type: 'container' | 'virtual-machine' | string;
   status: string;
   status_code: StatusCode;
   architecture?: string;
@@ -85,11 +85,11 @@ export interface CreateInstanceBody {
   description?: string;
   ephemeral?: boolean;
   source: {
-    type: "image" | "none";
+    type: 'image' | 'none';
     fingerprint?: string;
     alias?: string;
     server?: string;
-    mode?: "pull";
-    protocol?: "simplestreams" | "oci";
+    mode?: 'pull';
+    protocol?: 'simplestreams' | 'oci';
   };
 }

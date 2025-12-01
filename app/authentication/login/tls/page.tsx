@@ -4,20 +4,18 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/app/_components/ui/card";
-import TlsOptions from "./tlsOptions";
+} from '@/app/_components/ui/card';
+import TlsOptions from './tlsOptions';
 export const metadata = {
-  title: "TLS Login | Hye Ararat",
-  description: "Login to Hye Ararat via TLS",
+  title: 'TLS Login | Hye Ararat',
+  description: 'Login to Hye Ararat via TLS',
 };
 export default function TLSAuth() {
   return (
     <Card>
       <CardHeader>
         <CardTitle>TLS Authentication</CardTitle>
-        <CardDescription>
-          What certificate would you like to use?
-        </CardDescription>
+        <CardDescription>What certificate would you like to use?</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="w-full">

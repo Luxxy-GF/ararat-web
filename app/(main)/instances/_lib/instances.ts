@@ -1,4 +1,4 @@
-import type { Device } from "./instances.d";
+import type { Device } from './instances.d';
 
 /**
  * Check if a valid root disk exists in the devices (either direct or inherited)
@@ -9,7 +9,7 @@ export function hasValidRootDisk(
 ): boolean {
   const allDevices = { ...inheritedDevices, ...devices };
   const rootDisk = Object.values(allDevices).find(
-    (device) => device.type === "disk" && device.path === "/"
+    (device) => device.type === 'disk' && device.path === '/'
   );
   return rootDisk !== undefined && !!rootDisk.pool;
 }
@@ -22,16 +22,16 @@ export async function createInstance(
   project: string | null
 ): Promise<{ operation?: string; error?: string }> {
   const params = new URLSearchParams();
-  if (project && project !== "all") {
-    params.set("project", project);
+  if (project && project !== 'all') {
+    params.set('project', project);
   }
-  const url = `/1.0/instances${params.toString() ? `?${params.toString()}` : ""}`;
+  const url = `/1.0/instances${params.toString() ? `?${params.toString()}` : ''}`;
 
   try {
     const response = await fetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
     });
@@ -46,18 +46,16 @@ export async function createInstance(
 
     if (!response.ok) {
       return {
-        error:
-          (data.error as string) ||
-          `HTTP ${response.status}: ${response.statusText}`,
+        error: (data.error as string) || `HTTP ${response.status}: ${response.statusText}`,
       };
     }
 
-    if (data.type === "error") {
-      return { error: (data.error as string) || "Failed to create instance" };
+    if (data.type === 'error') {
+      return { error: (data.error as string) || 'Failed to create instance' };
     }
     return { operation: data.operation as string | undefined };
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Network error";
+    const message = err instanceof Error ? err.message : 'Network error';
     return { error: message };
   }
 }

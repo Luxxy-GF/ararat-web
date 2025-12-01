@@ -1,11 +1,9 @@
-"use client";
+'use client';
 
-import { createContext, use } from "react";
-import AuthenticationContext, {
-  AuthenticationContextData,
-} from "../../_context/authentication";
-import { useClientCertificate } from "@/app/_hooks/certificate";
-import IsClientContext from "@/app/_context/isClient";
+import { createContext, use } from 'react';
+import AuthenticationContext, { AuthenticationContextData } from '../../_context/authentication';
+import { useClientCertificate } from '@/app/_hooks/certificate';
+import IsClientContext from '@/app/_context/isClient';
 
 interface UserContextData {
   id: string;

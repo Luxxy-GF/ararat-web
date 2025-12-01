@@ -1,9 +1,9 @@
-"use client";
-import { Button } from "@/app/_components/ui/button";
-import { Skeleton } from "@/app/_components/ui/skeleton";
-import { useServerConfiguration } from "@/app/_hooks/server";
-import { useRouter } from "next/navigation";
-import React, { startTransition, useEffect } from "react";
+'use client';
+import { Button } from '@/app/_components/ui/button';
+import { Skeleton } from '@/app/_components/ui/skeleton';
+import { useServerConfiguration } from '@/app/_hooks/server';
+import { useRouter } from 'next/navigation';
+import React, { startTransition, useEffect } from 'react';
 
 function TLSButton(props: React.ComponentProps<typeof Button>) {
   return <Button {...props}>TLS</Button>;
@@ -19,10 +19,10 @@ export default function LoginMethodsComponent() {
         startTransition(() => {
           setAuthenticating(true);
         });
-        if (data.auth_methods[0] == "tls") {
-          console.log("Redirecting to TLS auth");
+        if (data.auth_methods[0] == 'tls') {
+          console.log('Redirecting to TLS auth');
           setTimeout(() => {
-            router.replace("/authentication/login/tls");
+            router.replace('/authentication/login/tls');
           }, 1);
         }
       }
@@ -36,20 +36,12 @@ export default function LoginMethodsComponent() {
             onClick: () => setAuthenticating(true),
             loading: authenticating,
           };
-          if (method == "tls")
+          if (method == 'tls')
             return (
-              <TLSButton
-                className={isValidating ? "animate-pulse" : ""}
-                key={method}
-                {...props}
-              />
+              <TLSButton className={isValidating ? 'animate-pulse' : ''} key={method} {...props} />
             );
           return (
-            <Button
-              className={isValidating ? "animate-pulse" : ""}
-              key={method}
-              {...props}
-            >
+            <Button className={isValidating ? 'animate-pulse' : ''} key={method} {...props}>
               {method}
             </Button>
           );

@@ -1,20 +1,13 @@
-"use client";
+'use client';
 
-import {
-  createContext,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  use,
-} from "react";
-import { useProjects } from "@/app/(main)/_hooks/projects";
-import type { Project } from "@/app/(main)/_lib/projects.d";
-import { mutate } from "swr";
-import IsClientContext from "@/app/_context/isClient";
+import { createContext, useCallback, useEffect, useMemo, useState, use } from 'react';
+import { useProjects } from '@/app/(main)/_hooks/projects';
+import type { Project } from '@/app/(main)/_lib/projects.d';
+import { mutate } from 'swr';
+import IsClientContext from '@/app/_context/isClient';
 
-export const ALL_PROJECTS_VALUE = "all";
-const STORAGE_KEY = "ararat-selected-project";
+export const ALL_PROJECTS_VALUE = 'all';
+const STORAGE_KEY = 'ararat-selected-project';
 
 interface ProjectsContextValue {
   projects: Project[];
@@ -49,7 +42,7 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [data, isValidating]);
   const [storedProject, setStoredProject] = useState<string>(() => {
-    if (typeof window === "undefined") return ALL_PROJECTS_VALUE;
+    if (typeof window === 'undefined') return ALL_PROJECTS_VALUE;
     return window.localStorage.getItem(STORAGE_KEY) ?? ALL_PROJECTS_VALUE;
   });
 
@@ -64,7 +57,7 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
   }, [data, storedProject]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
     window.localStorage.setItem(STORAGE_KEY, currentProject);
   }, [currentProject]);
 
@@ -73,8 +66,7 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(() => {
-    const effectiveProject =
-      currentProject === ALL_PROJECTS_VALUE ? null : currentProject;
+    const effectiveProject = currentProject === ALL_PROJECTS_VALUE ? null : currentProject;
     return {
       projects: data ?? [],
       currentProject,
@@ -84,15 +76,7 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
       isValidating: !isClient || isValidating,
       error: error ?? null,
     };
-  }, [
-    currentProject,
-    data,
-    error,
-    isLoading,
-    isValidating,
-    setProject,
-    isClient,
-  ]);
+  }, [currentProject, data, error, isLoading, isValidating, setProject, isClient]);
 
   return <ProjectsContext value={value}>{children}</ProjectsContext>;
 }

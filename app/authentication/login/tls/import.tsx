@@ -1,17 +1,13 @@
-"use client";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/app/_components/ui/alert";
-import { AlertCircleIcon, CircleCheck, InfoIcon } from "lucide-react";
-import { Button } from "@/app/_components/ui/button";
-import { Input } from "@/app/_components/ui/input";
-import { useState } from "react";
-import { addCertificate } from "@/app/_lib/certificate";
+'use client';
+import { Alert, AlertDescription, AlertTitle } from '@/app/_components/ui/alert';
+import { AlertCircleIcon, CircleCheck, InfoIcon } from 'lucide-react';
+import { Button } from '@/app/_components/ui/button';
+import { Input } from '@/app/_components/ui/input';
+import { useState } from 'react';
+import { addCertificate } from '@/app/_lib/certificate';
 
 export default function ImportCertificate() {
-  const [trustToken, setTrustToken] = useState("");
+  const [trustToken, setTrustToken] = useState('');
   const [addingCertificate, setAddingCertificate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
@@ -22,9 +18,7 @@ export default function ImportCertificate() {
           <>
             <CircleCheck color="lime" />
             <AlertTitle>Certificate Imported Successfully</AlertTitle>
-            <AlertDescription>
-              You can now use TLS authentication to log in.
-            </AlertDescription>
+            <AlertDescription>You can now use TLS authentication to log in.</AlertDescription>
           </>
         ) : null}
         {!error && !success ? (
@@ -65,14 +59,14 @@ export default function ImportCertificate() {
               trustToken
                 .trim()
                 .split(/\r?\n|\r|\n/g)
-                .at(-1) || "",
+                .at(-1) || '',
               true
             );
           } catch (error) {
             if (error instanceof Error) {
               setError(error.message);
             } else {
-              setError("An unknown error occurred");
+              setError('An unknown error occurred');
             }
             return;
           } finally {

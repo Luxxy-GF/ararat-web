@@ -4,13 +4,13 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/app/_components/ui/card";
-import LoginMethods from "./loginMethods";
-import AlreadyAuthenticated from "../_components/alreadyAuthenticated";
+} from '@/app/_components/ui/card';
+import LoginMethods from './loginMethods';
+import AlreadyAuthenticated from '../_components/alreadyAuthenticated';
 
 export const metadata = {
-  title: "Login | Hye Ararat",
-  description: "Login to Hye Ararat",
+  title: 'Login | Hye Ararat',
+  description: 'Login to Hye Ararat',
 };
 
 export default function Authentication() {
@@ -19,9 +19,7 @@ export default function Authentication() {
       <Card>
         <CardHeader>
           <CardTitle>Login</CardTitle>
-          <CardDescription>
-            Please select a login method to continue
-          </CardDescription>
+          <CardDescription>Please select a login method to continue</CardDescription>
         </CardHeader>
         <CardContent>
           <AlreadyAuthenticated />

@@ -1,7 +1,7 @@
-"use client";
-import { Separator } from "@/app/_components/ui/separator";
-import { SidebarTrigger } from "@/app/_components/ui/sidebar";
-import { GlobeIcon } from "lucide-react";
+'use client';
+import { Separator } from '@/app/_components/ui/separator';
+import { SidebarTrigger } from '@/app/_components/ui/sidebar';
+import { GlobeIcon } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -11,28 +11,20 @@ import {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from "../../_components/ui/select";
-import { use } from "react";
-import ProjectsContext from "@/app/(main)/_context/projects";
+} from '../../_components/ui/select';
+import { use } from 'react';
+import ProjectsContext from '@/app/(main)/_context/projects';
 
 export function SiteHeader() {
-  const { projects, currentProject, setProject, isLoading } =
-    use(ProjectsContext);
+  const { projects, currentProject, setProject, isLoading } = use(ProjectsContext);
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
-        <Separator
-          orientation="vertical"
-          className="mx-2 data-[orientation=vertical]:h-4"
-        />
+        <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
 
         <h1 className="text-base font-medium">Instances</h1>
-        <Select
-          value={currentProject}
-          onValueChange={setProject}
-          disabled={isLoading}
-        >
+        <Select value={currentProject} onValueChange={setProject} disabled={isLoading}>
           <SelectTrigger size="sm" className="ml-auto min-w-48 justify-between">
             <SelectValue placeholder="Select Project" />
           </SelectTrigger>

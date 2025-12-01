@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { createContext, use, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
-import { useRouter } from "next/navigation";
-import { useServerConfiguration } from "../_hooks/server";
-import IsClientContext from "./isClient";
+import { createContext, use, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useServerConfiguration } from '../_hooks/server';
+import IsClientContext from './isClient';
 
 export interface AuthenticationContextData {
   isAuthenticated: boolean;
@@ -19,11 +19,7 @@ const AuthenticationContext = createContext({
 
 export default AuthenticationContext;
 
-export function AuthenticationProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function AuthenticationProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isClient = use(IsClientContext);
@@ -31,13 +27,13 @@ export function AuthenticationProvider({
   const { isValidating, isLoading, data } = useServerConfiguration();
   useEffect(() => {
     if (!isValidating) {
-      if (data?.auth == "untrusted") {
-        if (!pathname.startsWith("/authentication")) {
-          router.replace("/authentication/login");
+      if (data?.auth == 'untrusted') {
+        if (!pathname.startsWith('/authentication')) {
+          router.replace('/authentication/login');
         }
-      } else if (data?.auth == "trusted") {
-        if (pathname === "/") {
-          router.replace("/instances");
+      } else if (data?.auth == 'trusted') {
+        if (pathname === '/') {
+          router.replace('/instances');
         }
       }
     }
@@ -47,7 +43,7 @@ export function AuthenticationProvider({
     <AuthenticationContext
       value={{
         data: {
-          isAuthenticated: data?.auth == "trusted" ? true : false,
+          isAuthenticated: data?.auth == 'trusted' ? true : false,
           method: data?.auth_user_method,
           identifier: data?.auth_user_name,
         },

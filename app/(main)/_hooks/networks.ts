@@ -1,5 +1,5 @@
-import useSWR from "swr";
-import { jsonFetcher } from "@/app/_lib/fetcher";
+import useSWR from 'swr';
+import { jsonFetcher } from '@/app/_lib/fetcher';
 
 export interface NetworkAddress {
   family: string;
@@ -19,8 +19,7 @@ export interface Network {
 }
 
 export function useNetworks(project?: string | null) {
-  const projectParam =
-    project && project !== "all" ? `?project=${project}` : "";
+  const projectParam = project && project !== 'all' ? `?project=${project}` : '';
 
   const fetcher = async (url: string): Promise<Network[]> => {
     const res = await jsonFetcher(url);

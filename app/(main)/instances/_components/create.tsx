@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Button } from "@/app/_components/ui/button";
+import { Button } from '@/app/_components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/app/_components/ui/dialog";
+} from '@/app/_components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -17,53 +17,48 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/app/_components/ui/form";
+} from '@/app/_components/ui/form';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/app/_components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/app/_components/ui/tabs";
-import { useState, useMemo, use, useCallback, useRef } from "react";
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import z from "zod";
-import ImageSelector, { SelectableImage } from "./imageSelector";
-import InstanceProperties from "@/app/(main)/instances/_components/properties";
-import InstanceDevices from "./devices";
-import type { Device } from "@/app/(main)/instances/_lib/instances.d";
-import { hasValidRootDisk, createInstance } from "@/app/(main)/instances/_lib/instances";
-import { toYaml, fromYaml } from "@/app/(main)/_lib/yaml";
+} from '@/app/_components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/_components/ui/tabs';
+import { useState, useMemo, use, useCallback, useRef } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import z from 'zod';
+import ImageSelector, { SelectableImage } from './imageSelector';
+import InstanceProperties from '@/app/(main)/instances/_components/properties';
+import InstanceDevices from './devices';
+import type { Device } from '@/app/(main)/instances/_lib/instances.d';
+import { hasValidRootDisk, createInstance } from '@/app/(main)/instances/_lib/instances';
+import { toYaml, fromYaml } from '@/app/(main)/_lib/yaml';
 
-import GeneralConfiguration from "./general-configuration";
-import { useProfiles } from "@/app/(main)/_hooks/profiles";
-import ProjectsContext from "@/app/(main)/_context/projects";
-import { Spinner } from "@/app/_components/ui/spinner";
-import { toast } from "sonner";
-import Editor, { OnMount } from "@monaco-editor/react";
-import { useTheme } from "next-themes";
-import { mutate } from "swr";
-import type * as Monaco from "monaco-editor";
+import GeneralConfiguration from './general-configuration';
+import { useProfiles } from '@/app/(main)/_hooks/profiles';
+import ProjectsContext from '@/app/(main)/_context/projects';
+import { Spinner } from '@/app/_components/ui/spinner';
+import { toast } from 'sonner';
+import Editor, { OnMount } from '@monaco-editor/react';
+import { useTheme } from 'next-themes';
+import { mutate } from 'swr';
+import type * as Monaco from 'monaco-editor';
 
 const sourceSchema = z
   .object({
-    type: z.enum(["image", "none"]),
+    type: z.enum(['image', 'none']),
     fingerprint: z.string().optional(),
     alias: z.string().optional(),
     server: z.string().optional(),
-    mode: z.literal("pull").optional(),
-    protocol: z.enum(["simplestreams", "oci"]).optional(),
+    mode: z.literal('pull').optional(),
+    protocol: z.enum(['simplestreams', 'oci']).optional(),
   })
   .refine(
     (data) => {
-      if (data.type === "none") {
+      if (data.type === 'none') {
         return true;
       }
       if (data.fingerprint) {
@@ -72,8 +67,8 @@ const sourceSchema = z
       return Boolean(data.mode && data.server && data.alias && data.protocol);
     },
     {
-      message: "Select an image to continue",
-      path: ["alias"],
+      message: 'Select an image to continue',
+      path: ['alias'],
     }
   );
 
@@ -81,11 +76,11 @@ const formSchema = z.object({
   // only letters, numbers, and dashes. cannot start with digit or dash. name must not end with dash
   name: z
     .string()
-    .min(3, "Instance name must be at least 3 characters long")
-    .max(50, "Instance name must be at most 50 characters long")
+    .min(3, 'Instance name must be at least 3 characters long')
+    .max(50, 'Instance name must be at most 50 characters long')
     .regex(
       /^[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]$/,
-      "Instance name must start with a letter and can only contain letters, numbers, and dashes. It cannot end with a dash."
+      'Instance name must start with a letter and can only contain letters, numbers, and dashes. It cannot end with a dash.'
     ),
   description: z.string().optional(),
   ephemeral: z.boolean().optional(),
@@ -94,18 +89,14 @@ const formSchema = z.object({
 export default function CreateInstance({ className }: { className?: string }) {
   const { effectiveProject } = use(ProjectsContext);
   const { resolvedTheme } = useTheme();
-  const [profilesSelected, setProfilesSelected] = useState<string[]>([
-    "default",
-  ]);
-  const [instanceType, setInstanceType] = useState<
-    "virtual-machine" | "container"
-  >("container");
+  const [profilesSelected, setProfilesSelected] = useState<string[]>(['default']);
+  const [instanceType, setInstanceType] = useState<'virtual-machine' | 'container'>('container');
   const [devices, setDevices] = useState<Record<string, Device>>({});
   const [config, setConfig] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [yamlError, setYamlError] = useState<string | null>(null);
-  const [yamlContent, setYamlContent] = useState<string>("");
+  const [yamlContent, setYamlContent] = useState<string>('');
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
 
   const { data: profiles } = useProfiles();
@@ -146,13 +137,13 @@ export default function CreateInstance({ className }: { className?: string }) {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    mode: "onChange",
+    mode: 'onChange',
     defaultValues: {
-      name: "",
+      name: '',
       description: undefined,
       ephemeral: undefined,
       source: {
-        type: "image",
+        type: 'image',
         fingerprint: undefined,
         alias: undefined,
         server: undefined,
@@ -162,49 +153,47 @@ export default function CreateInstance({ className }: { className?: string }) {
     },
   });
 
-  const [currentTab, setCurrentTab] = useState("properties");
+  const [currentTab, setCurrentTab] = useState('properties');
   const [showYamlEditor, setShowYamlEditor] = useState(false);
   const sourceType = useWatch({
     control: form.control,
-    name: "source.type",
+    name: 'source.type',
   });
-  const selectingImage = sourceType === "image" && currentTab === "source";
-  const [selectedImage, setSelectedImage] = useState<SelectableImage | null>(
-    null
-  );
+  const selectingImage = sourceType === 'image' && currentTab === 'source';
+  const [selectedImage, setSelectedImage] = useState<SelectableImage | null>(null);
 
   const resetSourceFields = () => {
-    form.setValue("source.fingerprint", undefined, { shouldDirty: true });
-    form.setValue("source.mode", undefined, { shouldDirty: true });
-    form.setValue("source.server", undefined, { shouldDirty: true });
-    form.setValue("source.alias", undefined, { shouldDirty: true });
-    form.setValue("source.protocol", undefined, { shouldDirty: true });
+    form.setValue('source.fingerprint', undefined, { shouldDirty: true });
+    form.setValue('source.mode', undefined, { shouldDirty: true });
+    form.setValue('source.server', undefined, { shouldDirty: true });
+    form.setValue('source.alias', undefined, { shouldDirty: true });
+    form.setValue('source.protocol', undefined, { shouldDirty: true });
   };
 
   const handleImageSelect = (image: SelectableImage) => {
     setSelectedImage(image);
     resetSourceFields();
     if (image.local && image.fingerprint) {
-      form.setValue("source.fingerprint", image.fingerprint, {
+      form.setValue('source.fingerprint', image.fingerprint, {
         shouldDirty: true,
         shouldValidate: true,
       });
     } else if (image.remote) {
-      form.setValue("source.mode", "pull", { shouldDirty: true });
-      form.setValue("source.server", image.remote.server, {
+      form.setValue('source.mode', 'pull', { shouldDirty: true });
+      form.setValue('source.server', image.remote.server, {
         shouldDirty: true,
         shouldValidate: true,
       });
-      form.setValue("source.alias", image.remote.alias, {
+      form.setValue('source.alias', image.remote.alias, {
         shouldDirty: true,
         shouldValidate: true,
       });
-      form.setValue("source.protocol", image.remote.protocol, {
+      form.setValue('source.protocol', image.remote.protocol, {
         shouldDirty: true,
         shouldValidate: true,
       });
     }
-    form.trigger("source");
+    form.trigger('source');
   };
 
   // Check if form is valid for submission
@@ -234,7 +223,7 @@ export default function CreateInstance({ className }: { className?: string }) {
     const values = form.getValues();
     const source: Record<string, unknown> = { type: values.source.type };
 
-    if (values.source.type === "image") {
+    if (values.source.type === 'image') {
       if (values.source.fingerprint) {
         source.fingerprint = values.source.fingerprint;
       } else if (values.source.alias) {
@@ -275,12 +264,9 @@ export default function CreateInstance({ className }: { className?: string }) {
   }, [buildPayload]);
 
   // Handle tab change (for main tabs, not YAML)
-  const handleTabChange = useCallback(
-    (tab: string) => {
-      setCurrentTab(tab);
-    },
-    []
-  );
+  const handleTabChange = useCallback((tab: string) => {
+    setCurrentTab(tab);
+  }, []);
 
   // Toggle YAML editor visibility
   const toggleYamlEditor = useCallback(() => {
@@ -308,64 +294,58 @@ export default function CreateInstance({ className }: { className?: string }) {
         const parsed = fromYaml(value);
 
         // Update form values from YAML
-        if (typeof parsed.name === "string") {
-          form.setValue("name", parsed.name, { shouldValidate: true });
+        if (typeof parsed.name === 'string') {
+          form.setValue('name', parsed.name, { shouldValidate: true });
         }
-        if (typeof parsed.description === "string") {
-          form.setValue("description", parsed.description);
+        if (typeof parsed.description === 'string') {
+          form.setValue('description', parsed.description);
         }
-        if (typeof parsed.ephemeral === "boolean") {
-          form.setValue("ephemeral", parsed.ephemeral);
+        if (typeof parsed.ephemeral === 'boolean') {
+          form.setValue('ephemeral', parsed.ephemeral);
         }
-        if (
-          parsed.type === "container" ||
-          parsed.type === "virtual-machine"
-        ) {
+        if (parsed.type === 'container' || parsed.type === 'virtual-machine') {
           setInstanceType(parsed.type);
         }
         if (Array.isArray(parsed.profiles)) {
           setProfilesSelected(parsed.profiles as string[]);
         }
-        if (parsed.devices && typeof parsed.devices === "object") {
+        if (parsed.devices && typeof parsed.devices === 'object') {
           setDevices(parsed.devices as Record<string, Device>);
         }
-        if (parsed.config && typeof parsed.config === "object") {
+        if (parsed.config && typeof parsed.config === 'object') {
           setConfig(parsed.config as Record<string, string>);
         }
-        if (parsed.source && typeof parsed.source === "object") {
+        if (parsed.source && typeof parsed.source === 'object') {
           const source = parsed.source as Record<string, unknown>;
-          if (source.type === "none" || source.type === "image") {
-            form.setValue("source.type", source.type, { shouldValidate: true });
-            if (source.type === "image") {
-              if (typeof source.fingerprint === "string") {
-                form.setValue("source.fingerprint", source.fingerprint, {
+          if (source.type === 'none' || source.type === 'image') {
+            form.setValue('source.type', source.type, { shouldValidate: true });
+            if (source.type === 'image') {
+              if (typeof source.fingerprint === 'string') {
+                form.setValue('source.fingerprint', source.fingerprint, {
                   shouldValidate: true,
                 });
               }
-              if (typeof source.alias === "string") {
-                form.setValue("source.alias", source.alias, {
+              if (typeof source.alias === 'string') {
+                form.setValue('source.alias', source.alias, {
                   shouldValidate: true,
                 });
               }
-              if (typeof source.server === "string") {
-                form.setValue("source.server", source.server);
+              if (typeof source.server === 'string') {
+                form.setValue('source.server', source.server);
               }
-              if (source.mode === "pull") {
-                form.setValue("source.mode", source.mode);
+              if (source.mode === 'pull') {
+                form.setValue('source.mode', source.mode);
               }
-              if (
-                source.protocol === "simplestreams" ||
-                source.protocol === "oci"
-              ) {
-                form.setValue("source.protocol", source.protocol);
+              if (source.protocol === 'simplestreams' || source.protocol === 'oci') {
+                form.setValue('source.protocol', source.protocol);
               }
             }
           }
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Invalid YAML syntax";
+        const message = error instanceof Error ? error.message : 'Invalid YAML syntax';
         setYamlError(message);
-        console.error("YAML parsing error:", error);
+        console.error('YAML parsing error:', error);
       }
     },
     [form, setInstanceType, setProfilesSelected, setDevices, setConfig]
@@ -375,13 +355,13 @@ export default function CreateInstance({ className }: { className?: string }) {
   const handleSubmit = async () => {
     const valid = await form.trigger();
     if (!valid) {
-      toast.error("Please fix the form errors before submitting");
+      toast.error('Please fix the form errors before submitting');
       return;
     }
 
     if (!rootDiskValid) {
-      toast.error("A valid root disk with a storage pool is required");
-      setCurrentTab("devices");
+      toast.error('A valid root disk with a storage pool is required');
+      setCurrentTab('devices');
       return;
     }
 
@@ -395,26 +375,22 @@ export default function CreateInstance({ className }: { className?: string }) {
       } else {
         toast.success(`Instance "${form.getValues().name}" creation started`);
         // Invalidate the instances list
-        mutate(
-          (key) => typeof key === "string" && key.startsWith("/1.0/instances")
-        );
+        mutate((key) => typeof key === 'string' && key.startsWith('/1.0/instances'));
         setDialogOpen(false);
         // Reset form
         form.reset();
         setDevices({});
         setConfig({});
         setSelectedImage(null);
-        setProfilesSelected(["default"]);
-        setInstanceType("container");
-        setYamlContent("");
-        setCurrentTab("properties");
+        setProfilesSelected(['default']);
+        setInstanceType('container');
+        setYamlContent('');
+        setCurrentTab('properties');
         setYamlError(null);
         setShowYamlEditor(false);
       }
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create instance"
-      );
+      toast.error(error instanceof Error ? error.message : 'Failed to create instance');
     } finally {
       setIsSubmitting(false);
     }
@@ -431,19 +407,24 @@ export default function CreateInstance({ className }: { className?: string }) {
         }}
       >
         <Form {...form}>
-          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit();
+            }}
+          >
             <DialogTrigger asChild>
-              <Button className={className} onClick={() => setDialogOpen(true)}>Create Instance</Button>
+              <Button className={className} onClick={() => setDialogOpen(true)}>
+                Create Instance
+              </Button>
             </DialogTrigger>
             <DialogContent
               className={`max-h-[90vh] w-full flex flex-col transition-all duration-200 ${
                 selectingImage
-                  ? "sm:max-w-5xl"
-                  : currentTab === "devices" ||
-                    currentTab === "general" ||
-                    showYamlEditor
-                  ? "sm:max-w-6xl h-[90vh]"
-                  : "sm:max-w-xl"
+                  ? 'sm:max-w-5xl'
+                  : currentTab === 'devices' || currentTab === 'general' || showYamlEditor
+                    ? 'sm:max-w-6xl h-[90vh]'
+                    : 'sm:max-w-xl'
               }`}
             >
               <DialogHeader className="shrink-0">
@@ -455,22 +436,14 @@ export default function CreateInstance({ className }: { className?: string }) {
                   <div className="flex flex-col flex-1 min-h-0">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-sm text-muted-foreground">
-                        Edit the raw YAML configuration. Changes will be synced
-                        with the form fields.
+                        Edit the raw YAML configuration. Changes will be synced with the form
+                        fields.
                       </p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={toggleYamlEditor}
-                      >
+                      <Button variant="ghost" size="sm" onClick={toggleYamlEditor}>
                         Back to form
                       </Button>
                     </div>
-                    {yamlError && (
-                      <p className="text-sm text-destructive mb-2">
-                        {yamlError}
-                      </p>
-                    )}
+                    {yamlError && <p className="text-sm text-destructive mb-2">{yamlError}</p>}
                     <div className="flex-1 min-h-0 border rounded-md overflow-hidden">
                       <Editor
                         height="100%"
@@ -478,11 +451,11 @@ export default function CreateInstance({ className }: { className?: string }) {
                         value={yamlContent}
                         onChange={handleYamlChange}
                         onMount={handleEditorMount}
-                        theme={resolvedTheme === "dark" ? "vs-dark" : "light"}
+                        theme={resolvedTheme === 'dark' ? 'vs-dark' : 'light'}
                         options={{
                           minimap: { enabled: false },
                           fontSize: 14,
-                          lineNumbers: "on",
+                          lineNumbers: 'on',
                           scrollBeyondLastLine: false,
                           automaticLayout: true,
                           tabSize: 2,
@@ -496,19 +469,13 @@ export default function CreateInstance({ className }: { className?: string }) {
                     value={currentTab}
                     onValueChange={handleTabChange}
                   >
-                    <TabsList
-                      className="w-full shrink-0"
-                      defaultValue="properties"
-                    >
+                    <TabsList className="w-full shrink-0" defaultValue="properties">
                       <TabsTrigger value="properties">Properties</TabsTrigger>
                       <TabsTrigger value="source">Source</TabsTrigger>
                       <TabsTrigger value="devices">Devices</TabsTrigger>
                       <TabsTrigger value="general">Configuration</TabsTrigger>
                     </TabsList>
-                    <TabsContent
-                      value="properties"
-                      className="overflow-auto flex-1 min-h-0 px-1"
-                    >
+                    <TabsContent value="properties" className="overflow-auto flex-1 min-h-0 px-1">
                       <InstanceProperties
                         form={form}
                         profilesSelected={profilesSelected}
@@ -517,10 +484,7 @@ export default function CreateInstance({ className }: { className?: string }) {
                         setInstanceType={setInstanceType}
                       />
                     </TabsContent>
-                    <TabsContent
-                      value="source"
-                      className="overflow-auto flex-1 min-h-0"
-                    >
+                    <TabsContent value="source" className="overflow-auto flex-1 min-h-0">
                       <FormField
                         control={form.control}
                         name="source.type"
@@ -531,7 +495,7 @@ export default function CreateInstance({ className }: { className?: string }) {
                               <Select
                                 onValueChange={(value) => {
                                   field.onChange(value);
-                                  if (value === "none") {
+                                  if (value === 'none') {
                                     setSelectedImage(null);
                                     resetSourceFields();
                                   }
@@ -559,10 +523,7 @@ export default function CreateInstance({ className }: { className?: string }) {
                         />
                       ) : null}
                     </TabsContent>
-                    <TabsContent
-                      value="devices"
-                      className="flex-1 min-h-0 overflow-hidden"
-                    >
+                    <TabsContent value="devices" className="flex-1 min-h-0 overflow-hidden">
                       <InstanceDevices
                         profiles={profilesSelected}
                         devices={devices}
@@ -570,10 +531,7 @@ export default function CreateInstance({ className }: { className?: string }) {
                         instanceType={instanceType}
                       />
                     </TabsContent>
-                    <TabsContent
-                      value="general"
-                      className="flex-1 min-h-0 overflow-hidden"
-                    >
+                    <TabsContent value="general" className="flex-1 min-h-0 overflow-hidden">
                       <GeneralConfiguration
                         config={config}
                         expandedConfig={memoizedExpandedConfig}
@@ -593,7 +551,7 @@ export default function CreateInstance({ className }: { className?: string }) {
                     className="text-muted-foreground"
                     onClick={toggleYamlEditor}
                   >
-                    {showYamlEditor ? "Back to form" : "Edit YAML"}
+                    {showYamlEditor ? 'Back to form' : 'Edit YAML'}
                   </Button>
                   <Button
                     type="submit"
@@ -606,7 +564,7 @@ export default function CreateInstance({ className }: { className?: string }) {
                         Creating...
                       </>
                     ) : (
-                      "Create Instance"
+                      'Create Instance'
                     )}
                   </Button>
                 </div>

@@ -1,24 +1,21 @@
-import type { ErrorResponse, StandardResponse } from "./response.d";
-import type {
-  AddCertificateBody,
-  AddCertificateBodyPublic,
-} from "./certificate.d";
+import type { ErrorResponse, StandardResponse } from './response.d';
+import type { AddCertificateBody, AddCertificateBodyPublic } from './certificate.d';
 
 export async function addCertificate(
   token: string,
   publicRequest: boolean
 ): Promise<StandardResponse<undefined>> {
   publicRequest = false;
-  const url = `/1.0/certificates${publicRequest ? "?public=true" : ""}`;
+  const url = `/1.0/certificates${publicRequest ? '?public=true' : ''}`;
   const body: AddCertificateBody | AddCertificateBodyPublic = {
-    type: "client",
+    type: 'client',
     trust_token: token,
   };
 
   const response = await fetch(url, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
   });
