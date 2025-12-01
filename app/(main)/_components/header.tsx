@@ -1,7 +1,7 @@
-"use client";
-import { Separator } from "@/app/_components/ui/separator";
-import { SidebarTrigger } from "@/app/_components/ui/sidebar";
-import { GlobeIcon } from "lucide-react";
+'use client';
+import { Separator } from '@/app/_components/ui/separator';
+import { SidebarTrigger } from '@/app/_components/ui/sidebar';
+import { GlobeIcon } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -11,9 +11,9 @@ import {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from "../../_components/ui/select";
-import { use } from "react";
-import ProjectsContext from "@/app/(main)/_context/projects";
+} from '../../_components/ui/select';
+import { use } from 'react';
+import ProjectsContext from '@/app/(main)/_context/projects';
 
 export function SiteHeader() {
   const { projects, currentProject, setProject, isLoading } =

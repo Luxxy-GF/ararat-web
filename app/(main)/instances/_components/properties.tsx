@@ -1,44 +1,51 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
+import { UseFormReturn } from 'react-hook-form';
 
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-  FieldSet,
-} from "@/app/_components/ui/field";
-import { Input } from "@/app/_components/ui/input";
-import { useProfiles } from "@/app/(main)/_hooks/profiles";
+import { Field, FieldLabel } from '@/app/_components/ui/field';
+import { Input } from '@/app/_components/ui/input';
+import { useProfiles } from '@/app/(main)/_hooks/profiles';
 
 import {
   Combobox,
   ComboboxTrigger,
   ComboboxContent,
   ComboboxItem,
-} from "@/app/_components/ui/combobox";
+} from '@/app/_components/ui/combobox';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/app/_components/ui/select";
+} from '@/app/_components/ui/select';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/app/_components/ui/form';
+import type { CreateInstanceBody } from '@/app/(main)/instances/_lib/instances.d';
+
+interface InstancePropertiesProps {
+  form: UseFormReturn<CreateInstanceBody>;
+  profilesSelected: string[];
+  setProfilesSelected: React.Dispatch<React.SetStateAction<string[]>>;
+  instanceType: 'virtual-machine' | 'container';
+  setInstanceType: React.Dispatch<
+    React.SetStateAction<'virtual-machine' | 'container'>
+  >;
+}
 
 export default function InstanceProperties({
+  form,
   profilesSelected,
   setProfilesSelected,
   instanceType,
   setInstanceType,
-}: {
-  profilesSelected: string[];
-  setProfilesSelected: React.Dispatch<React.SetStateAction<string[]>>;
-  instanceType: "virtual-machine" | "container";
-  setInstanceType: React.Dispatch<
-    React.SetStateAction<"virtual-machine" | "container">
-  >;
-}) {
+}: InstancePropertiesProps) {
   const {
     data: profiles,
     isLoading: isLoadingProfiles,
@@ -46,14 +53,37 @@ export default function InstanceProperties({
   } = useProfiles();
   return (
     <div className="flex flex-col gap-2">
-      <Field>
-        <FieldLabel htmlFor="name">Name</FieldLabel>
-        <Input id="name" />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="description">Description</FieldLabel>
-        <Input id="description" />
-      </Field>
+      <FormField
+        control={form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Name</FormLabel>
+            <FormControl>
+              <Input id="name" placeholder="my-instance" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="description"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Description</FormLabel>
+            <FormControl>
+              <Input
+                id="description"
+                placeholder="Optional description"
+                {...field}
+                value={field.value || ''}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
       <Field>
         <FieldLabel htmlFor="profile">Profiles</FieldLabel>
         <Combobox
@@ -86,7 +116,7 @@ export default function InstanceProperties({
         <Select
           value={instanceType}
           onValueChange={(value) =>
-            setInstanceType(value as "virtual-machine" | "container")
+            setInstanceType(value as 'virtual-machine' | 'container')
           }
         >
           <SelectTrigger id="type">

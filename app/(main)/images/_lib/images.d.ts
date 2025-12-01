@@ -1,4 +1,4 @@
-import { StandardResponse } from "../../../_lib/response";
+import { StandardResponse } from '../../../_lib/response';
 
 export interface Image {
   aliases: {

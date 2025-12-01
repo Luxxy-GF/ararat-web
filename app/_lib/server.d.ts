@@ -3,7 +3,7 @@ export interface Server {
   api_extensions: string[];
   api_status: string;
   api_version: string;
-  auth: "trusted" | "untrusted";
+  auth: 'trusted' | 'untrusted';
   auth_user_method?: string;
   auth_user_name?: string;
   public: boolean;
@@ -11,8 +11,8 @@ export interface Server {
 }
 
 export interface ServerConfig {
-  "user.ui.theme"?: string;
-  "user.ui_theme"?: string;
+  'user.ui.theme'?: string;
+  'user.ui_theme'?: string;
   [key: string]: unknown;
 }
 
@@ -24,8 +24,8 @@ export interface ConfigOption {
   longdesc?: string;
   condition?: string;
   fullKey?: string;
-  supported_types?: ("container" | "virtual-machine")[];
-  required_for?: ("container" | "virtual-machine")[];
+  supported_types?: ('container' | 'virtual-machine')[];
+  required_for?: ('container' | 'virtual-machine')[];
 }
 
 export interface DeviceTypeConfig {

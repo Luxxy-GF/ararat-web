@@ -1,0 +1,38 @@
+version: 2
+updates:
+  # Bun package manager (updates package.json and bun.lockb)
+  - package-ecosystem: 'bun'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '04:00'
+      timezone: 'UTC'
+    target-branch: 'yerek'
+    open-pull-requests-limit: 10
+    labels:
+      - 'dependencies'
+      - 'bun'
+      - 'javascript'
+    commit-message:
+      prefix: 'deps'
+      prefix-development: 'deps(dev)'
+      include: 'scope'
+    rebase-strategy: 'auto'
+    versioning-strategy: 'increase'
+  # Update GitHub Actions used in workflows
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '04:00'
+      timezone: 'UTC'
+    target-branch: 'yerek'
+    open-pull-requests-limit: 10
+    labels:
+      - 'dependencies'
+      - 'ci'
+    commit-message:
+      prefix: 'deps(ci)'
+      include: 'scope'

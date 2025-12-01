@@ -1,32 +1,32 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ColumnDef, Row } from "@tanstack/react-table";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ColumnDef, Row } from '@tanstack/react-table';
 
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from "@/app/_components/ui/alert";
-import { Badge } from "@/app/_components/ui/badge";
-import DataTable from "@/app/_components/ui/data-table";
-import { Input } from "@/app/_components/ui/input";
-import { Skeleton } from "@/app/_components/ui/skeleton";
-import { cn } from "@/app/_components/ui/lib/utils";
-import { Button } from "@/app/_components/ui/button";
-import { Spinner } from "@/app/_components/ui/spinner";
+} from '@/app/_components/ui/alert';
+import { Badge } from '@/app/_components/ui/badge';
+import DataTable from '@/app/_components/ui/data-table';
+import { Input } from '@/app/_components/ui/input';
+import { Skeleton } from '@/app/_components/ui/skeleton';
+import { cn } from '@/app/_components/ui/lib/utils';
+import { Button } from '@/app/_components/ui/button';
+import { Spinner } from '@/app/_components/ui/spinner';
 import {
   cancelOperation,
   fetchOperationsList,
-} from "@/app/(main)/operations/_lib/operations";
+} from '@/app/(main)/operations/_lib/operations';
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/app/_components/ui/sheet";
-import type { IncusOperation } from "@/app/(main)/operations/_lib/operations.d";
+} from '@/app/_components/ui/sheet';
+import type { IncusOperation } from '@/app/(main)/operations/_lib/operations.d';
 
 const STATUS_STYLES: Record<
   string,
@@ -36,41 +36,41 @@ const STATUS_STYLES: Record<
   }
 > = {
   running: {
-    label: "Running",
-    className: "border-blue-500/40 bg-blue-500/10 text-blue-100",
+    label: 'Running',
+    className: 'border-blue-500/40 bg-blue-500/10 text-blue-100',
   },
   pending: {
-    label: "Pending",
-    className: "border-zinc-600 bg-zinc-900 text-zinc-200",
+    label: 'Pending',
+    className: 'border-zinc-600 bg-zinc-900 text-zinc-200',
   },
   cancelling: {
-    label: "Cancelling",
-    className: "border-blue-300/40 bg-blue-300/10 text-blue-100",
+    label: 'Cancelling',
+    className: 'border-blue-300/40 bg-blue-300/10 text-blue-100',
   },
   success: {
-    label: "Success",
-    className: "border-emerald-500/40 bg-emerald-500/10 text-emerald-100",
+    label: 'Success',
+    className: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-100',
   },
   failure: {
-    label: "Failure",
-    className: "border-red-500/40 bg-red-500/10 text-red-100",
+    label: 'Failure',
+    className: 'border-red-500/40 bg-red-500/10 text-red-100',
   },
 };
 
 function formatDateTime(value?: string) {
-  if (!value) return "—";
+  if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
+    dateStyle: 'medium',
+    timeStyle: 'short',
   }).format(date);
 }
 
 export default function OperationsPage() {
   const [operations, setOperations] = useState<IncusOperation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState("");
+  const [filter, setFilter] = useState('');
   const [selectedOperations, setSelectedOperations] = useState<
     IncusOperation[]
   >([]);
@@ -88,7 +88,7 @@ export default function OperationsPage() {
           const dateA = new Date(a.created_at ?? a.updated_at ?? 0).getTime();
           const dateB = new Date(b.created_at ?? b.updated_at ?? 0).getTime();
           return dateB - dateA;
-        })
+        }),
       );
     } catch {
     } finally {
@@ -103,8 +103,8 @@ export default function OperationsPage() {
   const columns = useMemo<ColumnDef<object, unknown>[]>(
     () => [
       {
-        header: "Operation ID",
-        accessorKey: "id",
+        header: 'Operation ID',
+        accessorKey: 'id',
         cell: ({ row }: { row: Row<object> }) => {
           const operation = row.original as IncusOperation;
           return (
@@ -115,37 +115,37 @@ export default function OperationsPage() {
         },
       },
       {
-        header: "Type",
-        accessorKey: "class",
+        header: 'Type',
+        accessorKey: 'class',
         cell: ({ row }: { row: Row<object> }) => {
           const operation = row.original as IncusOperation;
-          return operation.class ?? "—";
+          return operation.class ?? '—';
         },
       },
       {
-        header: "Description",
-        accessorKey: "description",
+        header: 'Description',
+        accessorKey: 'description',
         cell: ({ row }: { row: Row<object> }) => {
           const operation = row.original as IncusOperation;
-          return operation.description ?? "—";
+          return operation.description ?? '—';
         },
       },
       {
-        header: "Status",
-        accessorKey: "status",
+        header: 'Status',
+        accessorKey: 'status',
         cell: ({ row }: { row: Row<object> }) => {
           const operation = row.original as IncusOperation;
-          const statusKey = operation.status?.toLowerCase() ?? "";
+          const statusKey = operation.status?.toLowerCase() ?? '';
           const statusMeta = STATUS_STYLES[statusKey] ?? {
-            label: operation.status || "Unknown",
-            className: "border-zinc-600 bg-zinc-900 text-zinc-300",
+            label: operation.status || 'Unknown',
+            className: 'border-zinc-600 bg-zinc-900 text-zinc-300',
           };
           return (
             <Badge
               variant="outline"
               className={cn(
-                "border px-2 py-0.5 text-xs font-medium",
-                statusMeta.className
+                'border px-2 py-0.5 text-xs font-medium',
+                statusMeta.className,
               )}
             >
               {statusMeta.label}
@@ -154,8 +154,8 @@ export default function OperationsPage() {
         },
       },
       {
-        header: "Creation Time",
-        accessorKey: "created_at",
+        header: 'Creation Time',
+        accessorKey: 'created_at',
         cell: ({ row }: { row: Row<object> }) => {
           const operation = row.original as IncusOperation;
           return (
@@ -166,7 +166,7 @@ export default function OperationsPage() {
         },
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -191,15 +191,15 @@ export default function OperationsPage() {
                 try {
                   await Promise.all(
                     selectedOperations.map((operation) =>
-                      cancelOperation(operation.id)
-                    )
+                      cancelOperation(operation.id),
+                    ),
                   );
                   await fetchOperations();
                 } catch (error) {
                   setActionError(
                     error instanceof Error
                       ? error.message
-                      : "Unable to cancel operations."
+                      : 'Unable to cancel operations.',
                   );
                 } finally {
                   setIsCancelling(false);
@@ -285,13 +285,21 @@ function OperationInspector({ operation }: { operation: IncusOperation }) {
       <SheetHeader className="px-4 pt-4">
         <SheetTitle>{operation.description ?? operation.id}</SheetTitle>
         <SheetDescription>
-          {operation.class ?? "Operation"} · {operation.status}
+          {operation.class ?? 'Operation'} · {operation.status}
         </SheetDescription>
       </SheetHeader>
       <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-4">
         <MetadataSection title="Metadata" metadata={operation.metadata} />
       </div>
     </>
+  );
+}
+
+function isPlainObject(obj: unknown): obj is Record<string, unknown> {
+  return (
+    !!obj &&
+    typeof obj === 'object' &&
+    Object.prototype.toString.call(obj) === '[object Object]'
   );
 }
 
@@ -304,17 +312,13 @@ function MetadataSection({
 }) {
   if (
     !metadata ||
-    (typeof metadata === "object" &&
-      metadata !== null &&
-      !Object.keys(metadata as object).length)
+    (isPlainObject(metadata) && Object.keys(metadata).length === 0)
   ) {
     return null;
   }
 
   const entries = (
-    typeof metadata === "object" && metadata !== null
-      ? Object.entries(metadata as Record<string, unknown>)
-      : [["value", metadata]]
+    isPlainObject(metadata) ? Object.entries(metadata) : [['value', metadata]]
   ) as [string, unknown][];
 
   return (
@@ -351,11 +355,11 @@ function KeyValueCard({
 }
 
 function renderValue(value: unknown): React.ReactNode {
-  if (value === null || typeof value === "undefined") return "—";
-  if (typeof value === "string" || typeof value === "number")
+  if (value === null || typeof value === 'undefined') return '—';
+  if (typeof value === 'string' || typeof value === 'number')
     return value.toString();
   if (Array.isArray(value)) {
-    if (!value.length) return "[]";
+    if (!value.length) return '[]';
     return (
       <ul className="list-disc pl-4 space-y-1">
         {value.map((item, idx) => (
@@ -366,10 +370,10 @@ function renderValue(value: unknown): React.ReactNode {
       </ul>
     );
   }
-  if (typeof value === "object") {
+  if (isPlainObject(value)) {
     return (
       <div className="space-y-2 pl-1">
-        {Object.entries(value as Record<string, unknown>).map(([k, v]) => (
+        {Object.entries(value).map(([k, v]) => (
           <KeyValueCard key={`nested-${k}`} label={k}>
             {renderValue(v)}
           </KeyValueCard>

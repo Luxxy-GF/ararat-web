@@ -1,4 +1,4 @@
-import LoginBackground from "./loginBackground";
+import LoginBackground from './loginBackground';
 
 export default function LoginLayout({
   children,

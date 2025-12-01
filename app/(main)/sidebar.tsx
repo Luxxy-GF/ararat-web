@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 import {
   IconAlertTriangle,
   IconCertificate,
@@ -8,7 +8,7 @@ import {
   IconLogout,
   IconSettings,
   type Icon,
-} from "@tabler/icons-react";
+} from '@tabler/icons-react';
 
 import {
   Sidebar as RawSidebar,
@@ -24,7 +24,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   useSidebar,
-} from "@/app/_components/ui/sidebar";
+} from '@/app/_components/ui/sidebar';
 import {
   BoxesIcon,
   ChevronDownIcon,
@@ -33,15 +33,15 @@ import {
   HardDriveIcon,
   PackageIcon,
   SquaresIntersectIcon,
-} from "lucide-react";
-import { usePathname } from "next/navigation";
+} from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "../_components/ui/collapsible";
-import Link from "next/link";
-import AuthenticationContext from "../_context/authentication";
+} from '../_components/ui/collapsible';
+import Link from 'next/link';
+import AuthenticationContext from '../_context/authentication';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,10 +49,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../_components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "../_components/ui/avatar";
-import UserContext from "./_context/user";
-import { Skeleton } from "../_components/ui/skeleton";
+} from '../_components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '../_components/ui/avatar';
+import UserContext from './_context/user';
+import { Skeleton } from '../_components/ui/skeleton';
 
 type NavMainItem = {
   title: string;
@@ -67,77 +67,77 @@ type NavMainItem = {
 const data = {
   navMain: [
     {
-      title: "Instances",
-      url: "/instances",
+      title: 'Instances',
+      url: '/instances',
       icon: BoxesIcon,
     },
     {
-      title: "Networking",
-      url: "#",
+      title: 'Networking',
+      url: '#',
       subItems: [
         {
-          title: "Networks",
-          url: "/networks",
+          title: 'Networks',
+          url: '/networks',
         },
         {
-          title: "IPAM",
-          url: "/networks/ipam",
+          title: 'IPAM',
+          url: '/networks/ipam',
         },
         {
-          title: "ACLs",
-          url: "/networks/acls",
+          title: 'ACLs',
+          url: '/networks/acls',
         },
       ],
       icon: ChevronsLeftRightEllipsisIcon,
     },
     {
-      title: "Storage",
-      url: "#",
+      title: 'Storage',
+      url: '#',
       subItems: [
         {
-          title: "Pools",
-          url: "/storage/pools",
+          title: 'Pools',
+          url: '/storage/pools',
         },
         {
-          title: "Volumes",
-          url: "/storage/volumes",
+          title: 'Volumes',
+          url: '/storage/volumes',
         },
         {
-          title: "ISOs",
-          url: "/storage/isos",
+          title: 'ISOs',
+          url: '/storage/isos',
         },
         {
-          title: "Buckets",
-          url: "/storage/buckets",
+          title: 'Buckets',
+          url: '/storage/buckets',
         },
       ],
       icon: HardDriveIcon,
     },
     {
-      title: "Images",
-      url: "/images",
+      title: 'Images',
+      url: '/images',
       icon: PackageIcon,
     },
     {
-      title: "Profiles",
-      url: "/profiles",
+      title: 'Profiles',
+      url: '/profiles',
       icon: SquaresIntersectIcon,
     },
     {
-      title: "Operations",
-      url: "/operations",
+      title: 'Operations',
+      url: '/operations',
       icon: CircleDotDashedIcon,
     },
   ],
   navSecondary: [
     {
-      title: "Configuration",
-      url: "#",
+      title: 'Configuration',
+      url: '#',
       icon: IconSettings,
     },
     {
-      title: "Warnings",
-      url: "#",
+      title: 'Warnings',
+      url: '#',
       icon: IconAlertTriangle,
     },
   ],
@@ -277,12 +277,12 @@ function NavUser() {
     isLoading: userIsLoading,
   } = React.use(UserContext);
   return (
-    <SidebarMenu className={authIsValidating ? "animate-pulse" : ""}>
+    <SidebarMenu className={authIsValidating ? 'animate-pulse' : ''}>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger
             asChild
-            disabled={authIsLoading ? true : authData?.method == "tls"}
+            disabled={authIsLoading ? true : authData?.method == 'tls'}
           >
             <SidebarMenuButton
               size="lg"
@@ -290,9 +290,9 @@ function NavUser() {
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
                 {!authIsLoading ? (
-                  authData?.method == "oidc" ? (
+                  authData?.method == 'oidc' ? (
                     <>
-                      <AvatarImage src={"user.avatar"} alt={"user.name"} />
+                      <AvatarImage src={'user.avatar'} alt={'user.name'} />
                       <AvatarFallback className="rounded-lg">JM</AvatarFallback>
                     </>
                   ) : (
@@ -308,57 +308,55 @@ function NavUser() {
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span
-                  className={`truncate font-medium ${
-                    userIsValidating ? "animate-pulse" : ""
-                  }`}
+                  className={`truncate font-medium ${userIsValidating ? 'animate-pulse' : ''}`}
                 >
                   {!userIsLoading
-                    ? authData?.method == "tls"
+                    ? authData?.method == 'tls'
                       ? userData?.name
-                      : "First Last"
-                    : "ppp"}
+                      : 'First Last'
+                    : 'ppp'}
                 </span>
                 <span className="text-muted-foreground truncate text-xs">
                   {!authIsLoading
-                    ? authData?.method == "tls"
+                    ? authData?.method == 'tls'
                       ? authData?.identifier?.slice(0, 12)
-                      : "email@hyecompany.com"
-                    : "Loading..."}
+                      : 'email@hyecompany.com'
+                    : 'Loading...'}
                 </span>
               </div>
-              {authData?.method == "oidc" ? (
+              {authData?.method == 'oidc' ? (
                 <IconDotsVertical className="ml-auto size-4" />
               ) : null}
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-            side={isMobile ? "bottom" : "right"}
+            side={isMobile ? 'bottom' : 'right'}
             align="end"
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  {authData?.method == "tls" ? (
+                  {authData?.method == 'tls' ? (
                     <IconCertificate className="m-auto" />
                   ) : (
                     <>
-                      <AvatarImage src={"user.avatar"} alt={"user.name"} />
+                      <AvatarImage src={'user.avatar'} alt={'user.name'} />
                       <AvatarFallback className="rounded-lg">JM</AvatarFallback>
                     </>
                   )}
                 </Avatar>
                 <div
                   className={`grid flex-1 text-left text-sm leading-tight ${
-                    authIsValidating ? "animate-pulse" : ""
+                    authIsValidating ? 'animate-pulse' : ''
                   }`}
                 >
-                  {authData?.method == "tls" ? (
+                  {authData?.method == 'tls' ? (
                     <>
                       <span
                         className={`truncate font-medium ${
-                          userIsValidating ? "animate-pulse" : ""
+                          userIsValidating ? 'animate-pulse' : ''
                         }`}
                       >
                         {userData?.name}
@@ -371,14 +369,14 @@ function NavUser() {
                     <>
                       <span className="truncate font-medium">First Last</span>
                       <span className="text-muted-foreground truncate text-xs">
-                        {"user.email"}
+                        {'user.email'}
                       </span>
                     </>
                   )}
                 </div>
               </div>
             </DropdownMenuLabel>
-            {authData?.method == "oidc" ? (
+            {authData?.method == 'oidc' ? (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
