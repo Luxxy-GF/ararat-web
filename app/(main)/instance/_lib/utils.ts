@@ -77,9 +77,42 @@ export function getRootDiskPool(instance: Instance) {
     return rootDisk?.pool ?? null;
 }
 
-export function calcUsagePercent(current?: number, peak?: number) {
+/**
+ * Calculates the percentage usage for resources with a known peak/total (e.g., Memory, Disk).
+ * NOT intended for CPU usage calculation as CPU usage is typically a delta over time.
+ */
+export function calcResourcePercent(current?: number, peak?: number) {
     if (!peak || peak <= 0) {
         return 0;
     }
     return Math.min(100, Math.max(0, ((current ?? 0) / peak) * 100));
+}
+
+export function getCPUCount(instance: Instance): number {
+    const limit = instance.config?.["limits.cpu"];
+    // If no limit is set, it technically has access to all host CPUs.
+    // However, for calculation purposes, defaulting to 1 avoids division by zero 
+    // and provides a baseline, though it might show >100% usage.
+    // Ideally we would know the host CPU count.
+    if (!limit) return 1;
+
+    // If it's a simple number (e.g. "2"), it's the count.
+    if (!isNaN(Number(limit))) {
+        return Number(limit);
+    }
+
+    // If it's a list (e.g. "0,2,4"), count the items.
+    if (limit.includes(",")) {
+        return limit.split(",").length;
+    }
+
+    // If it's a range (e.g. "0-3"), calculate the difference.
+    if (limit.includes("-")) {
+        const [start, end] = limit.split("-").map(Number);
+        if (!isNaN(start) && !isNaN(end)) {
+            return end - start + 1;
+        }
+    }
+
+    return 1;
 }
