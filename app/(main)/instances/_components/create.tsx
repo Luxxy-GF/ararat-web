@@ -25,7 +25,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/app/_components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/_components/ui/tabs';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/app/_components/ui/tabs';
 import { useState, useMemo, use, useCallback, useRef } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,8 +39,22 @@ import ImageSelector, { SelectableImage } from './imageSelector';
 import InstanceProperties from '@/app/(main)/instances/_components/properties';
 import InstanceDevices from './devices';
 import type { Device } from '@/app/(main)/instances/_lib/instances.d';
-import { hasValidRootDisk, createInstance } from '@/app/(main)/instances/_lib/instances';
+import { createInstance } from '@/app/(main)/instances/_lib/instances';
 import { toYaml, fromYaml } from '@/app/(main)/_lib/yaml';
+
+/**
+ * Check if a valid root disk exists in the devices (either direct or inherited)
+ */
+function hasValidRootDisk(
+  devices: Record<string, Device>,
+  inheritedDevices: Record<string, Device>,
+): boolean {
+  const allDevices = { ...inheritedDevices, ...devices };
+  const rootDisk = Object.values(allDevices).find(
+    (device) => device.type === 'disk' && device.path === '/',
+  );
+  return rootDisk !== undefined && !!rootDisk.pool;
+}
 
 import GeneralConfiguration from './general-configuration';
 import { useProfiles } from '@/app/(main)/_hooks/profiles';
@@ -69,7 +88,7 @@ const sourceSchema = z
     {
       message: 'Select an image to continue',
       path: ['alias'],
-    }
+    },
   );
 
 const formSchema = z.object({
@@ -80,7 +99,7 @@ const formSchema = z.object({
     .max(50, 'Instance name must be at most 50 characters long')
     .regex(
       /^[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]$/,
-      'Instance name must start with a letter and can only contain letters, numbers, and dashes. It cannot end with a dash.'
+      'Instance name must start with a letter and can only contain letters, numbers, and dashes. It cannot end with a dash.',
     ),
   description: z.string().optional(),
   ephemeral: z.boolean().optional(),
@@ -89,8 +108,12 @@ const formSchema = z.object({
 export default function CreateInstance({ className }: { className?: string }) {
   const { effectiveProject } = use(ProjectsContext);
   const { resolvedTheme } = useTheme();
-  const [profilesSelected, setProfilesSelected] = useState<string[]>(['default']);
-  const [instanceType, setInstanceType] = useState<'virtual-machine' | 'container'>('container');
+  const [profilesSelected, setProfilesSelected] = useState<string[]>([
+    'default',
+  ]);
+  const [instanceType, setInstanceType] = useState<
+    'virtual-machine' | 'container'
+  >('container');
   const [devices, setDevices] = useState<Record<string, Device>>({});
   const [config, setConfig] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -160,7 +183,9 @@ export default function CreateInstance({ className }: { className?: string }) {
     name: 'source.type',
   });
   const selectingImage = sourceType === 'image' && currentTab === 'source';
-  const [selectedImage, setSelectedImage] = useState<SelectableImage | null>(null);
+  const [selectedImage, setSelectedImage] = useState<SelectableImage | null>(
+    null,
+  );
 
   const resetSourceFields = () => {
     form.setValue('source.fingerprint', undefined, { shouldDirty: true });
@@ -201,7 +226,7 @@ export default function CreateInstance({ className }: { className?: string }) {
   useWatch({ control: form.control });
   const rootDiskValid = useMemo(
     () => hasValidRootDisk(devices, inheritedDevices),
-    [devices, inheritedDevices]
+    [devices, inheritedDevices],
   );
 
   const isFormValid = useMemo(() => {
@@ -336,19 +361,23 @@ export default function CreateInstance({ className }: { className?: string }) {
               if (source.mode === 'pull') {
                 form.setValue('source.mode', source.mode);
               }
-              if (source.protocol === 'simplestreams' || source.protocol === 'oci') {
+              if (
+                source.protocol === 'simplestreams' ||
+                source.protocol === 'oci'
+              ) {
                 form.setValue('source.protocol', source.protocol);
               }
             }
           }
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Invalid YAML syntax';
+        const message =
+          error instanceof Error ? error.message : 'Invalid YAML syntax';
         setYamlError(message);
         console.error('YAML parsing error:', error);
       }
     },
-    [form, setInstanceType, setProfilesSelected, setDevices, setConfig]
+    [form, setInstanceType, setProfilesSelected, setDevices, setConfig],
   );
 
   // Handle form submission
@@ -375,7 +404,9 @@ export default function CreateInstance({ className }: { className?: string }) {
       } else {
         toast.success(`Instance "${form.getValues().name}" creation started`);
         // Invalidate the instances list
-        mutate((key) => typeof key === 'string' && key.startsWith('/1.0/instances'));
+        mutate(
+          (key) => typeof key === 'string' && key.startsWith('/1.0/instances'),
+        );
         setDialogOpen(false);
         // Reset form
         form.reset();
@@ -390,7 +421,9 @@ export default function CreateInstance({ className }: { className?: string }) {
         setShowYamlEditor(false);
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create instance');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to create instance',
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -422,7 +455,9 @@ export default function CreateInstance({ className }: { className?: string }) {
               className={`max-h-[90vh] w-full flex flex-col transition-all duration-200 ${
                 selectingImage
                   ? 'sm:max-w-5xl'
-                  : currentTab === 'devices' || currentTab === 'general' || showYamlEditor
+                  : currentTab === 'devices' ||
+                      currentTab === 'general' ||
+                      showYamlEditor
                     ? 'sm:max-w-6xl h-[90vh]'
                     : 'sm:max-w-xl'
               }`}
@@ -436,11 +471,15 @@ export default function CreateInstance({ className }: { className?: string }) {
                   <div className="flex flex-col flex-1 min-h-0">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-sm text-muted-foreground">
-                        Edit the raw YAML configuration. Changes will be synced with the form
-                        fields.
+                        Edit the raw YAML configuration. Changes will be synced
+                        with the form fields.
                       </p>
                     </div>
-                    {yamlError && <p className="text-sm text-destructive mb-2">{yamlError}</p>}
+                    {yamlError && (
+                      <p className="text-sm text-destructive mb-2">
+                        {yamlError}
+                      </p>
+                    )}
                     <div className="flex-1 min-h-0 border rounded-md overflow-hidden">
                       <Editor
                         height="100%"
@@ -466,13 +505,19 @@ export default function CreateInstance({ className }: { className?: string }) {
                     value={currentTab}
                     onValueChange={handleTabChange}
                   >
-                    <TabsList className="w-full shrink-0" defaultValue="properties">
+                    <TabsList
+                      className="w-full shrink-0"
+                      defaultValue="properties"
+                    >
                       <TabsTrigger value="properties">Properties</TabsTrigger>
                       <TabsTrigger value="source">Source</TabsTrigger>
                       <TabsTrigger value="devices">Devices</TabsTrigger>
                       <TabsTrigger value="general">Configuration</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="properties" className="overflow-auto flex-1 min-h-0 px-1">
+                    <TabsContent
+                      value="properties"
+                      className="overflow-auto flex-1 min-h-0 px-1"
+                    >
                       <InstanceProperties
                         form={form}
                         profilesSelected={profilesSelected}
@@ -481,7 +526,10 @@ export default function CreateInstance({ className }: { className?: string }) {
                         setInstanceType={setInstanceType}
                       />
                     </TabsContent>
-                    <TabsContent value="source" className="overflow-auto flex-1 min-h-0">
+                    <TabsContent
+                      value="source"
+                      className="overflow-auto flex-1 min-h-0"
+                    >
                       <FormField
                         control={form.control}
                         name="source.type"
@@ -520,7 +568,10 @@ export default function CreateInstance({ className }: { className?: string }) {
                         />
                       ) : null}
                     </TabsContent>
-                    <TabsContent value="devices" className="flex-1 min-h-0 overflow-hidden">
+                    <TabsContent
+                      value="devices"
+                      className="flex-1 min-h-0 overflow-hidden"
+                    >
                       <InstanceDevices
                         profiles={profilesSelected}
                         devices={devices}
@@ -528,7 +579,10 @@ export default function CreateInstance({ className }: { className?: string }) {
                         instanceType={instanceType}
                       />
                     </TabsContent>
-                    <TabsContent value="general" className="flex-1 min-h-0 overflow-hidden">
+                    <TabsContent
+                      value="general"
+                      className="flex-1 min-h-0 overflow-hidden"
+                    >
                       <GeneralConfiguration
                         config={config}
                         expandedConfig={memoizedExpandedConfig}

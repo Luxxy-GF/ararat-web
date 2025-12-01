@@ -9,7 +9,9 @@ export function IsClientProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const animationFrame =
-      typeof window !== 'undefined' ? window.requestAnimationFrame(() => setIsClient(true)) : null;
+      typeof window !== 'undefined'
+        ? window.requestAnimationFrame(() => setIsClient(true))
+        : null;
 
     return () => {
       if (animationFrame !== null && typeof window !== 'undefined') {

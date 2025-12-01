@@ -38,10 +38,18 @@ export default function LoginMethodsComponent() {
           };
           if (method == 'tls')
             return (
-              <TLSButton className={isValidating ? 'animate-pulse' : ''} key={method} {...props} />
+              <TLSButton
+                className={isValidating ? 'animate-pulse' : ''}
+                key={method}
+                {...props}
+              />
             );
           return (
-            <Button className={isValidating ? 'animate-pulse' : ''} key={method} {...props}>
+            <Button
+              className={isValidating ? 'animate-pulse' : ''}
+              key={method}
+              {...props}
+            >
               {method}
             </Button>
           );

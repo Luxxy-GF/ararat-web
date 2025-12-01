@@ -1,9 +1,12 @@
 import type { ErrorResponse, StandardResponse } from './response.d';
-import type { AddCertificateBody, AddCertificateBodyPublic } from './certificate.d';
+import type {
+  AddCertificateBody,
+  AddCertificateBodyPublic,
+} from './certificate.d';
 
 export async function addCertificate(
   token: string,
-  publicRequest: boolean
+  publicRequest: boolean,
 ): Promise<StandardResponse<undefined>> {
   const url = `/1.0/certificates${publicRequest ? '?public=true' : ''}`;
   const body: AddCertificateBody | AddCertificateBodyPublic = {

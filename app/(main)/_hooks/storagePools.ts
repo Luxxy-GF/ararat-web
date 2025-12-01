@@ -7,7 +7,9 @@ export function useStoragePools() {
 
 export function useStoragePoolVolumes(poolName: string | null | undefined) {
   return useSWR(
-    poolName ? `/1.0/storage-pools/${poolName}/volumes/custom?recursion=1` : null,
-    () => (poolName ? getStoragePoolVolumes(poolName) : null)
+    poolName
+      ? `/1.0/storage-pools/${poolName}/volumes/custom?recursion=1`
+      : null,
+    () => (poolName ? getStoragePoolVolumes(poolName) : null),
   );
 }

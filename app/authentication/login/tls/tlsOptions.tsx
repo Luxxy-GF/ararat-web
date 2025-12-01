@@ -1,6 +1,11 @@
 'use client';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/_components/ui/tabs';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/app/_components/ui/tabs';
 import ImportCertificate from './import';
 import CreateCertificate from './create';
 

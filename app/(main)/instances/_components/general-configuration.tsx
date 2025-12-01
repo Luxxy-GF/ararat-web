@@ -10,7 +10,12 @@ import { ConfigOption } from '@/app/_lib/server.d';
 import { ScrollArea } from '@/app/_components/ui/scroll-area';
 import { SearchIcon } from 'lucide-react';
 import { VerticalTabsLayout } from '@/app/_components/layout/vertical-tabs-layout';
-import { Field, FieldLabel, FieldDescription, FieldContent } from '@/app/_components/ui/field';
+import {
+  Field,
+  FieldLabel,
+  FieldDescription,
+  FieldContent,
+} from '@/app/_components/ui/field';
 
 interface GeneralConfigurationProps {
   config: Record<string, string>;
@@ -37,7 +42,9 @@ export default function GeneralConfiguration({
 }: GeneralConfigurationProps) {
   const { data: configurableOptions } = useConfigurableOptions();
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = React.useState<string | null>(
+    null,
+  );
 
   // Parse and group configuration options
   const categories = React.useMemo(() => {
@@ -49,16 +56,21 @@ export default function GeneralConfiguration({
     Object.entries(instanceConfig).forEach(([categoryName, categoryData]) => {
       // The 'volatile' category contains system-managed configuration that should not be exposed to users.
       if (categoryName === 'volatile') return;
-      if (typeof categoryData !== 'object' || !categoryData || !('keys' in categoryData)) {
+      if (
+        typeof categoryData !== 'object' ||
+        !categoryData ||
+        !('keys' in categoryData)
+      ) {
         return;
       }
 
-      const keys = (categoryData as { keys: Record<string, ConfigOption>[] }).keys.flatMap(
-        (keyObj) =>
-          Object.entries(keyObj).map(([key, metadata]) => ({
-            key,
-            metadata,
-          }))
+      const keys = (
+        categoryData as { keys: Record<string, ConfigOption>[] }
+      ).keys.flatMap((keyObj) =>
+        Object.entries(keyObj).map(([key, metadata]) => ({
+          key,
+          metadata,
+        })),
       );
 
       const validKeys = keys.filter((k) => {
@@ -95,8 +107,10 @@ export default function GeneralConfiguration({
         keys: cat.keys.filter(
           (k) =>
             k.key.toLowerCase().includes(lowerQuery) ||
-            (k.metadata.shortdesc && k.metadata.shortdesc.toLowerCase().includes(lowerQuery)) ||
-            (k.metadata.longdesc && k.metadata.longdesc.toLowerCase().includes(lowerQuery))
+            (k.metadata.shortdesc &&
+              k.metadata.shortdesc.toLowerCase().includes(lowerQuery)) ||
+            (k.metadata.longdesc &&
+              k.metadata.longdesc.toLowerCase().includes(lowerQuery)),
         ),
       }))
       .filter((cat) => cat.keys.length > 0);
@@ -113,9 +127,16 @@ export default function GeneralConfiguration({
     onConfigChange(newConfig);
   };
 
-  const renderInput = (fullKey: string, metadata: ConfigOption, label?: string) => {
+  const renderInput = (
+    fullKey: string,
+    metadata: ConfigOption,
+    label?: string,
+  ) => {
     const hasLocalValue = Object.prototype.hasOwnProperty.call(config, fullKey);
-    const hasInheritedValue = Object.prototype.hasOwnProperty.call(expandedConfig, fullKey);
+    const hasInheritedValue = Object.prototype.hasOwnProperty.call(
+      expandedConfig,
+      fullKey,
+    );
     const isOverridden = hasLocalValue && hasInheritedValue;
 
     const localValue = config[fullKey];
@@ -137,10 +158,16 @@ export default function GeneralConfiguration({
       <Field key={fullKey} className="pb-6 border-b last:border-0 last:pb-0">
         <div className="flex items-start justify-between gap-4">
           <FieldContent>
-            <FieldLabel htmlFor={fullKey} className="text-sm font-medium flex items-center gap-2">
+            <FieldLabel
+              htmlFor={fullKey}
+              className="text-sm font-medium flex items-center gap-2"
+            >
               {label || fullKey}
               {isOverridden && (
-                <div className="h-2 w-2 rounded-full bg-orange-500" title="Overridden" />
+                <div
+                  className="h-2 w-2 rounded-full bg-orange-500"
+                  title="Overridden"
+                />
               )}
             </FieldLabel>
             <FieldDescription>{metadata.shortdesc}</FieldDescription>
@@ -165,7 +192,9 @@ export default function GeneralConfiguration({
                 <Switch
                   id={fullKey}
                   checked={effectiveValue === 'true'}
-                  onCheckedChange={(checked) => handleValueChange(fullKey, checked.toString())}
+                  onCheckedChange={(checked) =>
+                    handleValueChange(fullKey, checked.toString())
+                  }
                   disabled={readOnly}
                 />
                 <span className="text-xs text-muted-foreground">
@@ -195,13 +224,17 @@ export default function GeneralConfiguration({
           </div>
         </div>
         {metadata.longdesc && (
-          <FieldDescription className="text-xs">{metadata.longdesc}</FieldDescription>
+          <FieldDescription className="text-xs">
+            {metadata.longdesc}
+          </FieldDescription>
         )}
       </Field>
     );
   };
 
-  const activeCategoryData = filteredCategories.find((c) => c.name === selectedCategory);
+  const activeCategoryData = filteredCategories.find(
+    (c) => c.name === selectedCategory,
+  );
 
   const formatCategoryName = (name: string) => {
     return name
@@ -249,11 +282,17 @@ export default function GeneralConfiguration({
               (() => {
                 // Helper to group keys into a tree structure
                 type ConfigNode = {
-                  keys: { fullKey: string; leafName: string; metadata: ConfigOption }[];
+                  keys: {
+                    fullKey: string;
+                    leafName: string;
+                    metadata: ConfigOption;
+                  }[];
                   children: Record<string, ConfigNode>;
                 };
 
-                const buildTree = (items: { key: string; metadata: ConfigOption }[]) => {
+                const buildTree = (
+                  items: { key: string; metadata: ConfigOption }[],
+                ) => {
                   const root: ConfigNode = { keys: [], children: {} };
 
                   items.forEach(({ key: fullKey, metadata }) => {
@@ -285,18 +324,22 @@ export default function GeneralConfiguration({
                     <div className="space-y-6">
                       {/* Render keys at this level */}
                       {node.keys.map(({ fullKey, leafName, metadata }) =>
-                        renderInput(fullKey, metadata, leafName)
+                        renderInput(fullKey, metadata, leafName),
                       )}
 
                       {/* Render children (sub-categories) */}
-                      {Object.entries(node.children).map(([name, childNode]) => (
-                        <div key={name} className="pt-2">
-                          <h4 className="font-semibold text-base mb-4">
-                            {formatCategoryName(name)}
-                          </h4>
-                          <div className="space-y-6">{renderNode(childNode, level + 1)}</div>
-                        </div>
-                      ))}
+                      {Object.entries(node.children).map(
+                        ([name, childNode]) => (
+                          <div key={name} className="pt-2">
+                            <h4 className="font-semibold text-base mb-4">
+                              {formatCategoryName(name)}
+                            </h4>
+                            <div className="space-y-6">
+                              {renderNode(childNode, level + 1)}
+                            </div>
+                          </div>
+                        ),
+                      )}
                     </div>
                   );
                 };

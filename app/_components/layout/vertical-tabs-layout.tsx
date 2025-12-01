@@ -96,7 +96,9 @@ export function VerticalTabsLayout({
             className={cn(
               'flex items-center gap-3 rounded-md transition-colors text-left',
               'w-full p-3',
-              isSelected && !isMobile ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+              isSelected && !isMobile
+                ? 'bg-primary text-primary-foreground'
+                : 'hover:bg-muted',
             )}
           >
             {Icon && <Icon className={cn('shrink-0 h-5 w-5')} />}
@@ -109,7 +111,9 @@ export function VerticalTabsLayout({
                 <p
                   className={cn(
                     'text-xs mt-0.5 truncate',
-                    isSelected && !isMobile ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                    isSelected && !isMobile
+                      ? 'text-primary-foreground/80'
+                      : 'text-muted-foreground',
                   )}
                 >
                   {tab.description}
@@ -121,7 +125,9 @@ export function VerticalTabsLayout({
                 variant={isSelected && !isMobile ? 'secondary' : 'outline'}
                 className={cn(
                   'px-1.5 justify-center',
-                  orientation === 'vertical' ? 'h-5 text-xs' : 'h-4 text-[10px]'
+                  orientation === 'vertical'
+                    ? 'h-5 text-xs'
+                    : 'h-4 text-[10px]',
                 )}
               >
                 {tab.count}
@@ -157,7 +163,10 @@ export function VerticalTabsLayout({
       return (
         <div
           ref={containerRef}
-          className={cn('flex flex-col h-full overflow-hidden relative', className)}
+          className={cn(
+            'flex flex-col h-full overflow-hidden relative',
+            className,
+          )}
         >
           <div className="p-3 border-b flex items-center gap-2 bg-muted/30 shrink-0">
             <button
@@ -188,7 +197,9 @@ export function VerticalTabsLayout({
           <div className="flex-1 overflow-hidden">{children}</div>
           {/* Mobile Detail Panel Overlay - if detailPanel is active (e.g. adding a device) */}
           {detailPanel && (
-            <div className="absolute inset-0 bg-background z-10 flex flex-col">{detailPanel}</div>
+            <div className="absolute inset-0 bg-background z-10 flex flex-col">
+              {detailPanel}
+            </div>
           )}
         </div>
       );
@@ -197,7 +208,10 @@ export function VerticalTabsLayout({
     return (
       <div
         ref={containerRef}
-        className={cn('flex flex-col h-full overflow-hidden relative', className)}
+        className={cn(
+          'flex flex-col h-full overflow-hidden relative',
+          className,
+        )}
       >
         <div className="w-full shrink-0">
           {(title || header) && (
@@ -216,11 +230,18 @@ export function VerticalTabsLayout({
   return (
     <div
       ref={containerRef}
-      className={cn('h-full w-full border rounded-lg overflow-hidden', className)}
+      className={cn(
+        'h-full w-full border rounded-lg overflow-hidden',
+        className,
+      )}
     >
       <ResizablePanelGroup direction="horizontal" className="flex h-full">
         {/* Sidebar Panel */}
-        <ResizablePanel defaultSize={sidebarSize} minSize={sidebarMinSize} maxSize={sidebarMaxSize}>
+        <ResizablePanel
+          defaultSize={sidebarSize}
+          minSize={sidebarMinSize}
+          maxSize={sidebarMaxSize}
+        >
           <div className="h-full bg-muted/30 flex flex-col">
             {(title || header) && (
               <div className="p-3 border-b shrink-0">
@@ -228,7 +249,9 @@ export function VerticalTabsLayout({
                 {header}
               </div>
             )}
-            {controls && <div className="p-2 border-b shrink-0">{controls}</div>}
+            {controls && (
+              <div className="p-2 border-b shrink-0">{controls}</div>
+            )}
             <ScrollArea className="flex-1">{renderTabs('vertical')}</ScrollArea>
           </div>
         </ResizablePanel>

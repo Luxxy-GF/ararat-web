@@ -53,11 +53,15 @@ function processConfigurableOptions(config: ConfigurableOptions) {
     option.supported_types = ['container', 'virtual-machine'];
 
     // Check for container-only patterns
-    if (TYPE_PATTERNS.container.some((pattern) => textToCheck.includes(pattern))) {
+    if (
+      TYPE_PATTERNS.container.some((pattern) => textToCheck.includes(pattern))
+    ) {
       option.supported_types = ['container'];
     }
     // Check for VM-only patterns
-    else if (TYPE_PATTERNS.vm.some((pattern) => textToCheck.includes(pattern))) {
+    else if (
+      TYPE_PATTERNS.vm.some((pattern) => textToCheck.includes(pattern))
+    ) {
       option.supported_types = ['virtual-machine'];
     }
 
@@ -68,9 +72,13 @@ function processConfigurableOptions(config: ConfigurableOptions) {
 
       if (REQUIRED_PATTERNS.universal.some((pattern) => req === pattern)) {
         option.required_for = ['container', 'virtual-machine'];
-      } else if (REQUIRED_PATTERNS.container.some((pattern) => req.includes(pattern))) {
+      } else if (
+        REQUIRED_PATTERNS.container.some((pattern) => req.includes(pattern))
+      ) {
         option.required_for = ['container'];
-      } else if (REQUIRED_PATTERNS.vm.some((pattern) => req.includes(pattern))) {
+      } else if (
+        REQUIRED_PATTERNS.vm.some((pattern) => req.includes(pattern))
+      ) {
         option.required_for = ['virtual-machine'];
       }
     }

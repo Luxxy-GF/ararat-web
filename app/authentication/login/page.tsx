@@ -19,7 +19,9 @@ export default function Authentication() {
       <Card>
         <CardHeader>
           <CardTitle>Login</CardTitle>
-          <CardDescription>Please select a login method to continue</CardDescription>
+          <CardDescription>
+            Please select a login method to continue
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <AlreadyAuthenticated />

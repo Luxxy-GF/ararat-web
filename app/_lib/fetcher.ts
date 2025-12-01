@@ -17,7 +17,12 @@ export async function jsonFetcher(url: string, options?: JsonFetcherOptions) {
   }
 
   return fetch(endpoint.toString(), options?.init)
-    .then((res) => res.json() as Promise<StandardResponse<unknown> | ErrorResponse<unknown>>)
+    .then(
+      (res) =>
+        res.json() as Promise<
+          StandardResponse<unknown> | ErrorResponse<unknown>
+        >,
+    )
     .then((data) => {
       if (data.type == 'error') {
         throw {

@@ -26,13 +26,16 @@ export function useNetworks(project?: string | null) {
   const { effectiveProject } = useContext(ProjectsContext);
   const scopedProject = useMemo(
     () => (project === undefined ? effectiveProject : project),
-    [project, effectiveProject]
+    [project, effectiveProject],
   );
 
   const url = useMemo(
     () =>
-      buildApiPath('/1.0/networks', { project: scopedProject ?? null, params: { recursion: 1 } }),
-    [scopedProject]
+      buildApiPath('/1.0/networks', {
+        project: scopedProject ?? null,
+        params: { recursion: 1 },
+      }),
+    [scopedProject],
   );
 
   const fetcher = async (u: string): Promise<Network[]> => {
@@ -40,7 +43,10 @@ export function useNetworks(project?: string | null) {
     return (res as any)?.metadata ?? [];
   };
 
-  const { data, error, isLoading, isValidating, mutate } = useSWR<Network[]>(url, fetcher);
+  const { data, error, isLoading, isValidating, mutate } = useSWR<Network[]>(
+    url,
+    fetcher,
+  );
 
   return {
     data,

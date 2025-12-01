@@ -1,25 +1,9 @@
-import type { Device } from './instances.d';
-
-/**
- * Check if a valid root disk exists in the devices (either direct or inherited)
- */
-export function hasValidRootDisk(
-  devices: Record<string, Device>,
-  inheritedDevices: Record<string, Device>
-): boolean {
-  const allDevices = { ...inheritedDevices, ...devices };
-  const rootDisk = Object.values(allDevices).find(
-    (device) => device.type === 'disk' && device.path === '/'
-  );
-  return rootDisk !== undefined && !!rootDisk.pool;
-}
-
 /**
  * Create a new instance via POST /1.0/instances
  */
 export async function createInstance(
   payload: Record<string, unknown>,
-  project: string | null
+  project: string | null,
 ): Promise<{ operation?: string; error?: string }> {
   const params = new URLSearchParams();
   if (project && project !== 'all') {
@@ -46,7 +30,9 @@ export async function createInstance(
 
     if (!response.ok) {
       return {
-        error: (data.error as string) || `HTTP ${response.status}: ${response.statusText}`,
+        error:
+          (data.error as string) ||
+          `HTTP ${response.status}: ${response.statusText}`,
       };
     }
 

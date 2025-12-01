@@ -5,7 +5,10 @@ export type BuildApiPathOptions = {
 
 // Returns a relative API path with proper query params applied.
 // Example: buildApiPath('/1.0/networks', { project, params: { recursion: 1 } })
-export function buildApiPath(path: string, options?: BuildApiPathOptions): string {
+export function buildApiPath(
+  path: string,
+  options?: BuildApiPathOptions,
+): string {
   const base = path.startsWith('/') ? path : `/${path}`;
   const url = new URL(base, 'http://local'); // dummy origin to use URL utils
 

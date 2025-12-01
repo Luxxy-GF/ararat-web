@@ -11,6 +11,6 @@ export async function getProfiles(profiles: string[] | undefined) {
     }
   }
   return jsonFetcher(`/1.0/profiles?recursion=1${query}`).then(
-    (data) => data.metadata as Profile[]
+    (data) => data.metadata as Profile[],
   );
 }

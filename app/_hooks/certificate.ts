@@ -9,7 +9,7 @@ const fetcher = (...args: Parameters<typeof fetch>) =>
 export function useClientCertificate(id: string | undefined) {
   const { data, error, isLoading, isValidating } = useSWR(
     id ? `/1.0/certificates/${id}` : null,
-    fetcher
+    fetcher,
   );
   return {
     data,

@@ -45,7 +45,10 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import { useConfigurableOptions } from '@/app/_hooks/server';
-import { useStoragePools, useStoragePoolVolumes } from '@/app/(main)/_hooks/storagePools';
+import {
+  useStoragePools,
+  useStoragePoolVolumes,
+} from '@/app/(main)/_hooks/storagePools';
 import { useNetworks } from '@/app/(main)/_hooks/networks';
 import type { Device } from '@/app/(main)/instances/_lib/instances.d';
 import type { ConfigOption } from '@/app/_lib/server.d';
@@ -64,7 +67,13 @@ function validatePort(portSpec: string): boolean {
     // Check if it's a range
     if (part.includes('-')) {
       const [start, end] = part.split('-').map((p) => parseInt(p.trim(), 10));
-      if (isNaN(start) || isNaN(end) || start < 1 || end > 65535 || start > end) {
+      if (
+        isNaN(start) ||
+        isNaN(end) ||
+        start < 1 ||
+        end > 65535 ||
+        start > end
+      ) {
         return false;
       }
     } else {
@@ -134,7 +143,11 @@ function parseProxyConnection(connection: string): {
 }
 
 // Serialize proxy connection - supports IPv6 (Issue 1)
-function serializeProxyConnection(type: string, address: string, port: string): string {
+function serializeProxyConnection(
+  type: string,
+  address: string,
+  port: string,
+): string {
   if (type === 'unix') {
     return `${type}:${address}`;
   }
@@ -177,7 +190,7 @@ class DeviceValidator {
     name: string,
     existingDevices: Record<string, Device>,
     inheritedDevices: Record<string, Device>,
-    editingDeviceName?: string
+    editingDeviceName?: string,
   ): ValidationError | null {
     if (!name || name.trim() === '') {
       return {
@@ -187,7 +200,10 @@ class DeviceValidator {
       };
     }
 
-    const allNames = new Set([...Object.keys(existingDevices), ...Object.keys(inheritedDevices)]);
+    const allNames = new Set([
+      ...Object.keys(existingDevices),
+      ...Object.keys(inheritedDevices),
+    ]);
 
     if (editingDeviceName !== name && allNames.has(name)) {
       return {
@@ -205,15 +221,17 @@ class DeviceValidator {
     deviceType: string,
     existingDevices: Record<string, Device>,
     inheritedDevices: Record<string, Device>,
-    editingDeviceName?: string
+    editingDeviceName?: string,
   ): ValidationError | null {
     if (deviceType !== 'disk' || !path) return null;
 
     const allDevices = { ...inheritedDevices, ...existingDevices };
-    const hasDuplicate = Object.entries(allDevices).some(([deviceName, device]) => {
-      if (editingDeviceName && deviceName === editingDeviceName) return false;
-      return device.type === 'disk' && device.path === path;
-    });
+    const hasDuplicate = Object.entries(allDevices).some(
+      ([deviceName, device]) => {
+        if (editingDeviceName && deviceName === editingDeviceName) return false;
+        return device.type === 'disk' && device.path === path;
+      },
+    );
 
     if (hasDuplicate) {
       return {
@@ -226,7 +244,10 @@ class DeviceValidator {
     return null;
   }
 
-  static validatePort(portSpec: string, fieldName: string): ValidationError | null {
+  static validatePort(
+    portSpec: string,
+    fieldName: string,
+  ): ValidationError | null {
     if (!portSpec || portSpec.trim() === '') return null;
 
     if (!validatePort(portSpec)) {
@@ -248,7 +269,7 @@ class DeviceValidator {
     isRoot: boolean,
     isNetworkDevice: boolean,
     isGPUDevice: boolean,
-    instanceType: 'container' | 'virtual-machine'
+    instanceType: 'container' | 'virtual-machine',
   ): ValidationError[] {
     const errors: ValidationError[] = [];
 
@@ -271,7 +292,10 @@ class DeviceValidator {
                 message: 'Storage pool is required',
                 severity: 'error',
               });
-            } else if (isRoot && (key.startsWith('path') || key.startsWith('source'))) {
+            } else if (
+              isRoot &&
+              (key.startsWith('path') || key.startsWith('source'))
+            ) {
               // Skip - managed automatically
             } else if (!isRoot && !properties[key]) {
               errors.push({
@@ -323,7 +347,7 @@ class DeviceValidator {
     isRoot?: boolean,
     isNetworkDevice?: boolean,
     isGPUDevice?: boolean,
-    instanceType: 'container' | 'virtual-machine' = 'container'
+    instanceType: 'container' | 'virtual-machine' = 'container',
   ): ValidationResult {
     const errors: ValidationError[] = [];
 
@@ -333,7 +357,7 @@ class DeviceValidator {
         name,
         existingDevices,
         inheritedDevices,
-        editingDeviceName
+        editingDeviceName,
       );
       if (nameError) errors.push(nameError);
     }
@@ -344,7 +368,7 @@ class DeviceValidator {
       deviceType,
       existingDevices,
       inheritedDevices,
-      editingDeviceName
+      editingDeviceName,
     );
     if (pathError) errors.push(pathError);
 
@@ -371,7 +395,7 @@ class DeviceValidator {
       isRoot || false,
       isNetworkDevice || false,
       isGPUDevice || false,
-      instanceType
+      instanceType,
     );
     errors.push(...requiredErrors);
 
@@ -445,7 +469,9 @@ function DeviceListItem({
     <div
       onClick={onClick}
       className={`w-full text-left ${
-        readonly && inherited && !overridden ? 'cursor-not-allowed' : 'cursor-pointer'
+        readonly && inherited && !overridden
+          ? 'cursor-not-allowed'
+          : 'cursor-pointer'
       }`}
       role="button"
       tabIndex={readonly && inherited && !overridden ? -1 : 0}
@@ -477,7 +503,10 @@ function DeviceListItem({
                   </Badge>
                 )}
                 {overridden && (
-                  <Badge variant="outline" className="text-xs border-orange-500">
+                  <Badge
+                    variant="outline"
+                    className="text-xs border-orange-500"
+                  >
                     Overridden
                   </Badge>
                 )}
@@ -487,7 +516,9 @@ function DeviceListItem({
                   </Badge>
                 )}
               </div>
-              <CardDescription className="text-xs mt-1">{device.type}</CardDescription>
+              <CardDescription className="text-xs mt-1">
+                {device.type}
+              </CardDescription>
             </div>
             <div className="flex gap-1">
               {canReset && onReset && (
@@ -525,9 +556,16 @@ function DeviceListItem({
             {Object.entries(device).map(([key, value]) => {
               if (key === 'type') return null;
               return (
-                <div key={key} className="flex items-start justify-between gap-3 py-1">
-                  <span className="text-muted-foreground font-medium min-w-fit">{key}</span>
-                  <span className="font-mono text-right break-all">{value}</span>
+                <div
+                  key={key}
+                  className="flex items-start justify-between gap-3 py-1"
+                >
+                  <span className="text-muted-foreground font-medium min-w-fit">
+                    {key}
+                  </span>
+                  <span className="font-mono text-right break-all">
+                    {value}
+                  </span>
                 </div>
               );
             })}
@@ -568,16 +606,20 @@ function AddDeviceForm({
   flags,
 }: AddDeviceFormProps) {
   const [name, setName] = React.useState('');
-  const [properties, setProperties] = React.useState<Record<string, string>>({});
+  const [properties, setProperties] = React.useState<Record<string, string>>(
+    {},
+  );
   // Counter used to force a rerender/reset of certain controlled inputs (e.g. pool combobox)
   const [resetCounter, setResetCounter] = React.useState(0);
   // Track field-level validation errors (centralized)
-  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({});
+  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>(
+    {},
+  );
   // Check if a root disk already exists
   const hasRootDiskAlready = React.useMemo(() => {
     const allDevices = { ...inheritedDevices, ...existingDevices };
     return Object.values(allDevices).some(
-      (device) => device.type === 'disk' && device.path === '/'
+      (device) => device.type === 'disk' && device.path === '/',
     );
   }, [existingDevices, inheritedDevices]);
 
@@ -586,7 +628,9 @@ function AddDeviceForm({
   const isRoot =
     (isCreatingRootDisk && !hasRootDiskAlready && deviceType === 'disk') ||
     editingDevice?.name === 'root' ||
-    (editingDevice && editingDevice.device.path === '/' && deviceType === 'disk');
+    (editingDevice &&
+      editingDevice.device.path === '/' &&
+      deviceType === 'disk');
   // Name is readonly if it's root disk OR if it originated from inheritance (pure or overridden)
   const nameReadonly = isRoot || (isInherited && editingDevice !== undefined);
 
@@ -595,9 +639,8 @@ function AddDeviceForm({
   const isGPUDevice = deviceType === 'gpu' || deviceType.startsWith('gpu_');
 
   const { data: storagePools, error: storagePoolsError } = useStoragePools();
-  const { data: storageVolumes, error: storageVolumesError } = useStoragePoolVolumes(
-    properties.pool
-  );
+  const { data: storageVolumes, error: storageVolumesError } =
+    useStoragePoolVolumes(properties.pool);
   const { data: networks, error: networksError } = useNetworks();
   const { data: resources, error: resourcesError } = useResources();
 
@@ -613,10 +656,15 @@ function AddDeviceForm({
     if (isNetworkDevice) {
       // If network is set, infer type from the network
       if (properties.network && networks) {
-        const selectedNetwork = networks.find((n) => n.name === properties.network);
+        const selectedNetwork = networks.find(
+          (n) => n.name === properties.network,
+        );
         if (selectedNetwork) {
           // Map network type to nictype (bridge -> bridged, others stay the same)
-          const nictype = selectedNetwork.type === 'bridge' ? 'bridged' : selectedNetwork.type;
+          const nictype =
+            selectedNetwork.type === 'bridge'
+              ? 'bridged'
+              : selectedNetwork.type;
           return `nic_${nictype}`;
         }
       }
@@ -664,7 +712,13 @@ function AddDeviceForm({
       return config || null;
     }
     return deviceConfig;
-  }, [isNetworkDevice, isGPUDevice, configurableOptions, deviceConfigKey, deviceConfig]);
+  }, [
+    isNetworkDevice,
+    isGPUDevice,
+    configurableOptions,
+    deviceConfigKey,
+    deviceConfig,
+  ]);
 
   const poolConfig = React.useMemo(() => {
     if (!deviceConfig?.keys) return null;
@@ -755,7 +809,8 @@ function AddDeviceForm({
       if (isNetworkDevice) {
         const allDevices = { ...inheritedDevices, ...existingDevices };
         const networkDevices = Object.entries(allDevices).filter(
-          ([_, device]) => device.type === 'nic' || device.type.startsWith('nic_')
+          ([_, device]) =>
+            device.type === 'nic' || device.type.startsWith('nic_'),
         );
         const ethIndex = networkDevices.length;
         setName(`eth${ethIndex}`);
@@ -763,7 +818,8 @@ function AddDeviceForm({
         // For new GPU devices, default name to gpu{#} and gputype to physical
         const allDevices = { ...inheritedDevices, ...existingDevices };
         const gpuDevices = Object.entries(allDevices).filter(
-          ([_, device]) => device.type === 'gpu' || device.type.startsWith('gpu_')
+          ([_, device]) =>
+            device.type === 'gpu' || device.type.startsWith('gpu_'),
         );
         const gpuIndex = gpuDevices.length;
         setName(`gpu${gpuIndex}`);
@@ -790,10 +846,17 @@ function AddDeviceForm({
   };
 
   const { requiredCategories, optionalCategories } = React.useMemo(() => {
-    if (!effectiveDeviceConfig?.keys) return { requiredCategories: [], optionalCategories: [] };
+    if (!effectiveDeviceConfig?.keys)
+      return { requiredCategories: [], optionalCategories: [] };
 
-    const requiredMap = new Map<string, Array<{ key: string; config: ConfigOption }>>();
-    const optionalMap = new Map<string, Array<{ key: string; config: ConfigOption }>>();
+    const requiredMap = new Map<
+      string,
+      Array<{ key: string; config: ConfigOption }>
+    >();
+    const optionalMap = new Map<
+      string,
+      Array<{ key: string; config: ConfigOption }>
+    >();
 
     effectiveDeviceConfig.keys.forEach((keyObj) => {
       Object.entries(keyObj).forEach(([key, config]) => {
@@ -809,7 +872,10 @@ function AddDeviceForm({
         // For root disk: hide source & path selection (auto-managed) and remove pool/size from categorized fields (shown top-level)
         if (
           isRoot &&
-          (key.startsWith('source') || key.startsWith('path') || key === 'pool' || key === 'size')
+          (key.startsWith('source') ||
+            key.startsWith('path') ||
+            key === 'pool' ||
+            key === 'size')
         ) {
           return; // hide for root disk
         }
@@ -826,13 +892,19 @@ function AddDeviceForm({
         if (!targetMap.has(category)) {
           targetMap.set(category, []);
         }
-        targetMap.get(category)!.push({ key: fieldName, config: { ...config, fullKey: key } });
+        targetMap
+          .get(category)!
+          .push({ key: fieldName, config: { ...config, fullKey: key } });
       });
     });
 
-    const sortCategories = (map: Map<string, Array<{ key: string; config: ConfigOption }>>) => {
+    const sortCategories = (
+      map: Map<string, Array<{ key: string; config: ConfigOption }>>,
+    ) => {
       return Array.from(map.entries())
-        .sort(([a], [b]) => (a === 'General' ? -1 : b === 'General' ? 1 : a.localeCompare(b)))
+        .sort(([a], [b]) =>
+          a === 'General' ? -1 : b === 'General' ? 1 : a.localeCompare(b),
+        )
         .map(([name, fields]) => ({
           name,
           // Store fields with their data; visibility will be checked by shouldShowField
@@ -866,9 +938,15 @@ function AddDeviceForm({
 
     return (
       <>
-        {poolConfig && <div className="space-y-2">{renderField('pool', poolConfig, true)}</div>}
+        {poolConfig && (
+          <div className="space-y-2">
+            {renderField('pool', poolConfig, true)}
+          </div>
+        )}
         {isRoot && sizeConfig && (
-          <div className="space-y-2">{renderField('size', sizeConfig, true)}</div>
+          <div className="space-y-2">
+            {renderField('size', sizeConfig, true)}
+          </div>
         )}
       </>
     );
@@ -887,7 +965,8 @@ function AddDeviceForm({
             Parent Network
           </Label>
           <p className="text-xs text-muted-foreground">
-            Select an existing network to automatically configure the device type
+            Select an existing network to automatically configure the device
+            type
           </p>
           <Combobox
             value={properties.network || ''}
@@ -915,7 +994,8 @@ function AddDeviceForm({
                   <div className="flex flex-col">
                     <span>{network.name}</span>
                     <span className="text-xs text-muted-foreground">
-                      {network.type} {network.description && `• ${network.description}`}
+                      {network.type}{' '}
+                      {network.description && `• ${network.description}`}
                     </span>
                   </div>
                 </ComboboxItem>
@@ -949,7 +1029,10 @@ function AddDeviceForm({
                 allowDeselect
                 defaultValue=""
               >
-                <ComboboxTrigger className="h-9 w-full" placeholder="Select network type...">
+                <ComboboxTrigger
+                  className="h-9 w-full"
+                  placeholder="Select network type..."
+                >
                   {properties.nictype}
                 </ComboboxTrigger>
                 <ComboboxContent>
@@ -965,7 +1048,9 @@ function AddDeviceForm({
               </Combobox>
             </div>
             {properties.nictype && parentConfig && (
-              <div className="space-y-2">{renderField('parent', parentConfig, true)}</div>
+              <div className="space-y-2">
+                {renderField('parent', parentConfig, true)}
+              </div>
             )}
           </>
         )}
@@ -984,16 +1069,22 @@ function AddDeviceForm({
         <Label htmlFor="gputype" className="text-sm font-semibold">
           GPU Type
         </Label>
-        <p className="text-xs text-muted-foreground">Select the type of GPU passthrough to use</p>
+        <p className="text-xs text-muted-foreground">
+          Select the type of GPU passthrough to use
+        </p>
         <Select
           value={properties.gputype || 'physical'}
-          onValueChange={(value) => setProperties((prev) => ({ ...prev, gputype: value }))}
+          onValueChange={(value) =>
+            setProperties((prev) => ({ ...prev, gputype: value }))
+          }
         >
           <SelectTrigger className="h-9 w-full">
             <SelectValue placeholder="physical" />
           </SelectTrigger>
           <SelectContent>
-            {(!flags?.type || flags.type === 'virtual-machine' || flags.type === 'container') && (
+            {(!flags?.type ||
+              flags.type === 'virtual-machine' ||
+              flags.type === 'container') && (
               <SelectItem value="physical">Physical</SelectItem>
             )}
             {(!flags?.type || flags.type === 'virtual-machine') && (
@@ -1024,7 +1115,9 @@ function AddDeviceForm({
             Connect To
             <span className="text-destructive ml-1">*</span>
           </Label>
-          <p className="text-xs text-muted-foreground">The address and port to connect to</p>
+          <p className="text-xs text-muted-foreground">
+            The address and port to connect to
+          </p>
           <div className="flex gap-2">
             <Select
               value={parseProxyConnection(properties.connect || '').type}
@@ -1032,7 +1125,11 @@ function AddDeviceForm({
                 const parsed = parseProxyConnection(properties.connect || '');
                 setProperties((prev) => ({
                   ...prev,
-                  connect: serializeProxyConnection(type, parsed.address, parsed.port),
+                  connect: serializeProxyConnection(
+                    type,
+                    parsed.address,
+                    parsed.port,
+                  ),
                 }));
               }}
             >
@@ -1056,7 +1153,11 @@ function AddDeviceForm({
                 const parsed = parseProxyConnection(properties.connect || '');
                 setProperties((prev) => ({
                   ...prev,
-                  connect: serializeProxyConnection(parsed.type, e.target.value, parsed.port),
+                  connect: serializeProxyConnection(
+                    parsed.type,
+                    e.target.value,
+                    parsed.port,
+                  ),
                 }));
               }}
               className="h-9 flex-1 min-w-0"
@@ -1069,7 +1170,11 @@ function AddDeviceForm({
                   const parsed = parseProxyConnection(properties.connect || '');
                   setProperties((prev) => ({
                     ...prev,
-                    connect: serializeProxyConnection(parsed.type, parsed.address, e.target.value),
+                    connect: serializeProxyConnection(
+                      parsed.type,
+                      parsed.address,
+                      e.target.value,
+                    ),
                   }));
                 }}
                 className="h-9 w-24 font-mono text-xs"
@@ -1077,8 +1182,8 @@ function AddDeviceForm({
             )}
           </div>
           <p className="text-[10px] text-muted-foreground">
-            Port can be a single port (80), range (80-90), or comma-separated (80,443). IPv6
-            addresses should be in brackets: [::1]
+            Port can be a single port (80), range (80-90), or comma-separated
+            (80,443). IPv6 addresses should be in brackets: [::1]
           </p>
         </div>
         <div className="space-y-2">
@@ -1086,7 +1191,9 @@ function AddDeviceForm({
             Listen On
             <span className="text-destructive ml-1">*</span>
           </Label>
-          <p className="text-xs text-muted-foreground">The address and port to bind and listen</p>
+          <p className="text-xs text-muted-foreground">
+            The address and port to bind and listen
+          </p>
           <div className="flex gap-2">
             <Select
               value={parseProxyConnection(properties.listen || '').type}
@@ -1094,7 +1201,11 @@ function AddDeviceForm({
                 const parsed = parseProxyConnection(properties.listen || '');
                 setProperties((prev) => ({
                   ...prev,
-                  listen: serializeProxyConnection(type, parsed.address, parsed.port),
+                  listen: serializeProxyConnection(
+                    type,
+                    parsed.address,
+                    parsed.port,
+                  ),
                 }));
               }}
             >
@@ -1118,7 +1229,11 @@ function AddDeviceForm({
                 const parsed = parseProxyConnection(properties.listen || '');
                 setProperties((prev) => ({
                   ...prev,
-                  listen: serializeProxyConnection(parsed.type, e.target.value, parsed.port),
+                  listen: serializeProxyConnection(
+                    parsed.type,
+                    e.target.value,
+                    parsed.port,
+                  ),
                 }));
               }}
               className="h-9 flex-1 min-w-0"
@@ -1131,7 +1246,11 @@ function AddDeviceForm({
                   const parsed = parseProxyConnection(properties.listen || '');
                   setProperties((prev) => ({
                     ...prev,
-                    listen: serializeProxyConnection(parsed.type, parsed.address, e.target.value),
+                    listen: serializeProxyConnection(
+                      parsed.type,
+                      parsed.address,
+                      e.target.value,
+                    ),
                   }));
                 }}
                 className="h-9 w-24 font-mono text-xs"
@@ -1139,8 +1258,9 @@ function AddDeviceForm({
             )}
           </div>
           <p className="text-[10px] text-muted-foreground">
-            Port can be a single port (8080), range (8080-8090), or comma-separated (8080,8443).
-            IPv6 addresses should be in brackets: [::]
+            Port can be a single port (8080), range (8080-8090), or
+            comma-separated (8080,8443). IPv6 addresses should be in brackets:
+            [::]
           </p>
         </div>
       </div>
@@ -1159,7 +1279,7 @@ function AddDeviceForm({
       editingDevice?.name,
       isRoot,
       isNetworkDevice,
-      isGPUDevice
+      isGPUDevice,
     );
   }, [
     name,
@@ -1217,16 +1337,21 @@ function AddDeviceForm({
   const shouldShowField = React.useCallback(
     (fieldKey: string, config: ConfigOption) => {
       // Hide path/source for root disk
-      if (isRoot && (fieldKey.startsWith('path') || fieldKey.startsWith('source'))) {
+      if (
+        isRoot &&
+        (fieldKey.startsWith('path') || fieldKey.startsWith('source'))
+      ) {
         return false;
       }
 
       // Check shortdesc for type restrictions (memoize the lowercase conversion)
       if (flags?.type && config.shortdesc) {
         const shortdesc = config.shortdesc.toLowerCase();
-        const isVMOnly = shortdesc.includes('only for vms') || shortdesc.includes('vm only');
+        const isVMOnly =
+          shortdesc.includes('only for vms') || shortdesc.includes('vm only');
         const isContainerOnly =
-          shortdesc.includes('only for containers') || shortdesc.includes('container only');
+          shortdesc.includes('only for containers') ||
+          shortdesc.includes('container only');
 
         if (isVMOnly && flags.type !== 'virtual-machine') return false;
         if (isContainerOnly && flags.type !== 'container') return false;
@@ -1325,7 +1450,10 @@ function AddDeviceForm({
         if (gputype === 'sriov') {
           // Available: id, pci, productid, vendorid
           // Hide: mdev, mig.*, uid, gid, mode
-          if (['mdev', 'uid', 'gid', 'mode'].includes(fieldKey) || fieldKey.startsWith('mig.')) {
+          if (
+            ['mdev', 'uid', 'gid', 'mode'].includes(fieldKey) ||
+            fieldKey.startsWith('mig.')
+          ) {
             return false;
           }
           return true;
@@ -1334,18 +1462,19 @@ function AddDeviceForm({
 
       return true;
     },
-    [isRoot, flags, deviceType, properties, isNetworkDevice, isGPUDevice]
+    [isRoot, flags, deviceType, properties, isNetworkDevice, isGPUDevice],
   );
 
   const renderField = (
     key: string,
     config: ConfigOption & { fullKey?: string },
-    isTopLevel: boolean = false
+    isTopLevel: boolean = false,
   ) => {
     const fieldId = `config-${config.fullKey || key}`;
     const fieldKey = config.fullKey || key;
     const isBool = config.type === 'bool';
-    const hasCondition = config.condition && typeof config.condition === 'string';
+    const hasCondition =
+      config.condition && typeof config.condition === 'string';
     const hasError = !!fieldErrors[fieldKey];
     const errorId = `${fieldId}-error`;
 
@@ -1365,7 +1494,11 @@ function AddDeviceForm({
       !properties.network
     ) {
       effectiveConfig = { ...config, required: 'yes' as const };
-    } else if (isGPUDevice && fieldKey === 'mdev' && properties.gputype === 'mdev') {
+    } else if (
+      isGPUDevice &&
+      fieldKey === 'mdev' &&
+      properties.gputype === 'mdev'
+    ) {
       // mdev field is required for gpu_mdev type
       effectiveConfig = { ...config, required: 'yes' as const };
     }
@@ -1374,10 +1507,14 @@ function AddDeviceForm({
       <div key={fieldKey} className="space-y-2">
         <Label
           htmlFor={fieldId}
-          className={isTopLevel ? 'text-sm font-semibold' : 'text-xs font-medium'}
+          className={
+            isTopLevel ? 'text-sm font-semibold' : 'text-xs font-medium'
+          }
         >
           {formatLabel(key)}
-          {effectiveConfig.required === 'yes' && <span className="text-destructive ml-1">*</span>}
+          {effectiveConfig.required === 'yes' && (
+            <span className="text-destructive ml-1">*</span>
+          )}
         </Label>
         {effectiveConfig.shortdesc && (
           <p className="text-xs text-muted-foreground leading-relaxed">
@@ -1387,7 +1524,9 @@ function AddDeviceForm({
         {isBool ? (
           <div className="flex items-center justify-between">
             <label htmlFor={fieldId} className="text-xs text-muted-foreground">
-              {effectiveConfig.default === 'true' ? 'Enabled by default' : 'Disabled by default'}
+              {effectiveConfig.default === 'true'
+                ? 'Enabled by default'
+                : 'Disabled by default'}
             </label>
             <Switch
               id={fieldId}
@@ -1412,19 +1551,28 @@ function AddDeviceForm({
             }
             allowDeselect
           >
-            <ComboboxTrigger placeholder={effectiveConfig.default || 'Select storage pool'} />
+            <ComboboxTrigger
+              placeholder={effectiveConfig.default || 'Select storage pool'}
+            />
             <ComboboxContent
               searchPlaceholder="Search storage pools..."
               emptyLabel="No storage pools found."
             >
               {storagePools?.map((pool) => (
-                <ComboboxItem key={pool.name} value={pool.name} description={pool.description}>
+                <ComboboxItem
+                  key={pool.name}
+                  value={pool.name}
+                  description={pool.description}
+                >
                   {pool.name}
                 </ComboboxItem>
               ))}
             </ComboboxContent>
           </Combobox>
-        ) : fieldKey === 'source' && deviceType === 'disk' && properties.pool && storageVolumes ? (
+        ) : fieldKey === 'source' &&
+          deviceType === 'disk' &&
+          properties.pool &&
+          storageVolumes ? (
           <Combobox
             value={(() => {
               const source = properties[fieldKey] || '';
@@ -1440,7 +1588,9 @@ function AddDeviceForm({
               }));
             }}
           >
-            <ComboboxTrigger placeholder={effectiveConfig.default || 'Select storage volume'} />
+            <ComboboxTrigger
+              placeholder={effectiveConfig.default || 'Select storage volume'}
+            />
             <ComboboxContent
               searchPlaceholder="Search storage volumes..."
               emptyLabel="No storage volumes found."
@@ -1466,8 +1616,12 @@ function AddDeviceForm({
               }))
             }
           >
-            <SelectTrigger className={isTopLevel ? 'h-9 w-full' : 'h-8 text-xs w-full'}>
-              <SelectValue placeholder={effectiveConfig.default || 'Select bind mode'} />
+            <SelectTrigger
+              className={isTopLevel ? 'h-9 w-full' : 'h-8 text-xs w-full'}
+            >
+              <SelectValue
+                placeholder={effectiveConfig.default || 'Select bind mode'}
+              />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="host">Host</SelectItem>
@@ -1478,7 +1632,9 @@ function AddDeviceForm({
           <Combobox
             value={properties[fieldKey] || undefined}
             onValueChange={(value) => {
-              const card = resources.gpu?.cards?.find((c) => c.pci_address === value);
+              const card = resources.gpu?.cards?.find(
+                (c) => c.pci_address === value,
+              );
               setProperties((prev) => ({
                 ...prev,
                 pci: value,
@@ -1490,7 +1646,10 @@ function AddDeviceForm({
             allowDeselect
           >
             <ComboboxTrigger placeholder="Select GPU (PCI)" />
-            <ComboboxContent searchPlaceholder="Search GPUs..." emptyLabel="No GPUs detected.">
+            <ComboboxContent
+              searchPlaceholder="Search GPUs..."
+              emptyLabel="No GPUs detected."
+            >
               {resources.gpu.cards.map((card, idx) => (
                 <ComboboxItem
                   key={card.pci_address || idx}
@@ -1514,16 +1673,23 @@ function AddDeviceForm({
             allowDeselect
           >
             <ComboboxTrigger placeholder="Select vendor" />
-            <ComboboxContent searchPlaceholder="Search vendors..." emptyLabel="No vendors">
+            <ComboboxContent
+              searchPlaceholder="Search vendors..."
+              emptyLabel="No vendors"
+            >
               {[
                 ...new Map(
                   (resources.gpu.cards || []).map((c) => [
                     c.vendor_id || '',
                     { id: c.vendor_id, name: c.vendor },
-                  ])
+                  ]),
                 ).values(),
               ].map((v) => (
-                <ComboboxItem key={v.id || v.name} value={v.id || ''} description={v.name}>
+                <ComboboxItem
+                  key={v.id || v.name}
+                  value={v.id || ''}
+                  description={v.name}
+                >
                   {v.id} — {v.name}
                 </ComboboxItem>
               ))}
@@ -1541,9 +1707,15 @@ function AddDeviceForm({
             allowDeselect
           >
             <ComboboxTrigger placeholder="Select product" />
-            <ComboboxContent searchPlaceholder="Search products..." emptyLabel="No products">
+            <ComboboxContent
+              searchPlaceholder="Search products..."
+              emptyLabel="No products"
+            >
               {(resources.gpu.cards || [])
-                .filter((c) => !properties.vendorid || c.vendor_id === properties.vendorid)
+                .filter(
+                  (c) =>
+                    !properties.vendorid || c.vendor_id === properties.vendorid,
+                )
                 .map((card, idx) => (
                   <ComboboxItem
                     key={card.product_id || idx}
@@ -1570,7 +1742,11 @@ function AddDeviceForm({
             </SelectTrigger>
             <SelectContent>
               {effectiveConfig.condition?.split('|').map((option: string) => (
-                <SelectItem key={option.trim()} value={option.trim()} className="text-xs">
+                <SelectItem
+                  key={option.trim()}
+                  value={option.trim()}
+                  className="text-xs"
+                >
                   {option.trim()}
                 </SelectItem>
               ))}
@@ -1595,10 +1771,13 @@ function AddDeviceForm({
     );
   };
 
-  const renderCategory = (category: FieldCategory, isTopLevel: boolean = false) => {
+  const renderCategory = (
+    category: FieldCategory,
+    isTopLevel: boolean = false,
+  ) => {
     // Filter fields based on visibility rules
     const visibleFields = category.fields.filter(({ config }) =>
-      shouldShowField(config.fullKey || '', config)
+      shouldShowField(config.fullKey || '', config),
     );
 
     // Don't render empty categories
@@ -1614,14 +1793,17 @@ function AddDeviceForm({
           </h5>
         )}
         <div className="space-y-4">
-          {visibleFields.map(({ key, config }) => renderField(key, config, isTopLevel))}
+          {visibleFields.map(({ key, config }) =>
+            renderField(key, config, isTopLevel),
+          )}
         </div>
       </div>
     );
   };
 
   // Show error states if any data fetching failed
-  const hasDataError = storagePoolsError || storageVolumesError || networksError || resourcesError;
+  const hasDataError =
+    storagePoolsError || storageVolumesError || networksError || resourcesError;
 
   return (
     <div className="flex flex-col h-full">
@@ -1651,7 +1833,9 @@ function AddDeviceForm({
                   id="device-name"
                   placeholder={
                     DEVICE_TYPES.find(
-                      (t) => t.value === deviceType || (isNetworkDevice && t.value === 'nic')
+                      (t) =>
+                        t.value === deviceType ||
+                        (isNetworkDevice && t.value === 'nic'),
                     )?.placeholder || 'device0'
                   }
                   value={name}
@@ -1684,20 +1868,26 @@ function AddDeviceForm({
             <>
               <Separator />
               <div className="space-y-3">
-                <h4 className="text-sm font-semibold">Optional Configuration</h4>
+                <h4 className="text-sm font-semibold">
+                  Optional Configuration
+                </h4>
                 <div className="space-y-6">
                   <Accordion type="single" collapsible className="space-y-2">
                     {optionalCategories.map((category) => {
                       // Count visible fields for this category
-                      const visibleFieldCount = category.fields.filter(({ config }) =>
-                        shouldShowField(config.fullKey || '', config)
+                      const visibleFieldCount = category.fields.filter(
+                        ({ config }) =>
+                          shouldShowField(config.fullKey || '', config),
                       ).length;
 
                       // Add source path field if applicable
                       const hasSourcePath =
-                        deviceType === 'disk' && properties.pool && category.name === 'General';
+                        deviceType === 'disk' &&
+                        properties.pool &&
+                        category.name === 'General';
 
-                      const totalVisibleFields = visibleFieldCount + (hasSourcePath ? 1 : 0);
+                      const totalVisibleFields =
+                        visibleFieldCount + (hasSourcePath ? 1 : 0);
 
                       // Skip empty categories
                       if (totalVisibleFields === 0) {
@@ -1722,11 +1912,15 @@ function AddDeviceForm({
                           <AccordionContent className="px-3 pb-3 pt-0 space-y-4">
                             {hasSourcePath && (
                               <div className="space-y-2">
-                                <Label htmlFor="source-path" className="text-xs font-medium">
+                                <Label
+                                  htmlFor="source-path"
+                                  className="text-xs font-medium"
+                                >
                                   Source Path
                                 </Label>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                  Subpath within the storage volume (e.g., /data)
+                                  Subpath within the storage volume (e.g.,
+                                  /data)
                                 </p>
                                 <Input
                                   id="source-path"
@@ -1735,7 +1929,9 @@ function AddDeviceForm({
                                   value={(() => {
                                     const source = properties.source || '';
                                     const parts = source.split('/');
-                                    return parts.length > 1 ? '/' + parts.slice(1).join('/') : '';
+                                    return parts.length > 1
+                                      ? '/' + parts.slice(1).join('/')
+                                      : '';
                                   })()}
                                   onChange={(e) => {
                                     const path = e.target.value;
@@ -1759,7 +1955,9 @@ function AddDeviceForm({
                                 />
                               </div>
                             )}
-                            {category.fields.map(({ key, config }) => renderField(key, config))}
+                            {category.fields.map(({ key, config }) =>
+                              renderField(key, config),
+                            )}
                           </AccordionContent>
                         </AccordionItem>
                       );
@@ -1801,12 +1999,18 @@ function AddDeviceForm({
             Stop Editing
           </Button>
         )}
-        <Button onClick={handleSubmit} disabled={!validationResult.isValid} className="w-full">
+        <Button
+          onClick={handleSubmit}
+          disabled={!validationResult.isValid}
+          className="w-full"
+        >
           {!editingDevice && <IconPlus className="h-4 w-4 mr-2" />}
           {editingDevice
             ? `Save ${editingDevice.name}`
             : `Add ${(() => {
-                const deviceType_ = DEVICE_TYPES.find((t) => t.value === deviceType);
+                const deviceType_ = DEVICE_TYPES.find(
+                  (t) => t.value === deviceType,
+                );
                 if (!deviceType_) return 'Device';
                 const label = deviceType_.label;
                 // Handle "Proxies" -> "Proxy"
@@ -1833,7 +2037,8 @@ export default function Devices({
   flags,
 }: DevicesProps) {
   const [selectedType, setSelectedType] = React.useState('disk');
-  const [localDevices, setLocalDevices] = React.useState<Record<string, Device>>(devices);
+  const [localDevices, setLocalDevices] =
+    React.useState<Record<string, Device>>(devices);
   const [selectedDevice, setSelectedDevice] = React.useState<{
     name: string;
     device: Device;
@@ -1870,13 +2075,15 @@ export default function Devices({
     });
   }, [localDevices, inheritedDevices, selectedType]);
 
-  const isInherited = (name: string) => name in inheritedDevices && !(name in localDevices);
-  const isOverridden = (name: string) => name in inheritedDevices && name in localDevices;
+  const isInherited = (name: string) =>
+    name in inheritedDevices && !(name in localDevices);
+  const isOverridden = (name: string) =>
+    name in inheritedDevices && name in localDevices;
 
   const hasRootDisk = React.useMemo(() => {
     const allDevices = { ...inheritedDevices, ...localDevices };
     return Object.values(allDevices).some(
-      (device) => device.type === 'disk' && device.path === '/'
+      (device) => device.type === 'disk' && device.path === '/',
     );
   }, [localDevices, inheritedDevices]);
 
@@ -1994,7 +2201,9 @@ export default function Devices({
       const count = Object.values({
         ...inheritedDevices,
         ...localDevices,
-      }).filter((d) => d.type === type.value || d.type.startsWith(`${type.value}_`)).length;
+      }).filter(
+        (d) => d.type === type.value || d.type.startsWith(`${type.value}_`),
+      ).length;
 
       return {
         value: type.value,
@@ -2026,7 +2235,9 @@ export default function Devices({
             : isCreatingRootDisk && !hasRootDisk && selectedType === 'disk'
               ? 'Add Root Disk'
               : `Add ${(() => {
-                  const deviceType = DEVICE_TYPES.find((t) => t.value === selectedType);
+                  const deviceType = DEVICE_TYPES.find(
+                    (t) => t.value === selectedType,
+                  );
                   if (!deviceType) return 'Device';
                   const label = deviceType.label;
                   if (label.endsWith('ies')) {
@@ -2042,7 +2253,12 @@ export default function Devices({
           {/* Mobile close button if needed, or just rely on back */}
         </div>
         <div className="ml-auto hidden md:block">
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={closeDetailPanel}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={closeDetailPanel}
+          >
             <IconX className="h-4 w-4" />
           </Button>
         </div>
@@ -2062,7 +2278,8 @@ export default function Devices({
           editingDevice={selectedDevice || undefined}
           isInherited={
             selectedDevice
-              ? isInherited(selectedDevice.name) || isOverridden(selectedDevice.name)
+              ? isInherited(selectedDevice.name) ||
+                isOverridden(selectedDevice.name)
               : false
           }
           onUpdate={(oldName, newName, device) => {
@@ -2088,7 +2305,9 @@ export default function Devices({
         setShowDetailPanel(false); // Close detail panel when switching tabs
       }}
       title="Device Types"
-      detailPanel={!readonly && showDetailPanel ? renderDetailForm() : undefined}
+      detailPanel={
+        !readonly && showDetailPanel ? renderDetailForm() : undefined
+      }
       contentSize={readonly ? 80 : 50}
     >
       <div className="h-full flex flex-col">
@@ -2110,22 +2329,32 @@ export default function Devices({
         </div>
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-3">
-            {!readonly && selectedType === 'disk' && !hasRootDisk && !isCreatingRootDisk && (
-              <Card className="border-dashed border-primary/50 bg-primary/5">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold">No Root Disk</CardTitle>
-                  <CardDescription className="text-xs">
-                    A root disk is typically required for instances. Would you like to add one?
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <Button size="sm" className="w-full" onClick={handleAddClick}>
-                    <IconPlus className="h-4 w-4 mr-2" />
-                    Add Root Disk
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+            {!readonly &&
+              selectedType === 'disk' &&
+              !hasRootDisk &&
+              !isCreatingRootDisk && (
+                <Card className="border-dashed border-primary/50 bg-primary/5">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-semibold">
+                      No Root Disk
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      A root disk is typically required for instances. Would you
+                      like to add one?
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      onClick={handleAddClick}
+                    >
+                      <IconPlus className="h-4 w-4 mr-2" />
+                      Add Root Disk
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             {filteredDevices.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="rounded-full bg-muted p-4 mb-4">
