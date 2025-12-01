@@ -270,25 +270,19 @@ function OperationInspector({ operation }: { operation: IncusOperation }) {
 
 function isPlainObject(obj: unknown): obj is Record<string, unknown> {
   return (
-    !!obj &&
-    typeof obj === 'object' &&
-    Object.prototype.toString.call(obj) === '[object Object]'
+    !!obj && typeof obj === 'object' && Object.prototype.toString.call(obj) === '[object Object]'
   );
 }
 
 function MetadataSection({ title, metadata }: { title: string; metadata: unknown }) {
-  if (
-    !metadata ||
-    (isPlainObject(metadata) && Object.keys(metadata).length === 0)
-  ) {
+  if (!metadata || (isPlainObject(metadata) && Object.keys(metadata).length === 0)) {
     return null;
   }
 
-  const entries = (
-    isPlainObject(metadata)
-      ? Object.entries(metadata)
-      : [['value', metadata]]
-  ) as [string, unknown][];
+  const entries = (isPlainObject(metadata) ? Object.entries(metadata) : [['value', metadata]]) as [
+    string,
+    unknown,
+  ][];
 
   return (
     <div className="space-y-2">
