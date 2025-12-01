@@ -18,3 +18,12 @@ export async function jsonFetcher(url: string) {
       return data as StandardResponse<unknown>;
     });
 }
+
+export async function textFetcher(url: string) {
+  const endpoint = new URL(window.location.origin + url);
+  const res = await fetch(endpoint.toString());
+  if (!res.ok) {
+    throw new Error("Failed to fetch text content");
+  }
+  return res.text();
+}
