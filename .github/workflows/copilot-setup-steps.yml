@@ -105,6 +105,11 @@ jobs:
 
       - name: Create TLS certs directory
         run: |
+          set -euo pipefail
+          if [ -z "$ARARAT_CERT_DIR" ]; then
+            echo "Error: ARARAT_CERT_DIR is not set" >&2
+            exit 1
+          fi
           mkdir -p "$ARARAT_CERT_DIR"
 
       - name: Provision client TLS cert for Incus (self-signed)
