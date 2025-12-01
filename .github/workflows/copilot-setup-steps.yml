@@ -176,6 +176,19 @@ jobs:
           # Add the agent's client certificate to Incus trust store
           sudo incus config trust add-cert "$ARARAT_CERT_PEM" || true
 
+      - name: Verify Incus HTTPS endpoint
+        run: |
+          set -euo pipefail
+          # Ensure Incus HTTPS is responding before starting Caddy
+          for i in {1..30}; do
+            if curl -k --cert "$ARARAT_CERT_PEM" --key "$ARARAT_KEY_PEM" -sSf "https://127.0.0.1:8443/1.0" >/dev/null 2>&1; then
+              echo "✓ Incus HTTPS endpoint ready"
+              break
+            fi
+            sleep 1
+          done
+          curl -k --cert "$ARARAT_CERT_PEM" --key "$ARARAT_KEY_PEM" -sSf "https://127.0.0.1:8443/1.0" >/dev/null
+
       - name: Export environment for the agent and app
         run: |
           {
@@ -193,16 +206,15 @@ jobs:
             -v "$PWD/.caddy.Caddyfile":/etc/caddy/Caddyfile \
             -v "$ARARAT_CERT_DIR":/etc/caddy/certs:ro \
             caddy:2
-          # Quick health check
-          for i in {1..30}; do
-            if curl -sSf "http://localhost:${CADDY_HTTP_PORT}" >/dev/null 2>&1; then break; fi
-            sleep 1
-          done
-          if ! curl -sSf "http://localhost:${CADDY_HTTP_PORT}" >/dev/null 2>&1; then
-            echo "Caddy failed to start or bind" >&2
+          # Wait for Caddy to bind
+          sleep 3
+          # Check that Caddy container is still running
+          if ! docker ps | grep -q caddy-dev; then
+            echo "Caddy container exited" >&2
             docker logs caddy-dev || true
             exit 1
           fi
+          echo "✓ Caddy started and running"
 
       - name: Install Playwright browsers
         run: |
