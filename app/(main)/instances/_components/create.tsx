@@ -431,7 +431,7 @@ export default function CreateInstance({ className }: { className?: string }) {
         }}
       >
         <Form {...form}>
-          <form>
+          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
             <DialogTrigger asChild>
               <Button className={className} onClick={() => setDialogOpen(true)}>Create Instance</Button>
             </DialogTrigger>
@@ -584,30 +584,32 @@ export default function CreateInstance({ className }: { className?: string }) {
                   </Tabs>
                 )}
               </div>
-              <DialogFooter className="shrink-0 flex items-center justify-between">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground"
-                  onClick={toggleYamlEditor}
-                >
-                  {showYamlEditor ? "Back to form" : "Edit YAML"}
-                </Button>
-                <Button
-                  type="button"
-                  disabled={!isFormValid || isSubmitting}
-                  onClick={handleSubmit}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Spinner className="mr-2 h-4 w-4" />
-                      Creating...
-                    </>
-                  ) : (
-                    "Create Instance"
-                  )}
-                </Button>
+              <DialogFooter className="shrink-0">
+                <div className="flex items-center justify-between w-full">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground"
+                    onClick={toggleYamlEditor}
+                  >
+                    {showYamlEditor ? "Back to form" : "Edit YAML"}
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={!isFormValid || isSubmitting}
+                    onClick={handleSubmit}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Spinner className="mr-2 h-4 w-4" />
+                        Creating...
+                      </>
+                    ) : (
+                      "Create Instance"
+                    )}
+                  </Button>
+                </div>
               </DialogFooter>
             </DialogContent>
           </form>
