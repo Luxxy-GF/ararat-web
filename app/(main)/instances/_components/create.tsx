@@ -439,9 +439,6 @@ export default function CreateInstance({ className }: { className?: string }) {
                         Edit the raw YAML configuration. Changes will be synced with the form
                         fields.
                       </p>
-                      <Button variant="ghost" size="sm" onClick={toggleYamlEditor}>
-                        Back to form
-                      </Button>
                     </div>
                     {yamlError && <p className="text-sm text-destructive mb-2">{yamlError}</p>}
                     <div className="flex-1 min-h-0 border rounded-md overflow-hidden">
@@ -551,7 +548,7 @@ export default function CreateInstance({ className }: { className?: string }) {
                     className="text-muted-foreground"
                     onClick={toggleYamlEditor}
                   >
-                    {showYamlEditor ? 'Back to form' : 'Edit YAML'}
+                    {showYamlEditor ? 'Back to wizard' : 'Edit YAML'}
                   </Button>
                   <Button
                     type="submit"
