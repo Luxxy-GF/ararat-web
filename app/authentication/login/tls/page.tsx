@@ -15,7 +15,9 @@ export default function TLSAuth() {
     <Card>
       <CardHeader>
         <CardTitle>TLS Authentication</CardTitle>
-        <CardDescription>What certificate would you like to use?</CardDescription>
+        <CardDescription>
+          What certificate would you like to use?
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="w-full">

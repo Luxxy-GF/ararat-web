@@ -1,6 +1,13 @@
 'use client';
 
-import { createContext, useCallback, useEffect, useMemo, useState, use } from 'react';
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  use,
+} from 'react';
 import { useProjects } from '@/app/(main)/_hooks/projects';
 import type { Project } from '@/app/(main)/_lib/projects.d';
 import { mutate } from 'swr';
@@ -66,7 +73,8 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(() => {
-    const effectiveProject = currentProject === ALL_PROJECTS_VALUE ? null : currentProject;
+    const effectiveProject =
+      currentProject === ALL_PROJECTS_VALUE ? null : currentProject;
     return {
       projects: data ?? [],
       currentProject,
@@ -76,7 +84,15 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
       isValidating: !isClient || isValidating,
       error: error ?? null,
     };
-  }, [currentProject, data, error, isLoading, isValidating, setProject, isClient]);
+  }, [
+    currentProject,
+    data,
+    error,
+    isLoading,
+    isValidating,
+    setProject,
+    isClient,
+  ]);
 
   return <ProjectsContext value={value}>{children}</ProjectsContext>;
 }

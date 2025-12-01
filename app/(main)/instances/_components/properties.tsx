@@ -34,7 +34,9 @@ interface InstancePropertiesProps {
   profilesSelected: string[];
   setProfilesSelected: React.Dispatch<React.SetStateAction<string[]>>;
   instanceType: 'virtual-machine' | 'container';
-  setInstanceType: React.Dispatch<React.SetStateAction<'virtual-machine' | 'container'>>;
+  setInstanceType: React.Dispatch<
+    React.SetStateAction<'virtual-machine' | 'container'>
+  >;
 }
 
 export default function InstanceProperties({
@@ -98,7 +100,11 @@ export default function InstanceProperties({
             emptyLabel="No profiles found."
           >
             {profiles?.map((p) => (
-              <ComboboxItem key={p.name} value={p.name} description={p.description}>
+              <ComboboxItem
+                key={p.name}
+                value={p.name}
+                description={p.description}
+              >
                 {p.name}
               </ComboboxItem>
             ))}
@@ -109,7 +115,9 @@ export default function InstanceProperties({
         <FieldLabel htmlFor="type">Type</FieldLabel>
         <Select
           value={instanceType}
-          onValueChange={(value) => setInstanceType(value as 'virtual-machine' | 'container')}
+          onValueChange={(value) =>
+            setInstanceType(value as 'virtual-machine' | 'container')
+          }
         >
           <SelectTrigger id="type">
             <SelectValue placeholder="Select instance type" />

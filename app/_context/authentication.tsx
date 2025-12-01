@@ -19,7 +19,11 @@ const AuthenticationContext = createContext({
 
 export default AuthenticationContext;
 
-export function AuthenticationProvider({ children }: { children: React.ReactNode }) {
+export function AuthenticationProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const isClient = use(IsClientContext);

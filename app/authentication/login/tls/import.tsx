@@ -1,5 +1,9 @@
 'use client';
-import { Alert, AlertDescription, AlertTitle } from '@/app/_components/ui/alert';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '@/app/_components/ui/alert';
 import { AlertCircleIcon, CircleCheck, InfoIcon } from 'lucide-react';
 import { Button } from '@/app/_components/ui/button';
 import { Input } from '@/app/_components/ui/input';
@@ -18,7 +22,9 @@ export default function ImportCertificate() {
           <>
             <CircleCheck color="lime" />
             <AlertTitle>Certificate Imported Successfully</AlertTitle>
-            <AlertDescription>You can now use TLS authentication to log in.</AlertDescription>
+            <AlertDescription>
+              You can now use TLS authentication to log in.
+            </AlertDescription>
           </>
         ) : null}
         {!error && !success ? (
@@ -60,7 +66,7 @@ export default function ImportCertificate() {
                 .trim()
                 .split(/\r?\n|\r|\n/g)
                 .at(-1) || '',
-              true
+              true,
             );
           } catch (error) {
             if (error instanceof Error) {

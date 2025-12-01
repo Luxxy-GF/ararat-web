@@ -84,12 +84,20 @@ export default function ImageSelector({
   instanceType?: 'virtual-machine' | 'container';
 }) {
   const { currentProject } = use(ProjectsContext);
-  const { data: localImagesData, isLoading, isValidating } = useImages(currentProject);
-  const [userAddedRemoteServers, setUserAddedRemoteServers] = useState<RemoteServer[]>([]);
+  const {
+    data: localImagesData,
+    isLoading,
+    isValidating,
+  } = useImages(currentProject);
+  const [userAddedRemoteServers, setUserAddedRemoteServers] = useState<
+    RemoteServer[]
+  >([]);
   const [remoteImages, setRemoteImages] = useState<SelectableImage[]>([]);
   const [loadingRemotes, setLoadingRemotes] = useState(false);
   const [addingRemote, setAddingRemote] = useState(false);
-  const [remoteProtocol, setRemoteProtocol] = useState<'simplestreams' | 'oci'>('simplestreams');
+  const [remoteProtocol, setRemoteProtocol] = useState<'simplestreams' | 'oci'>(
+    'simplestreams',
+  );
   const [remoteURL, setRemoteURL] = useState('');
   const [ociImage, setOciImage] = useState('');
   const [stringFilter, setStringFilter] = useState('');
@@ -100,7 +108,8 @@ export default function ImageSelector({
     return localImagesData.map((image: Image) => ({
       id: `local-${image.fingerprint}`,
       local: true,
-      label: image.aliases?.[0]?.name ?? image.properties.os ?? image.fingerprint,
+      label:
+        image.aliases?.[0]?.name ?? image.properties.os ?? image.fingerprint,
       os: image.properties.os,
       release: image.properties.release,
       variant: image.properties.variant,
@@ -138,7 +147,7 @@ export default function ImageSelector({
 
   useEffect(() => {
     const serversToFetch = remoteServers.filter(
-      (remote) => !fetchedRemotesRef.current.has(remote.server)
+      (remote) => !fetchedRemotesRef.current.has(remote.server),
     );
     if (!serversToFetch.length) return;
     let cancelled = false;
@@ -150,9 +159,15 @@ export default function ImageSelector({
             const remoteImagesForServer = await fetchSimplestreamImages(remote);
             if (cancelled) return;
             fetchedRemotesRef.current.add(remote.server);
-            setRemoteImages((prev) => mergeImageLists(prev, remoteImagesForServer));
+            setRemoteImages((prev) =>
+              mergeImageLists(prev, remoteImagesForServer),
+            );
           } catch (error) {
-            console.error('Unable to fetch remote images', remote.server, error);
+            console.error(
+              'Unable to fetch remote images',
+              remote.server,
+              error,
+            );
           }
         }
       } finally {
@@ -178,14 +193,14 @@ export default function ImageSelector({
     (image: SelectableImage) => {
       onSelect(image);
     },
-    [onSelect]
+    [onSelect],
   );
 
   const handleRowClick = useCallback(
     (row: Row<object>) => {
       handleSelect(row.original as SelectableImage);
     },
-    [handleSelect]
+    [handleSelect],
   );
 
   const handleAddRemote = () => {
@@ -198,7 +213,10 @@ export default function ImageSelector({
       });
     } else if (remoteProtocol === 'oci' && ociImage) {
       const ociEntry = buildOciImage(normalized, ociImage);
-      setRemoteImages((prev) => [ociEntry, ...prev.filter((image) => image.id !== ociEntry.id)]);
+      setRemoteImages((prev) => [
+        ociEntry,
+        ...prev.filter((image) => image.id !== ociEntry.id),
+      ]);
     }
     setRemoteURL('');
     setOciImage('');
@@ -226,7 +244,10 @@ export default function ImageSelector({
                   {image.local ? 'Local' : 'Remote'}
                 </Badge>
               </div>
-              <span className="text-xs text-muted-foreground truncate" title={image.label}>
+              <span
+                className="text-xs text-muted-foreground truncate"
+                title={image.label}
+              >
                 {image.label}
               </span>
               {!image.local && image.remote?.server ? (
@@ -248,7 +269,9 @@ export default function ImageSelector({
           const image = row.original as SelectableImage;
           const typeText = image.types.length
             ? image.types
-                .map((type) => (type === 'virtual-machine' ? 'Virtual Machine' : 'Container'))
+                .map((type) =>
+                  type === 'virtual-machine' ? 'Virtual Machine' : 'Container',
+                )
                 .join(', ')
             : '—';
           return (
@@ -271,7 +294,7 @@ export default function ImageSelector({
         },
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -286,24 +309,30 @@ export default function ImageSelector({
                   {selectedImage.os ?? 'Unknown OS'}
                   {selectedImage.release ? ` · ${selectedImage.release}` : ''}
                 </p>
-                <p className="text-muted-foreground text-xs">{selectedImage.label}</p>
+                <p className="text-muted-foreground text-xs">
+                  {selectedImage.label}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {selectedImage.remote
                     ? `${formatProtocol(
-                        selectedImage.remote.protocol
+                        selectedImage.remote.protocol,
                       )} · ${formatSource(selectedImage.remote.server)}`
                     : 'Local image'}
                 </p>
               </>
             ) : (
-              <p className="text-muted-foreground">Select an image to define the instance base.</p>
+              <p className="text-muted-foreground">
+                Select an image to define the instance base.
+              </p>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <div>
               <p className="font-medium text-md my-auto">Available Images</p>
               <p className="text-xs text-muted-foreground">
-                {currentProject === 'all' ? 'All projects' : `Project · ${currentProject}`}
+                {currentProject === 'all'
+                  ? 'All projects'
+                  : `Project · ${currentProject}`}
               </p>
             </div>
             <div className="sm:ml-auto flex flex-wrap items-center gap-2 w-full sm:w-fit">
@@ -330,13 +359,17 @@ export default function ImageSelector({
                   <div className="flex gap-2 -mt-2" id="remoteProtocol">
                     <Select
                       value={remoteProtocol}
-                      onValueChange={(value) => setRemoteProtocol(value as 'simplestreams' | 'oci')}
+                      onValueChange={(value) =>
+                        setRemoteProtocol(value as 'simplestreams' | 'oci')
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Remote Type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="simplestreams">Simplestreams</SelectItem>
+                        <SelectItem value="simplestreams">
+                          Simplestreams
+                        </SelectItem>
                         <SelectItem value="oci">OCI</SelectItem>
                       </SelectContent>
                     </Select>
@@ -360,10 +393,15 @@ export default function ImageSelector({
                   ) : null}
                   <DialogFooter>
                     <Button
-                      disabled={!remoteURL || (remoteProtocol === 'oci' && !ociImage.trim().length)}
+                      disabled={
+                        !remoteURL ||
+                        (remoteProtocol === 'oci' && !ociImage.trim().length)
+                      }
                       onClick={handleAddRemote}
                     >
-                      {remoteProtocol === 'oci' ? 'Add OCI Image' : 'Add Remote Server'}
+                      {remoteProtocol === 'oci'
+                        ? 'Add OCI Image'
+                        : 'Add Remote Server'}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -382,7 +420,9 @@ export default function ImageSelector({
               data={images}
               onRowClick={handleRowClick}
               getRowClassName={(row) =>
-                (row.original as SelectableImage).id === selectedImageId ? 'bg-muted/30' : ''
+                (row.original as SelectableImage).id === selectedImageId
+                  ? 'bg-muted/30'
+                  : ''
               }
             />
           </div>
@@ -399,7 +439,10 @@ function normalizeRemoteURL(url: string) {
   return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
 }
 
-function mergeImageLists(current: SelectableImage[], incoming: SelectableImage[]) {
+function mergeImageLists(
+  current: SelectableImage[],
+  incoming: SelectableImage[],
+) {
   const map = new Map<string, SelectableImage>();
   current.forEach((image) => map.set(image.id, image));
   incoming.forEach((image) => map.set(image.id, image));
@@ -422,14 +465,16 @@ async function fetchSimplestreamImages(remote: RemoteServer) {
     throw new Error(`Unable to fetch images from ${base}`);
   }
   const imagesJson = await imagesRes.json();
-  const products = (imagesJson.products ?? {}) as Record<string, SimplestreamProduct>;
+  const products = (imagesJson.products ?? {}) as Record<
+    string,
+    SimplestreamProduct
+  >;
   const remoteImages: SelectableImage[] = [];
   Object.entries(products).forEach(([key, product]) => {
     const alias = extractPrimaryAlias(product.aliases) ?? key;
     const versionKey = selectLatestVersion(product.versions);
-    const versionItems: Record<string, SimplestreamItem> | undefined = versionKey
-      ? product.versions?.[versionKey]?.items
-      : undefined;
+    const versionItems: Record<string, SimplestreamItem> | undefined =
+      versionKey ? product.versions?.[versionKey]?.items : undefined;
     const types = deriveImageTypes(versionItems);
     remoteImages.push({
       id: `remote-${base}-${alias}-${product.arch ?? ''}-${product.variant ?? ''}`,
@@ -472,16 +517,18 @@ function deriveImageTypes(items?: Record<string, SimplestreamItem>) {
   const types = new Set<ImageKind>();
   const containerMatch = values.some((item) =>
     ['squashfs', 'lxd', 'rootfs'].some(
-      (token) => (item.ftype ?? '').includes(token) || (item.path ?? '').includes(token)
-    )
+      (token) =>
+        (item.ftype ?? '').includes(token) || (item.path ?? '').includes(token),
+    ),
   );
   if (containerMatch) {
     types.add('container');
   }
   const vmMatch = values.some((item) =>
     ['disk', 'qcow', 'uefi'].some(
-      (token) => (item.ftype ?? '').includes(token) || (item.path ?? '').includes(token)
-    )
+      (token) =>
+        (item.ftype ?? '').includes(token) || (item.path ?? '').includes(token),
+    ),
   );
   if (vmMatch) {
     types.add('virtual-machine');

@@ -35,7 +35,11 @@ import {
   SquaresIntersectIcon,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../_components/ui/collapsible';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '../_components/ui/collapsible';
 import Link from 'next/link';
 import AuthenticationContext from '../_context/authentication';
 import {
@@ -139,7 +143,9 @@ const data = {
   ],
 };
 
-export default function Sidebar({ ...props }: React.ComponentProps<typeof RawSidebar>) {
+export default function Sidebar({
+  ...props
+}: React.ComponentProps<typeof RawSidebar>) {
   return (
     <RawSidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -211,7 +217,10 @@ function NavMain({
                 </Collapsible>
               ) : (
                 <Link href={item.url}>
-                  <SidebarMenuButton isActive={pathname.startsWith(item.url)} tooltip={item.title}>
+                  <SidebarMenuButton
+                    isActive={pathname.startsWith(item.url)}
+                    tooltip={item.title}
+                  >
                     {item.icon && <item.icon />}
                     <span>{item.title}</span>
                   </SidebarMenuButton>
@@ -271,7 +280,10 @@ function NavUser() {
     <SidebarMenu className={authIsValidating ? 'animate-pulse' : ''}>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild disabled={authIsLoading ? true : authData?.method == 'tls'}>
+          <DropdownMenuTrigger
+            asChild
+            disabled={authIsLoading ? true : authData?.method == 'tls'}
+          >
             <SidebarMenuButton
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
@@ -295,7 +307,9 @@ function NavUser() {
                 )}
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className={`truncate font-medium ${userIsValidating ? 'animate-pulse' : ''}`}>
+                <span
+                  className={`truncate font-medium ${userIsValidating ? 'animate-pulse' : ''}`}
+                >
                   {!userIsLoading
                     ? authData?.method == 'tls'
                       ? userData?.name
@@ -310,7 +324,9 @@ function NavUser() {
                     : 'Loading...'}
                 </span>
               </div>
-              {authData?.method == 'oidc' ? <IconDotsVertical className="ml-auto size-4" /> : null}
+              {authData?.method == 'oidc' ? (
+                <IconDotsVertical className="ml-auto size-4" />
+              ) : null}
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -352,7 +368,9 @@ function NavUser() {
                   ) : (
                     <>
                       <span className="truncate font-medium">First Last</span>
-                      <span className="text-muted-foreground truncate text-xs">{'user.email'}</span>
+                      <span className="text-muted-foreground truncate text-xs">
+                        {'user.email'}
+                      </span>
                     </>
                   )}
                 </div>

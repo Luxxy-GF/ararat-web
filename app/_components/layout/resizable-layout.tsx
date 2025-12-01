@@ -37,9 +37,16 @@ export function ResizableLayout({
   className = '',
 }: ResizableLayoutProps) {
   return (
-    <ResizablePanelGroup direction="horizontal" className={`flex h-full ${className}`}>
+    <ResizablePanelGroup
+      direction="horizontal"
+      className={`flex h-full ${className}`}
+    >
       {/* Sidebar Panel */}
-      <ResizablePanel defaultSize={sidebarSize} minSize={sidebarMinSize} maxSize={sidebarMaxSize}>
+      <ResizablePanel
+        defaultSize={sidebarSize}
+        minSize={sidebarMinSize}
+        maxSize={sidebarMaxSize}
+      >
         {sidebar}
       </ResizablePanel>
 
@@ -54,7 +61,11 @@ export function ResizableLayout({
       {detail && (
         <>
           <ResizableHandle />
-          <ResizablePanel defaultSize={detailSize} minSize={detailMinSize} maxSize={detailMaxSize}>
+          <ResizablePanel
+            defaultSize={detailSize}
+            minSize={detailMinSize}
+            maxSize={detailMaxSize}
+          >
             {detail}
           </ResizablePanel>
         </>

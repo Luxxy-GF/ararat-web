@@ -16,7 +16,9 @@ self.addEventListener('message', (ev: MessageEvent) => {
     cert.serialNumber = String(Date.now());
     cert.validity.notBefore = new Date();
     cert.validity.notAfter = new Date();
-    cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 2);
+    cert.validity.notAfter.setFullYear(
+      cert.validity.notBefore.getFullYear() + 2,
+    );
 
     const attrs = [
       {
@@ -34,9 +36,14 @@ self.addEventListener('message', (ev: MessageEvent) => {
     // Create PFX (PKCS#12) with the supplied password (may be empty string)
     let pfxBase64: string | undefined;
     try {
-      const pfxAsn1 = forge.pkcs12.toPkcs12Asn1(keys.privateKey, [cert], password, {
-        algorithm: '3des',
-      });
+      const pfxAsn1 = forge.pkcs12.toPkcs12Asn1(
+        keys.privateKey,
+        [cert],
+        password,
+        {
+          algorithm: '3des',
+        },
+      );
       const pfxDer = forge.asn1.toDer(pfxAsn1).getBytes();
       pfxBase64 = forge.util.encode64(pfxDer);
     } catch (pfxErr) {

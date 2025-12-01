@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ColumnDef, Row } from '@tanstack/react-table';
 
-import { Alert, AlertDescription, AlertTitle } from '@/app/_components/ui/alert';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '@/app/_components/ui/alert';
 import { Badge } from '@/app/_components/ui/badge';
 import DataTable from '@/app/_components/ui/data-table';
 import { Input } from '@/app/_components/ui/input';
@@ -11,7 +15,10 @@ import { Skeleton } from '@/app/_components/ui/skeleton';
 import { cn } from '@/app/_components/ui/lib/utils';
 import { Button } from '@/app/_components/ui/button';
 import { Spinner } from '@/app/_components/ui/spinner';
-import { cancelOperation, fetchOperationsList } from '@/app/(main)/operations/_lib/operations';
+import {
+  cancelOperation,
+  fetchOperationsList,
+} from '@/app/(main)/operations/_lib/operations';
 import {
   Sheet,
   SheetContent,
@@ -64,10 +71,13 @@ export default function OperationsPage() {
   const [operations, setOperations] = useState<IncusOperation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('');
-  const [selectedOperations, setSelectedOperations] = useState<IncusOperation[]>([]);
+  const [selectedOperations, setSelectedOperations] = useState<
+    IncusOperation[]
+  >([]);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
-  const [inspectorOperation, setInspectorOperation] = useState<IncusOperation | null>(null);
+  const [inspectorOperation, setInspectorOperation] =
+    useState<IncusOperation | null>(null);
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
 
   const fetchOperations = useCallback(async () => {
@@ -78,7 +88,7 @@ export default function OperationsPage() {
           const dateA = new Date(a.created_at ?? a.updated_at ?? 0).getTime();
           const dateB = new Date(b.created_at ?? b.updated_at ?? 0).getTime();
           return dateB - dateA;
-        })
+        }),
       );
     } catch {
     } finally {
@@ -97,7 +107,11 @@ export default function OperationsPage() {
         accessorKey: 'id',
         cell: ({ row }: { row: Row<object> }) => {
           const operation = row.original as IncusOperation;
-          return <div className="font-mono text-xs truncate max-w-[200px]">{operation.id}</div>;
+          return (
+            <div className="font-mono text-xs truncate max-w-[200px]">
+              {operation.id}
+            </div>
+          );
         },
       },
       {
@@ -129,7 +143,10 @@ export default function OperationsPage() {
           return (
             <Badge
               variant="outline"
-              className={cn('border px-2 py-0.5 text-xs font-medium', statusMeta.className)}
+              className={cn(
+                'border px-2 py-0.5 text-xs font-medium',
+                statusMeta.className,
+              )}
             >
               {statusMeta.label}
             </Badge>
@@ -142,12 +159,14 @@ export default function OperationsPage() {
         cell: ({ row }: { row: Row<object> }) => {
           const operation = row.original as IncusOperation;
           return (
-            <span className="text-sm text-zinc-300">{formatDateTime(operation.created_at)}</span>
+            <span className="text-sm text-zinc-300">
+              {formatDateTime(operation.created_at)}
+            </span>
           );
         },
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -155,7 +174,9 @@ export default function OperationsPage() {
       <div className="flex flex-wrap items-center gap-3">
         <div>
           <p className="text-2xl font-semibold">Operations</p>
-          <p className="text-sm text-muted-foreground">Live tasks and background operations</p>
+          <p className="text-sm text-muted-foreground">
+            Live tasks and background operations
+          </p>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-3">
           {selectedOperations.length ? (
@@ -169,12 +190,16 @@ export default function OperationsPage() {
                 setIsCancelling(true);
                 try {
                   await Promise.all(
-                    selectedOperations.map((operation) => cancelOperation(operation.id))
+                    selectedOperations.map((operation) =>
+                      cancelOperation(operation.id),
+                    ),
                   );
                   await fetchOperations();
                 } catch (error) {
                   setActionError(
-                    error instanceof Error ? error.message : 'Unable to cancel operations.'
+                    error instanceof Error
+                      ? error.message
+                      : 'Unable to cancel operations.',
                   );
                 } finally {
                   setIsCancelling(false);
@@ -228,7 +253,9 @@ export default function OperationsPage() {
         />
       ) : (
         <div className="flex h-48 items-center justify-center rounded-md border border-white/5">
-          <p className="text-sm text-muted-foreground">No operations are currently running.</p>
+          <p className="text-sm text-muted-foreground">
+            No operations are currently running.
+          </p>
         </div>
       )}
       <Sheet
@@ -270,23 +297,35 @@ function OperationInspector({ operation }: { operation: IncusOperation }) {
 
 function isPlainObject(obj: unknown): obj is Record<string, unknown> {
   return (
-    !!obj && typeof obj === 'object' && Object.prototype.toString.call(obj) === '[object Object]'
+    !!obj &&
+    typeof obj === 'object' &&
+    Object.prototype.toString.call(obj) === '[object Object]'
   );
 }
 
-function MetadataSection({ title, metadata }: { title: string; metadata: unknown }) {
-  if (!metadata || (isPlainObject(metadata) && Object.keys(metadata).length === 0)) {
+function MetadataSection({
+  title,
+  metadata,
+}: {
+  title: string;
+  metadata: unknown;
+}) {
+  if (
+    !metadata ||
+    (isPlainObject(metadata) && Object.keys(metadata).length === 0)
+  ) {
     return null;
   }
 
-  const entries = (isPlainObject(metadata) ? Object.entries(metadata) : [['value', metadata]]) as [
-    string,
-    unknown,
-  ][];
+  const entries = (
+    isPlainObject(metadata) ? Object.entries(metadata) : [['value', metadata]]
+  ) as [string, unknown][];
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium uppercase text-muted-foreground">{title}</p>
+      <p className="text-xs font-medium uppercase text-muted-foreground">
+        {title}
+      </p>
       <div className="space-y-2 rounded-md border border-white/10 bg-black/30 p-3 text-sm">
         {entries.map(([key, value]) => (
           <KeyValueCard key={`${title}-${key}`} label={key}>
@@ -298,7 +337,13 @@ function MetadataSection({ title, metadata }: { title: string; metadata: unknown
   );
 }
 
-function KeyValueCard({ label, children }: { label: string; children: React.ReactNode }) {
+function KeyValueCard({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1 rounded-md border border-white/5 bg-zinc-900/70 px-3 py-2">
       <p className="text-[10px] font-medium uppercase text-muted-foreground tracking-wide">
@@ -311,7 +356,8 @@ function KeyValueCard({ label, children }: { label: string; children: React.Reac
 
 function renderValue(value: unknown): React.ReactNode {
   if (value === null || typeof value === 'undefined') return '—';
-  if (typeof value === 'string' || typeof value === 'number') return value.toString();
+  if (typeof value === 'string' || typeof value === 'number')
+    return value.toString();
   if (Array.isArray(value)) {
     if (!value.length) return '[]';
     return (

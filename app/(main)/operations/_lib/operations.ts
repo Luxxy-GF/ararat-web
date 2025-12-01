@@ -36,7 +36,9 @@ export async function fetchOperationsList(): Promise<IncusOperation[]> {
   return resolveOperations(json);
 }
 
-async function resolveOperations(payload: OperationsResponse): Promise<IncusOperation[]> {
+async function resolveOperations(
+  payload: OperationsResponse,
+): Promise<IncusOperation[]> {
   const raw = payload?.metadata;
   if (Array.isArray(raw)) {
     return raw as IncusOperation[];
@@ -55,23 +57,30 @@ async function resolveOperations(payload: OperationsResponse): Promise<IncusOper
     ] as (string | IncusOperation)[];
     const flattenedObjects = buckets.filter(
       (entry): entry is IncusOperation =>
-        typeof entry === 'object' && entry !== null && 'status' in entry && 'id' in entry
+        typeof entry === 'object' &&
+        entry !== null &&
+        'status' in entry &&
+        'id' in entry,
     );
     if (flattenedObjects.length) {
       return flattenedObjects;
     }
-    const stringPaths = buckets.filter((entry): entry is string => typeof entry === 'string');
+    const stringPaths = buckets.filter(
+      (entry): entry is string => typeof entry === 'string',
+    );
     const uniquePaths = Array.from(new Set(stringPaths));
     if (!uniquePaths.length) return [];
     const details = await Promise.all(
       uniquePaths.map(async (path) => {
         const detailRes = await fetch(path, { cache: 'no-store' });
         if (!detailRes.ok) {
-          throw new Error(`Unable to fetch operation ${path}: ${detailRes.status}`);
+          throw new Error(
+            `Unable to fetch operation ${path}: ${detailRes.status}`,
+          );
         }
         const detailJson = (await detailRes.json()) as OperationDetailResponse;
         return detailJson.metadata;
-      })
+      }),
     );
     return details;
   }

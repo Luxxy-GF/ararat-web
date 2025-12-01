@@ -12,7 +12,11 @@ const EventEmitterContext = createContext<EventEmitterContextValue>({
 });
 export default EventEmitterContext;
 
-export function EventEmitterProvider({ children }: { children: React.ReactNode }) {
+export function EventEmitterProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [eventEmitter, setEventEmitter] = useState<WebSocket>();
 
   useEffect(() => {
@@ -21,7 +25,9 @@ export function EventEmitterProvider({ children }: { children: React.ReactNode }
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const ws = new WebSocket(`${protocol}://${window.location.host}/1.0/events`);
+    const ws = new WebSocket(
+      `${protocol}://${window.location.host}/1.0/events`,
+    );
 
     const handleOpen = () => {
       setEventEmitter(ws);
@@ -73,7 +79,7 @@ export function EventEmitterProvider({ children }: { children: React.ReactNode }
             loading: 'Loading...',
             success: ({ name }: { name: string }) => `${name} mmm`,
             error: `MMM`,
-          }
+          },
         );
       }
     };
@@ -87,5 +93,9 @@ export function EventEmitterProvider({ children }: { children: React.ReactNode }
     };
   }, []);
 
-  return <EventEmitterContext value={{ eventEmitter }}>{children}</EventEmitterContext>;
+  return (
+    <EventEmitterContext value={{ eventEmitter }}>
+      {children}
+    </EventEmitterContext>
+  );
 }

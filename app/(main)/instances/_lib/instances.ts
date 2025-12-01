@@ -5,11 +5,11 @@ import type { Device } from './instances.d';
  */
 export function hasValidRootDisk(
   devices: Record<string, Device>,
-  inheritedDevices: Record<string, Device>
+  inheritedDevices: Record<string, Device>,
 ): boolean {
   const allDevices = { ...inheritedDevices, ...devices };
   const rootDisk = Object.values(allDevices).find(
-    (device) => device.type === 'disk' && device.path === '/'
+    (device) => device.type === 'disk' && device.path === '/',
   );
   return rootDisk !== undefined && !!rootDisk.pool;
 }
@@ -19,7 +19,7 @@ export function hasValidRootDisk(
  */
 export async function createInstance(
   payload: Record<string, unknown>,
-  project: string | null
+  project: string | null,
 ): Promise<{ operation?: string; error?: string }> {
   const params = new URLSearchParams();
   if (project && project !== 'all') {
@@ -46,7 +46,9 @@ export async function createInstance(
 
     if (!response.ok) {
       return {
-        error: (data.error as string) || `HTTP ${response.status}: ${response.statusText}`,
+        error:
+          (data.error as string) ||
+          `HTTP ${response.status}: ${response.statusText}`,
       };
     }
 

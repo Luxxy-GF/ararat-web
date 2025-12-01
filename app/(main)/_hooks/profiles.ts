@@ -8,7 +8,9 @@ export function useProfiles(profiles?: string[]) {
       query += `&filter=${profiles.map((p) => `name eq ${p}`).join(' or ')}`;
     }
   }
-  const result = useSWR(`/1.0/profiles?recursion=1${query}`, () => getProfiles(profiles));
+  const result = useSWR(`/1.0/profiles?recursion=1${query}`, () =>
+    getProfiles(profiles),
+  );
   const profilesList: string[] = [];
   result.data?.forEach((profile) => {
     mutate(`/1.0/profiles/${profile.name}`, profile, { revalidate: false });

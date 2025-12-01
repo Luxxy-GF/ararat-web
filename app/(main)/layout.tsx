@@ -4,7 +4,11 @@ import { UserProvider } from '@/app/(main)/_context/user';
 import { SiteHeader } from '@/app/(main)/_components/header';
 import { SidebarInset, SidebarProvider } from '@/app/_components/ui/sidebar';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const variant = 'inset';
   return (
     <UserProvider>
