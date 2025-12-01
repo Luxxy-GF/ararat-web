@@ -271,13 +271,11 @@ function OperationInspector({ operation }: { operation: IncusOperation }) {
 function MetadataSection({ title, metadata }: { title: string; metadata: unknown }) {
   if (
     !metadata ||
-    (
-      typeof metadata === 'object' &&
+    (typeof metadata === 'object' &&
       metadata !== null &&
       !Array.isArray(metadata) &&
       Object.prototype.toString.call(metadata) === '[object Object]' &&
-      !Object.keys(metadata as object).length
-    )
+      !Object.keys(metadata as object).length)
   ) {
     return null;
   }
