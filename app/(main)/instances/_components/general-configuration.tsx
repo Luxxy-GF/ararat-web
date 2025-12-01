@@ -4,7 +4,6 @@ import * as React from 'react';
 import { Input } from '@/app/_components/ui/input';
 import { Switch } from '@/app/_components/ui/switch';
 import { Button } from '@/app/_components/ui/button';
-import { Badge } from '@/app/_components/ui/badge';
 import { IconRotateClockwise, IconArrowLeft } from '@tabler/icons-react';
 import { useConfigurableOptions } from '@/app/_hooks/server';
 import { ConfigOption } from '@/app/_lib/server.d';
