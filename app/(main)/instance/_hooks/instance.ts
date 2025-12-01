@@ -6,7 +6,7 @@ import { jsonFetcher } from "../../../_lib/fetcher";
 export function useInstance(name: string | null, config?: any) {
     const { data, error, isLoading, mutate } = useSWR<StandardResponse<Instance>>(
         name ? `/1.0/instances/${name}?recursion=1` : null,
-        jsonFetcher,
+        (url) => jsonFetcher<Instance>(url),
         config
     );
 
@@ -21,7 +21,7 @@ export function useInstance(name: string | null, config?: any) {
 export function useInstanceAccess(name: string | null) {
     const { data, error, isLoading } = useSWR<StandardResponse<string[]>>(
         name ? `/1.0/instances/${name}/access` : null,
-        jsonFetcher
+        (url: string) => jsonFetcher<string[]>(url)
     );
 
     return {

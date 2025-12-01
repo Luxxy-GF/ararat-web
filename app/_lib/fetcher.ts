@@ -1,12 +1,12 @@
 import type { StandardResponse, ErrorResponse } from "@/app/_lib/response.d";
 
-export async function jsonFetcher(url: string) {
+export async function jsonFetcher<T = unknown>(url: string) {
   const endpoint = new URL(window.location.origin + url);
   return fetch(endpoint.toString())
     .then(
       (res) =>
         res.json() as Promise<
-          StandardResponse<unknown> | ErrorResponse<unknown>
+          StandardResponse<T> | ErrorResponse<unknown>
         >
     )
     .then((data) => {
@@ -15,7 +15,7 @@ export async function jsonFetcher(url: string) {
           ...data,
         } as ErrorResponse<unknown>;
       }
-      return data as StandardResponse<unknown>;
+      return data as StandardResponse<T>;
     });
 }
 

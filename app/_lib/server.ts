@@ -2,12 +2,12 @@ import { jsonFetcher } from './fetcher';
 import type { ConfigurableOptions, Server, ConfigOption } from './server.d';
 
 export async function getServerConfiguration() {
-  return jsonFetcher('/1.0').then((data) => data.metadata as Server);
+  return jsonFetcher<Server>('/1.0').then((data) => data.metadata);
 }
 
 export async function getConfigurableOptions() {
-  return jsonFetcher('/1.0/metadata/configuration').then((data) => {
-    const config = data.metadata as ConfigurableOptions;
+  return jsonFetcher<ConfigurableOptions>('/1.0/metadata/configuration').then((data) => {
+    const config = data.metadata;
     processConfigurableOptions(config);
     return config;
   });
