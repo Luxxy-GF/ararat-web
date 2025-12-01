@@ -5,7 +5,6 @@ export async function addCertificate(
   token: string,
   publicRequest: boolean
 ): Promise<StandardResponse<undefined>> {
-  publicRequest = false;
   const url = `/1.0/certificates${publicRequest ? '?public=true' : ''}`;
   const body: AddCertificateBody | AddCertificateBodyPublic = {
     type: 'client',
