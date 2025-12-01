@@ -30,10 +30,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/app/_components/ui/form";
-import type { InstanceFormValues } from "@/app/(main)/instances/_lib/instances.d";
+import type { CreateInstanceBody } from "@/app/(main)/instances/_lib/instances.d";
 
 interface InstancePropertiesProps {
-  form: UseFormReturn<InstanceFormValues>;
+  form: UseFormReturn<CreateInstanceBody>;
   profilesSelected: string[];
   setProfilesSelected: React.Dispatch<React.SetStateAction<string[]>>;
   instanceType: "virtual-machine" | "container";

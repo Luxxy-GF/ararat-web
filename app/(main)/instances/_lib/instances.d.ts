@@ -78,9 +78,9 @@ export type InstancesMetadata = Instance[];
 export type InstancesResponse = StandardResponse<InstancesMetadata>;
 
 /**
- * Form values for creating a new instance
+ * Request body schema for POST /1.0/instances API endpoint
  */
-export interface InstanceFormValues {
+export interface CreateInstanceBody {
   name: string;
   description?: string;
   ephemeral?: boolean;
