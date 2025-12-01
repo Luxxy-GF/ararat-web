@@ -1,4 +1,4 @@
-import { StandardResponse } from "../../../app/_lib/response";
+import { StandardResponse } from '../../../app/_lib/response';
 
 export interface Project {
   name: string;

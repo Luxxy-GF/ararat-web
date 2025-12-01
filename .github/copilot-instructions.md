@@ -2,6 +2,22 @@
 
 This project (Hye Ararat) is a web app that allows users to manage system/app containers and VMs. It is built on Next.js and drives the Incus API.
 
+## Code Standards
+
+### Required Before Each Commit
+
+- Run `bun run format` before committing any changes to ensure proper code formatting
+- This will run Prettier on all files to maintain consistent style
+
+### Development Flow
+
+- Install dependencies: `bun install`
+- Development server: `bun run dev`
+- Build: `bun run build`
+- Lint: `bun run lint`
+- Format check: `bun run format:check`
+- Format fix: `bun run format`
+
 ## Folder Structure
 
 - Files are in the nearest shared parent of all consumers.
@@ -42,3 +58,11 @@ When creating new API functionality, follow this structure based on the highest-
 - Tailwind CSS for the frontend
 - shadcn/ui based components in `app/_components/ui`
 - swr for data fetching
+
+## Key Guidelines
+
+1. Follow TypeScript best practices and use strict typing
+2. Maintain existing code structure and organization
+3. Use React hooks and functional components
+4. Write clear, descriptive variable and function names
+5. Keep components small and focused on a single responsibility

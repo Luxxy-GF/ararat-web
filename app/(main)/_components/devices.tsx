@@ -1,39 +1,39 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Button } from "@/app/_components/ui/button";
+import * as React from 'react';
+import { Button } from '@/app/_components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/app/_components/ui/card";
-import { Input } from "@/app/_components/ui/input";
-import { Label } from "@/app/_components/ui/label";
-import { ScrollArea } from "@/app/_components/ui/scroll-area";
-import { Separator } from "@/app/_components/ui/separator";
-import { Badge } from "@/app/_components/ui/badge";
-import { Switch } from "@/app/_components/ui/switch";
+} from '@/app/_components/ui/card';
+import { Input } from '@/app/_components/ui/input';
+import { Label } from '@/app/_components/ui/label';
+import { ScrollArea } from '@/app/_components/ui/scroll-area';
+import { Separator } from '@/app/_components/ui/separator';
+import { Badge } from '@/app/_components/ui/badge';
+import { Switch } from '@/app/_components/ui/switch';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/app/_components/ui/select";
+} from '@/app/_components/ui/select';
 import {
   Combobox,
   ComboboxTrigger,
   ComboboxContent,
   ComboboxItem,
-} from "@/app/_components/ui/combobox";
+} from '@/app/_components/ui/combobox';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/app/_components/ui/accordion";
+} from '@/app/_components/ui/accordion';
 import {
   IconPlus,
   IconTrash,
@@ -43,30 +43,30 @@ import {
   IconArrowsLeftRight,
   IconArrowLeft,
   IconX,
-} from "@tabler/icons-react";
-import { useConfigurableOptions } from "@/app/_hooks/server";
+} from '@tabler/icons-react';
+import { useConfigurableOptions } from '@/app/_hooks/server';
 import {
   useStoragePools,
   useStoragePoolVolumes,
-} from "@/app/(main)/_hooks/storagePools";
-import { useNetworks } from "@/app/(main)/_hooks/networks";
-import type { Device } from "@/app/(main)/instances/_lib/instances.d";
-import type { ConfigOption } from "@/app/_lib/server.d";
-import { useResources } from "@/app/(main)/_hooks/resources";
-import { VerticalTabsLayout } from "@/app/_components/layout/vertical-tabs-layout";
-import { useMobile } from "@/app/_components/ui/hooks/use-mobile";
+} from '@/app/(main)/_hooks/storagePools';
+import { useNetworks } from '@/app/(main)/_hooks/networks';
+import type { Device } from '@/app/(main)/instances/_lib/instances.d';
+import type { ConfigOption } from '@/app/_lib/server.d';
+import { useResources } from '@/app/(main)/_hooks/resources';
+import { VerticalTabsLayout } from '@/app/_components/layout/vertical-tabs-layout';
+import { useMobile } from '@/app/_components/ui/hooks/use-mobile';
 
 // Utility function to validate port specifications (Issue 3)
 function validatePort(portSpec: string): boolean {
-  if (!portSpec || portSpec.trim() === "") return false;
+  if (!portSpec || portSpec.trim() === '') return false;
 
   // Split by comma for comma-separated ports
-  const parts = portSpec.split(",").map((p) => p.trim());
+  const parts = portSpec.split(',').map((p) => p.trim());
 
   for (const part of parts) {
     // Check if it's a range
-    if (part.includes("-")) {
-      const [start, end] = part.split("-").map((p) => parseInt(p.trim(), 10));
+    if (part.includes('-')) {
+      const [start, end] = part.split('-').map((p) => parseInt(p.trim(), 10));
       if (
         isNaN(start) ||
         isNaN(end) ||
@@ -93,20 +93,20 @@ function parseProxyConnection(connection: string): {
   address: string;
   port: string;
 } {
-  if (!connection) return { type: "tcp", address: "", port: "" };
+  if (!connection) return { type: 'tcp', address: '', port: '' };
 
-  const parts = connection.split(":");
-  if (parts.length < 2) return { type: "tcp", address: "", port: "" };
+  const parts = connection.split(':');
+  if (parts.length < 2) return { type: 'tcp', address: '', port: '' };
 
   const type = parts[0];
 
-  if (type === "unix") {
+  if (type === 'unix') {
     // Unix socket: everything after "unix:" is the path
-    return { type, address: parts.slice(1).join(":"), port: "" };
+    return { type, address: parts.slice(1).join(':'), port: '' };
   }
 
   // For TCP/UDP, handle IPv6 addresses in brackets [addr]:port
-  const rest = parts.slice(1).join(":");
+  const rest = parts.slice(1).join(':');
 
   // Check for IPv6 format with brackets: [addr]:port
   const ipv6Match = rest.match(/^\[([^\]]+)\]:(.+)$/);
@@ -115,9 +115,9 @@ function parseProxyConnection(connection: string): {
   }
 
   // Check for IPv6 without port (just the address)
-  if (rest.includes(":")) {
+  if (rest.includes(':')) {
     // Likely IPv6 address without port, or IPv4:port
-    const lastColon = rest.lastIndexOf(":");
+    const lastColon = rest.lastIndexOf(':');
     const potentialPort = rest.substring(lastColon + 1);
 
     // If last part looks like a port (number or range), split there
@@ -130,7 +130,7 @@ function parseProxyConnection(connection: string): {
     }
 
     // Otherwise treat entire rest as IPv6 address
-    return { type, address: rest, port: "" };
+    return { type, address: rest, port: '' };
   }
 
   // Simple case: type:address:port
@@ -139,21 +139,21 @@ function parseProxyConnection(connection: string): {
   }
 
   // Fallback
-  return { type, address: rest, port: "" };
+  return { type, address: rest, port: '' };
 }
 
 // Serialize proxy connection - supports IPv6 (Issue 1)
 function serializeProxyConnection(
   type: string,
   address: string,
-  port: string
+  port: string,
 ): string {
-  if (type === "unix") {
+  if (type === 'unix') {
     return `${type}:${address}`;
   }
 
   // If address contains colons (IPv6), wrap in brackets when port is present
-  if (address.includes(":") && port) {
+  if (address.includes(':') && port) {
     return `${type}:[${address}]:${port}`;
   }
 
@@ -166,7 +166,7 @@ export interface DevicesProps {
   onDevicesChange?: (devices: Record<string, Device>) => void;
   readonly?: boolean;
   flags?: {
-    type?: "virtual-machine" | "container";
+    type?: 'virtual-machine' | 'container';
   };
 }
 
@@ -177,7 +177,7 @@ export interface DevicesProps {
 type ValidationError = {
   field: string;
   message: string;
-  severity: "error" | "warning";
+  severity: 'error' | 'warning';
 };
 
 type ValidationResult = {
@@ -190,13 +190,13 @@ class DeviceValidator {
     name: string,
     existingDevices: Record<string, Device>,
     inheritedDevices: Record<string, Device>,
-    editingDeviceName?: string
+    editingDeviceName?: string,
   ): ValidationError | null {
-    if (!name || name.trim() === "") {
+    if (!name || name.trim() === '') {
       return {
-        field: "name",
-        message: "Device name is required",
-        severity: "error",
+        field: 'name',
+        message: 'Device name is required',
+        severity: 'error',
       };
     }
 
@@ -207,9 +207,9 @@ class DeviceValidator {
 
     if (editingDeviceName !== name && allNames.has(name)) {
       return {
-        field: "name",
+        field: 'name',
         message: `Device "${name}" already exists`,
-        severity: "error",
+        severity: 'error',
       };
     }
 
@@ -221,23 +221,23 @@ class DeviceValidator {
     deviceType: string,
     existingDevices: Record<string, Device>,
     inheritedDevices: Record<string, Device>,
-    editingDeviceName?: string
+    editingDeviceName?: string,
   ): ValidationError | null {
-    if (deviceType !== "disk" || !path) return null;
+    if (deviceType !== 'disk' || !path) return null;
 
     const allDevices = { ...inheritedDevices, ...existingDevices };
     const hasDuplicate = Object.entries(allDevices).some(
       ([deviceName, device]) => {
         if (editingDeviceName && deviceName === editingDeviceName) return false;
-        return device.type === "disk" && device.path === path;
-      }
+        return device.type === 'disk' && device.path === path;
+      },
     );
 
     if (hasDuplicate) {
       return {
-        field: "path",
+        field: 'path',
         message: `Another disk already uses path "${path}"`,
-        severity: "error",
+        severity: 'error',
       };
     }
 
@@ -246,16 +246,16 @@ class DeviceValidator {
 
   static validatePort(
     portSpec: string,
-    fieldName: string
+    fieldName: string,
   ): ValidationError | null {
-    if (!portSpec || portSpec.trim() === "") return null;
+    if (!portSpec || portSpec.trim() === '') return null;
 
     if (!validatePort(portSpec)) {
       return {
         field: fieldName,
         message:
-          "Invalid port specification. Use single port (80), range (80-90), or comma-separated (80,443)",
-        severity: "error",
+          'Invalid port specification. Use single port (80), range (80-90), or comma-separated (80,443)',
+        severity: 'error',
       };
     }
 
@@ -269,7 +269,7 @@ class DeviceValidator {
     isRoot: boolean,
     isNetworkDevice: boolean,
     isGPUDevice: boolean,
-    instanceType: "container" | "virtual-machine"
+    instanceType: 'container' | 'virtual-machine',
   ): ValidationError[] {
     const errors: ValidationError[] = [];
 
@@ -281,27 +281,27 @@ class DeviceValidator {
           let isRequired = false;
           if (Array.isArray(config.required_for)) {
             isRequired = config.required_for.includes(instanceType);
-          } else if (config.required === "yes") {
+          } else if (config.required === 'yes') {
             isRequired = true;
           }
 
           if (isRequired) {
-            if (isRoot && key === "pool" && !properties.pool) {
+            if (isRoot && key === 'pool' && !properties.pool) {
               errors.push({
                 field: key,
-                message: "Storage pool is required",
-                severity: "error",
+                message: 'Storage pool is required',
+                severity: 'error',
               });
             } else if (
               isRoot &&
-              (key.startsWith("path") || key.startsWith("source"))
+              (key.startsWith('path') || key.startsWith('source'))
             ) {
               // Skip - managed automatically
             } else if (!isRoot && !properties[key]) {
               errors.push({
                 field: key,
                 message: `${key} is required`,
-                severity: "error",
+                severity: 'error',
               });
             }
           }
@@ -317,19 +317,19 @@ class DeviceValidator {
 
       if (!hasNetwork && (!hasNictype || !hasParent)) {
         errors.push({
-          field: "network",
-          message: "Select a network OR specify both nictype and parent",
-          severity: "error",
+          field: 'network',
+          message: 'Select a network OR specify both nictype and parent',
+          severity: 'error',
         });
       }
     }
 
     // GPU mdev validation
-    if (isGPUDevice && properties.gputype === "mdev" && !properties.mdev) {
+    if (isGPUDevice && properties.gputype === 'mdev' && !properties.mdev) {
       errors.push({
-        field: "mdev",
-        message: "MDEV field is required for GPU MDEV type",
-        severity: "error",
+        field: 'mdev',
+        message: 'MDEV field is required for GPU MDEV type',
+        severity: 'error',
       });
     }
 
@@ -347,7 +347,7 @@ class DeviceValidator {
     isRoot?: boolean,
     isNetworkDevice?: boolean,
     isGPUDevice?: boolean,
-    instanceType: "container" | "virtual-machine" = "container"
+    instanceType: 'container' | 'virtual-machine' = 'container',
   ): ValidationResult {
     const errors: ValidationError[] = [];
 
@@ -357,32 +357,32 @@ class DeviceValidator {
         name,
         existingDevices,
         inheritedDevices,
-        editingDeviceName
+        editingDeviceName,
       );
       if (nameError) errors.push(nameError);
     }
 
     // Path validation
     const pathError = this.validateDiskPath(
-      properties.path || "",
+      properties.path || '',
       deviceType,
       existingDevices,
       inheritedDevices,
-      editingDeviceName
+      editingDeviceName,
     );
     if (pathError) errors.push(pathError);
 
     // Port validation for proxy devices
-    if (deviceType === "proxy") {
-      const parsed = parseProxyConnection(properties.connect || "");
-      if (parsed.type !== "unix" && parsed.port) {
-        const portError = this.validatePort(parsed.port, "connect");
+    if (deviceType === 'proxy') {
+      const parsed = parseProxyConnection(properties.connect || '');
+      if (parsed.type !== 'unix' && parsed.port) {
+        const portError = this.validatePort(parsed.port, 'connect');
         if (portError) errors.push(portError);
       }
 
-      const parsedListen = parseProxyConnection(properties.listen || "");
-      if (parsedListen.type !== "unix" && parsedListen.port) {
-        const portError = this.validatePort(parsedListen.port, "listen");
+      const parsedListen = parseProxyConnection(properties.listen || '');
+      if (parsedListen.type !== 'unix' && parsedListen.port) {
+        const portError = this.validatePort(parsedListen.port, 'listen');
         if (portError) errors.push(portError);
       }
     }
@@ -395,7 +395,7 @@ class DeviceValidator {
       isRoot || false,
       isNetworkDevice || false,
       isGPUDevice || false,
-      instanceType
+      instanceType,
     );
     errors.push(...requiredErrors);
 
@@ -408,32 +408,32 @@ class DeviceValidator {
 
 const DEVICE_TYPES = [
   {
-    value: "disk",
-    label: "Disks",
+    value: 'disk',
+    label: 'Disks',
     icon: IconDeviceFloppy,
-    description: "Storage devices",
-    placeholder: "disk0",
+    description: 'Storage devices',
+    placeholder: 'disk0',
   },
   {
-    value: "nic",
-    label: "Networks",
+    value: 'nic',
+    label: 'Networks',
     icon: IconNetwork,
-    description: "Network interfaces",
-    placeholder: "eth0",
+    description: 'Network interfaces',
+    placeholder: 'eth0',
   },
   {
-    value: "proxy",
-    label: "Proxies",
+    value: 'proxy',
+    label: 'Proxies',
     icon: IconArrowsLeftRight,
-    description: "Port forwarding",
-    placeholder: "web0",
+    description: 'Port forwarding',
+    placeholder: 'web0',
   },
   {
-    value: "gpu",
-    label: "GPUs",
+    value: 'gpu',
+    label: 'GPUs',
     icon: IconDeviceGamepad2,
-    description: "Graphics processors",
-    placeholder: "gpu0",
+    description: 'Graphics processors',
+    placeholder: 'gpu0',
   },
 ];
 
@@ -462,7 +462,7 @@ function DeviceListItem({
   onReset,
   onClick,
 }: DeviceListItemProps) {
-  const canDelete = !readonly && !inherited && !overridden && name !== "root";
+  const canDelete = !readonly && !inherited && !overridden && name !== 'root';
   const canReset = !readonly && overridden;
 
   return (
@@ -470,29 +470,27 @@ function DeviceListItem({
       onClick={onClick}
       className={`w-full text-left ${
         readonly && inherited && !overridden
-          ? "cursor-not-allowed"
-          : "cursor-pointer"
+          ? 'cursor-not-allowed'
+          : 'cursor-pointer'
       }`}
       role="button"
       tabIndex={readonly && inherited && !overridden ? -1 : 0}
       onKeyDown={(e) => {
-        if ((e.key === "Enter" || e.key === " ") && onClick) {
+        if ((e.key === 'Enter' || e.key === ' ') && onClick) {
           e.preventDefault();
           onClick();
         }
       }}
       aria-label={`${name} device - ${device.type}${
-        inherited ? " (inherited)" : ""
-      }${overridden ? " (overridden)" : ""}`}
+        inherited ? ' (inherited)' : ''
+      }${overridden ? ' (overridden)' : ''}`}
     >
       <Card
-        className={`${inherited ? "border-dashed" : ""} ${
-          overridden ? "border-orange-500/50" : ""
-        } ${hasIssues ? "border-destructive" : ""} ${
-          selected ? "ring-2 ring-primary" : "hover:bg-muted/50"
-        } ${
-          readonly && inherited && !overridden ? "opacity-50" : ""
-        } transition-all`}
+        className={`${inherited ? 'border-dashed' : ''} ${
+          overridden ? 'border-orange-500/50' : ''
+        } ${hasIssues ? 'border-destructive' : ''} ${
+          selected ? 'ring-2 ring-primary' : 'hover:bg-muted/50'
+        } ${readonly && inherited && !overridden ? 'opacity-50' : ''} transition-all`}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
@@ -556,7 +554,7 @@ function DeviceListItem({
         <CardContent className="pt-0">
           <div className="space-y-1.5 text-xs">
             {Object.entries(device).map(([key, value]) => {
-              if (key === "type") return null;
+              if (key === 'type') return null;
               return (
                 <div
                   key={key}
@@ -590,7 +588,7 @@ interface AddDeviceFormProps {
   existingDevices?: Record<string, Device>;
   inheritedDevices?: Record<string, Device>;
   flags?: {
-    type?: "virtual-machine" | "container";
+    type?: 'virtual-machine' | 'container';
   };
 }
 
@@ -607,38 +605,38 @@ function AddDeviceForm({
   inheritedDevices = {},
   flags,
 }: AddDeviceFormProps) {
-  const [name, setName] = React.useState("");
+  const [name, setName] = React.useState('');
   const [properties, setProperties] = React.useState<Record<string, string>>(
-    {}
+    {},
   );
   // Counter used to force a rerender/reset of certain controlled inputs (e.g. pool combobox)
   const [resetCounter, setResetCounter] = React.useState(0);
   // Track field-level validation errors (centralized)
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>(
-    {}
+    {},
   );
   // Check if a root disk already exists
   const hasRootDiskAlready = React.useMemo(() => {
     const allDevices = { ...inheritedDevices, ...existingDevices };
     return Object.values(allDevices).some(
-      (device) => device.type === "disk" && device.path === "/"
+      (device) => device.type === 'disk' && device.path === '/',
     );
   }, [existingDevices, inheritedDevices]);
 
   // Root disk: editing existing device named "root" OR device with path="/" that's already been added
   // OR explicitly creating root disk (but only if no root disk exists yet)
   const isRoot =
-    (isCreatingRootDisk && !hasRootDiskAlready && deviceType === "disk") ||
-    editingDevice?.name === "root" ||
+    (isCreatingRootDisk && !hasRootDiskAlready && deviceType === 'disk') ||
+    editingDevice?.name === 'root' ||
     (editingDevice &&
-      editingDevice.device.path === "/" &&
-      deviceType === "disk");
+      editingDevice.device.path === '/' &&
+      deviceType === 'disk');
   // Name is readonly if it's root disk OR if it originated from inheritance (pure or overridden)
   const nameReadonly = isRoot || (isInherited && editingDevice !== undefined);
 
   // Detect device types early for conditional hook calls
-  const isNetworkDevice = deviceType === "nic" || deviceType.startsWith("nic_");
-  const isGPUDevice = deviceType === "gpu" || deviceType.startsWith("gpu_");
+  const isNetworkDevice = deviceType === 'nic' || deviceType.startsWith('nic_');
+  const isGPUDevice = deviceType === 'gpu' || deviceType.startsWith('gpu_');
 
   const { data: storagePools, error: storagePoolsError } = useStoragePools();
   const { data: storageVolumes, error: storageVolumesError } =
@@ -650,7 +648,7 @@ function AddDeviceForm({
   const isCephPool = React.useMemo(() => {
     if (!properties.pool || !storagePools) return false;
     const selectedPool = storagePools.find((p) => p.name === properties.pool);
-    return selectedPool?.driver === "ceph";
+    return selectedPool?.driver === 'ceph';
   }, [properties.pool, storagePools]);
 
   // Get the actual device config key for networks and GPUs
@@ -659,13 +657,13 @@ function AddDeviceForm({
       // If network is set, infer type from the network
       if (properties.network && networks) {
         const selectedNetwork = networks.find(
-          (n) => n.name === properties.network
+          (n) => n.name === properties.network,
         );
         if (selectedNetwork) {
           // Map network type to nictype (bridge -> bridged, others stay the same)
           const nictype =
-            selectedNetwork.type === "bridge"
-              ? "bridged"
+            selectedNetwork.type === 'bridge'
+              ? 'bridged'
               : selectedNetwork.type;
           return `nic_${nictype}`;
         }
@@ -682,7 +680,7 @@ function AddDeviceForm({
 
     if (isGPUDevice) {
       // GPU type defaults to physical if not specified
-      const gputype = properties.gputype || "physical";
+      const gputype = properties.gputype || 'physical';
       return `gpu_${gputype}`;
     }
 
@@ -726,7 +724,7 @@ function AddDeviceForm({
     if (!deviceConfig?.keys) return null;
     for (const keyObj of deviceConfig.keys) {
       if (keyObj.pool) {
-        return { ...keyObj.pool, fullKey: "pool" } as ConfigOption & {
+        return { ...keyObj.pool, fullKey: 'pool' } as ConfigOption & {
           fullKey: string;
         };
       }
@@ -738,7 +736,7 @@ function AddDeviceForm({
     if (!deviceConfig?.keys) return null;
     for (const keyObj of deviceConfig.keys) {
       if (keyObj.size) {
-        return { ...keyObj.size, fullKey: "size" } as ConfigOption & {
+        return { ...keyObj.size, fullKey: 'size' } as ConfigOption & {
           fullKey: string;
         };
       }
@@ -750,7 +748,7 @@ function AddDeviceForm({
     if (!effectiveDeviceConfig?.keys) return null;
     for (const keyObj of effectiveDeviceConfig.keys) {
       if (keyObj.parent) {
-        return { ...keyObj.parent, fullKey: "parent" } as ConfigOption & {
+        return { ...keyObj.parent, fullKey: 'parent' } as ConfigOption & {
           fullKey: string;
         };
       }
@@ -762,7 +760,7 @@ function AddDeviceForm({
     if (!effectiveDeviceConfig?.keys) return null;
     for (const keyObj of effectiveDeviceConfig.keys) {
       if (keyObj.connect) {
-        return { ...keyObj.connect, fullKey: "connect" } as ConfigOption & {
+        return { ...keyObj.connect, fullKey: 'connect' } as ConfigOption & {
           fullKey: string;
         };
       }
@@ -774,7 +772,7 @@ function AddDeviceForm({
     if (!effectiveDeviceConfig?.keys) return null;
     for (const keyObj of effectiveDeviceConfig.keys) {
       if (keyObj.listen) {
-        return { ...keyObj.listen, fullKey: "listen" } as ConfigOption & {
+        return { ...keyObj.listen, fullKey: 'listen' } as ConfigOption & {
           fullKey: string;
         };
       }
@@ -789,21 +787,21 @@ function AddDeviceForm({
       const { type, ...deviceProps } = editingDevice.device;
 
       // For GPU devices, extract gputype from the type field
-      if (type.startsWith("gpu_")) {
+      if (type.startsWith('gpu_')) {
         const gputype = type.substring(4); // Remove "gpu_" prefix
         setProperties({ ...deviceProps, gputype });
       } else {
         setProperties(deviceProps);
       }
-    } else if (isCreatingRootDisk && deviceType === "disk") {
+    } else if (isCreatingRootDisk && deviceType === 'disk') {
       // Use the memoized hasRootDiskAlready check to avoid duplication
       if (!hasRootDiskAlready) {
         // Only set path:"/" when actually creating a NEW root disk
-        setName("root");
-        setProperties({ path: "/" });
+        setName('root');
+        setProperties({ path: '/' });
       } else {
         // Root disk already exists, create a regular disk instead
-        setName("");
+        setName('');
         setProperties({});
       }
     } else {
@@ -812,7 +810,7 @@ function AddDeviceForm({
         const allDevices = { ...inheritedDevices, ...existingDevices };
         const networkDevices = Object.entries(allDevices).filter(
           ([_, device]) =>
-            device.type === "nic" || device.type.startsWith("nic_")
+            device.type === 'nic' || device.type.startsWith('nic_'),
         );
         const ethIndex = networkDevices.length;
         setName(`eth${ethIndex}`);
@@ -821,13 +819,13 @@ function AddDeviceForm({
         const allDevices = { ...inheritedDevices, ...existingDevices };
         const gpuDevices = Object.entries(allDevices).filter(
           ([_, device]) =>
-            device.type === "gpu" || device.type.startsWith("gpu_")
+            device.type === 'gpu' || device.type.startsWith('gpu_'),
         );
         const gpuIndex = gpuDevices.length;
         setName(`gpu${gpuIndex}`);
-        setProperties({ gputype: "physical" });
+        setProperties({ gputype: 'physical' });
       } else {
-        setName("");
+        setName('');
         setProperties({});
       }
     }
@@ -862,34 +860,34 @@ function AddDeviceForm({
 
     effectiveDeviceConfig.keys.forEach((keyObj) => {
       Object.entries(keyObj).forEach(([key, config]) => {
-        const parts = key.split(".");
-        const category = parts.length > 1 ? parts[0] : "General";
-        const fieldName = parts.length > 1 ? parts.slice(1).join(".") : key;
+        const parts = key.split('.');
+        const category = parts.length > 1 ? parts[0] : 'General';
+        const fieldName = parts.length > 1 ? parts.slice(1).join('.') : key;
 
         // Hide ceph fields unless using ceph pool
-        if (category.toLowerCase() === "ceph" && !isCephPool) {
+        if (category.toLowerCase() === 'ceph' && !isCephPool) {
           return;
         }
 
         // For root disk: hide source & path selection (auto-managed) and remove pool/size from categorized fields (shown top-level)
         if (
           isRoot &&
-          (key.startsWith("source") ||
-            key.startsWith("path") ||
-            key === "pool" ||
-            key === "size")
+          (key.startsWith('source') ||
+            key.startsWith('path') ||
+            key === 'pool' ||
+            key === 'size')
         ) {
           return; // hide for root disk
         }
         // For non-root disks: hide size field (only allowed for root disk)
-        if (deviceType === "disk" && !isRoot && key === "size") {
+        if (deviceType === 'disk' && !isRoot && key === 'size') {
           return;
         }
         // For all disk devices: remove pool from categorized fields (shown top-level)
-        if (deviceType === "disk" && key === "pool") {
+        if (deviceType === 'disk' && key === 'pool') {
           return;
         }
-        const targetMap = config.required === "yes" ? requiredMap : optionalMap;
+        const targetMap = config.required === 'yes' ? requiredMap : optionalMap;
 
         if (!targetMap.has(category)) {
           targetMap.set(category, []);
@@ -901,19 +899,19 @@ function AddDeviceForm({
     });
 
     const sortCategories = (
-      map: Map<string, Array<{ key: string; config: ConfigOption }>>
+      map: Map<string, Array<{ key: string; config: ConfigOption }>>,
     ) => {
       return Array.from(map.entries())
         .sort(([a], [b]) =>
-          a === "General" ? -1 : b === "General" ? 1 : a.localeCompare(b)
+          a === 'General' ? -1 : b === 'General' ? 1 : a.localeCompare(b),
         )
         .map(([name, fields]) => ({
           name,
           // Store fields with their data; visibility will be checked by shouldShowField
           fields: fields.sort((a, b) => {
             // For source category, ensure pool appears first if present
-            if (a.config.fullKey === "pool") return -1;
-            if (b.config.fullKey === "pool") return 1;
+            if (a.config.fullKey === 'pool') return -1;
+            if (b.config.fullKey === 'pool') return 1;
             return a.key.localeCompare(b.key);
           }),
         }));
@@ -929,25 +927,25 @@ function AddDeviceForm({
     return key
       .split(/[._]/) // Split on dot or underscore
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+      .join(' ');
   };
 
   // ============================================================================
   // DISK DEVICE FIELDS
   // ============================================================================
   const renderDiskFields = () => {
-    if (deviceType !== "disk") return null;
+    if (deviceType !== 'disk') return null;
 
     return (
       <>
         {poolConfig && (
           <div className="space-y-2">
-            {renderField("pool", poolConfig, true)}
+            {renderField('pool', poolConfig, true)}
           </div>
         )}
         {isRoot && sizeConfig && (
           <div className="space-y-2">
-            {renderField("size", sizeConfig, true)}
+            {renderField('size', sizeConfig, true)}
           </div>
         )}
       </>
@@ -971,13 +969,13 @@ function AddDeviceForm({
             type
           </p>
           <Combobox
-            value={properties.network || ""}
+            value={properties.network || ''}
             onValueChange={(value) => {
               setProperties((prev) => {
                 const newProps: Record<string, string> = { ...prev };
                 if (value) {
                   newProps.network = value;
-                  if ("nictype" in newProps) delete newProps.nictype;
+                  if ('nictype' in newProps) delete newProps.nictype;
                 } else {
                   delete newProps.network;
                 }
@@ -996,7 +994,7 @@ function AddDeviceForm({
                   <div className="flex flex-col">
                     <span>{network.name}</span>
                     <span className="text-xs text-muted-foreground">
-                      {network.type}{" "}
+                      {network.type}{' '}
                       {network.description && `• ${network.description}`}
                     </span>
                   </div>
@@ -1016,7 +1014,7 @@ function AddDeviceForm({
                 Or manually select a network interface type
               </p>
               <Combobox
-                value={properties.nictype || ""}
+                value={properties.nictype || ''}
                 onValueChange={(value) => {
                   setProperties((prev) => {
                     const newProps: Record<string, string> = { ...prev };
@@ -1051,7 +1049,7 @@ function AddDeviceForm({
             </div>
             {properties.nictype && parentConfig && (
               <div className="space-y-2">
-                {renderField("parent", parentConfig, true)}
+                {renderField('parent', parentConfig, true)}
               </div>
             )}
           </>
@@ -1075,7 +1073,7 @@ function AddDeviceForm({
           Select the type of GPU passthrough to use
         </p>
         <Select
-          value={properties.gputype || "physical"}
+          value={properties.gputype || 'physical'}
           onValueChange={(value) =>
             setProperties((prev) => ({ ...prev, gputype: value }))
           }
@@ -1085,17 +1083,17 @@ function AddDeviceForm({
           </SelectTrigger>
           <SelectContent>
             {(!flags?.type ||
-              flags.type === "virtual-machine" ||
-              flags.type === "container") && (
+              flags.type === 'virtual-machine' ||
+              flags.type === 'container') && (
               <SelectItem value="physical">Physical</SelectItem>
             )}
-            {(!flags?.type || flags.type === "virtual-machine") && (
+            {(!flags?.type || flags.type === 'virtual-machine') && (
               <SelectItem value="mdev">MDEV</SelectItem>
             )}
-            {(!flags?.type || flags.type === "container") && (
+            {(!flags?.type || flags.type === 'container') && (
               <SelectItem value="mig">MIG</SelectItem>
             )}
-            {(!flags?.type || flags.type === "virtual-machine") && (
+            {(!flags?.type || flags.type === 'virtual-machine') && (
               <SelectItem value="sriov">SR-IOV</SelectItem>
             )}
           </SelectContent>
@@ -1108,7 +1106,7 @@ function AddDeviceForm({
   // PROXY DEVICE FIELDS
   // ============================================================================
   const renderProxyFields = () => {
-    if (deviceType !== "proxy" || !connectConfig || !listenConfig) return null;
+    if (deviceType !== 'proxy' || !connectConfig || !listenConfig) return null;
 
     return (
       <div className="space-y-4">
@@ -1122,15 +1120,15 @@ function AddDeviceForm({
           </p>
           <div className="flex gap-2">
             <Select
-              value={parseProxyConnection(properties.connect || "").type}
+              value={parseProxyConnection(properties.connect || '').type}
               onValueChange={(type) => {
-                const parsed = parseProxyConnection(properties.connect || "");
+                const parsed = parseProxyConnection(properties.connect || '');
                 setProperties((prev) => ({
                   ...prev,
                   connect: serializeProxyConnection(
                     type,
                     parsed.address,
-                    parsed.port
+                    parsed.port,
                   ),
                 }));
               }}
@@ -1146,36 +1144,36 @@ function AddDeviceForm({
             </Select>
             <Input
               placeholder={
-                parseProxyConnection(properties.connect || "").type === "unix"
-                  ? "/path/to/socket"
-                  : "127.0.0.1"
+                parseProxyConnection(properties.connect || '').type === 'unix'
+                  ? '/path/to/socket'
+                  : '127.0.0.1'
               }
-              value={parseProxyConnection(properties.connect || "").address}
+              value={parseProxyConnection(properties.connect || '').address}
               onChange={(e) => {
-                const parsed = parseProxyConnection(properties.connect || "");
+                const parsed = parseProxyConnection(properties.connect || '');
                 setProperties((prev) => ({
                   ...prev,
                   connect: serializeProxyConnection(
                     parsed.type,
                     e.target.value,
-                    parsed.port
+                    parsed.port,
                   ),
                 }));
               }}
               className="h-9 flex-1 min-w-0"
             />
-            {parseProxyConnection(properties.connect || "").type !== "unix" && (
+            {parseProxyConnection(properties.connect || '').type !== 'unix' && (
               <Input
                 placeholder="80"
-                value={parseProxyConnection(properties.connect || "").port}
+                value={parseProxyConnection(properties.connect || '').port}
                 onChange={(e) => {
-                  const parsed = parseProxyConnection(properties.connect || "");
+                  const parsed = parseProxyConnection(properties.connect || '');
                   setProperties((prev) => ({
                     ...prev,
                     connect: serializeProxyConnection(
                       parsed.type,
                       parsed.address,
-                      e.target.value
+                      e.target.value,
                     ),
                   }));
                 }}
@@ -1198,15 +1196,15 @@ function AddDeviceForm({
           </p>
           <div className="flex gap-2">
             <Select
-              value={parseProxyConnection(properties.listen || "").type}
+              value={parseProxyConnection(properties.listen || '').type}
               onValueChange={(type) => {
-                const parsed = parseProxyConnection(properties.listen || "");
+                const parsed = parseProxyConnection(properties.listen || '');
                 setProperties((prev) => ({
                   ...prev,
                   listen: serializeProxyConnection(
                     type,
                     parsed.address,
-                    parsed.port
+                    parsed.port,
                   ),
                 }));
               }}
@@ -1222,36 +1220,36 @@ function AddDeviceForm({
             </Select>
             <Input
               placeholder={
-                parseProxyConnection(properties.listen || "").type === "unix"
-                  ? "/path/to/socket"
-                  : "0.0.0.0"
+                parseProxyConnection(properties.listen || '').type === 'unix'
+                  ? '/path/to/socket'
+                  : '0.0.0.0'
               }
-              value={parseProxyConnection(properties.listen || "").address}
+              value={parseProxyConnection(properties.listen || '').address}
               onChange={(e) => {
-                const parsed = parseProxyConnection(properties.listen || "");
+                const parsed = parseProxyConnection(properties.listen || '');
                 setProperties((prev) => ({
                   ...prev,
                   listen: serializeProxyConnection(
                     parsed.type,
                     e.target.value,
-                    parsed.port
+                    parsed.port,
                   ),
                 }));
               }}
               className="h-9 flex-1 min-w-0"
             />
-            {parseProxyConnection(properties.listen || "").type !== "unix" && (
+            {parseProxyConnection(properties.listen || '').type !== 'unix' && (
               <Input
                 placeholder="8080"
-                value={parseProxyConnection(properties.listen || "").port}
+                value={parseProxyConnection(properties.listen || '').port}
                 onChange={(e) => {
-                  const parsed = parseProxyConnection(properties.listen || "");
+                  const parsed = parseProxyConnection(properties.listen || '');
                   setProperties((prev) => ({
                     ...prev,
                     listen: serializeProxyConnection(
                       parsed.type,
                       parsed.address,
-                      e.target.value
+                      e.target.value,
                     ),
                   }));
                 }}
@@ -1281,7 +1279,7 @@ function AddDeviceForm({
       editingDevice?.name,
       isRoot,
       isNetworkDevice,
-      isGPUDevice
+      isGPUDevice,
     );
   }, [
     name,
@@ -1299,8 +1297,8 @@ function AddDeviceForm({
   // Ensure path stays at "/" for root disk - but only if we're actually creating/editing a root disk
   React.useEffect(() => {
     // Only set path to "/" if this is explicitly a root disk creation or editing root disk
-    if (isRoot && deviceType === "disk" && properties.path !== "/") {
-      setProperties((prev) => ({ ...prev, path: "/" }));
+    if (isRoot && deviceType === 'disk' && properties.path !== '/') {
+      setProperties((prev) => ({ ...prev, path: '/' }));
     }
   }, [isRoot, deviceType, properties.path]);
 
@@ -1311,13 +1309,13 @@ function AddDeviceForm({
     }
     const finalProps = { ...properties };
     if (isRoot) {
-      finalProps.path = "/"; // enforce
+      finalProps.path = '/'; // enforce
     }
 
     // For GPU devices, construct the full type including gputype
     let finalType = deviceType;
     if (isGPUDevice) {
-      const gputype = properties.gputype || "physical";
+      const gputype = properties.gputype || 'physical';
       finalType = `gpu_${gputype}`;
       // Remove gputype from properties as it's encoded in the type
       delete finalProps.gputype;
@@ -1328,8 +1326,8 @@ function AddDeviceForm({
     } else {
       onAdd(name, { type: finalType, ...finalProps });
     }
-    setName("");
-    setProperties(isRoot ? { path: "/" } : {});
+    setName('');
+    setProperties(isRoot ? { path: '/' } : {});
     setFieldErrors({});
     setResetCounter((c) => c + 1);
   };
@@ -1341,7 +1339,7 @@ function AddDeviceForm({
       // Hide path/source for root disk
       if (
         isRoot &&
-        (fieldKey.startsWith("path") || fieldKey.startsWith("source"))
+        (fieldKey.startsWith('path') || fieldKey.startsWith('source'))
       ) {
         return false;
       }
@@ -1350,40 +1348,40 @@ function AddDeviceForm({
       if (flags?.type && config.shortdesc) {
         const shortdesc = config.shortdesc.toLowerCase();
         const isVMOnly =
-          shortdesc.includes("only for vms") || shortdesc.includes("vm only");
+          shortdesc.includes('only for vms') || shortdesc.includes('vm only');
         const isContainerOnly =
-          shortdesc.includes("only for containers") ||
-          shortdesc.includes("container only");
+          shortdesc.includes('only for containers') ||
+          shortdesc.includes('container only');
 
-        if (isVMOnly && flags.type !== "virtual-machine") return false;
-        if (isContainerOnly && flags.type !== "container") return false;
+        if (isVMOnly && flags.type !== 'virtual-machine') return false;
+        if (isContainerOnly && flags.type !== 'container') return false;
       }
 
       // Disk-specific rules
-      if (deviceType === "disk") {
+      if (deviceType === 'disk') {
         // Only show wwn if io.bus equals virtio-scsi
-        if (fieldKey === "wwn" && properties["io.bus"] !== "virtio-scsi") {
+        if (fieldKey === 'wwn' && properties['io.bus'] !== 'virtio-scsi') {
           return false;
         }
         // Only show size.state for VMs (or when no type flag is set)
-        if (fieldKey === "size.state" && flags?.type === "container") {
+        if (fieldKey === 'size.state' && flags?.type === 'container') {
           return false;
         }
         // Only show boot.priority for VMs (or when no type flag is set)
-        if (fieldKey === "boot.priority" && flags?.type === "container") {
+        if (fieldKey === 'boot.priority' && flags?.type === 'container') {
           return false;
         }
 
         // Limits exclusion: if limits.max is set, hide limits.read and limits.write
-        if (properties["limits.max"]) {
-          if (fieldKey === "limits.read" || fieldKey === "limits.write") {
+        if (properties['limits.max']) {
+          if (fieldKey === 'limits.read' || fieldKey === 'limits.write') {
             return false;
           }
         }
 
         // Limits exclusion: if limits.read or limits.write is set, hide limits.max
-        if (properties["limits.read"] || properties["limits.write"]) {
-          if (fieldKey === "limits.max") {
+        if (properties['limits.read'] || properties['limits.write']) {
+          if (fieldKey === 'limits.max') {
             return false;
           }
         }
@@ -1392,69 +1390,69 @@ function AddDeviceForm({
       // Network-specific rules
       if (isNetworkDevice) {
         // Hide the network config field when parent network is selected
-        if (fieldKey === "network" && properties.network) {
+        if (fieldKey === 'network' && properties.network) {
           return false;
         }
         // Only show boot.priority for VMs (or when no type flag is set)
-        if (fieldKey === "boot.priority" && flags?.type === "container") {
+        if (fieldKey === 'boot.priority' && flags?.type === 'container') {
           return false;
         }
       }
 
       // Proxy-specific rules
-      if (deviceType === "proxy") {
+      if (deviceType === 'proxy') {
         // Hide connect and listen fields - they're rendered with custom UI
-        if (fieldKey === "connect" || fieldKey === "listen") {
+        if (fieldKey === 'connect' || fieldKey === 'listen') {
           return false;
         }
       }
 
       // GPU-specific rules based on gputype
       if (isGPUDevice) {
-        const gputype = properties.gputype || "physical";
+        const gputype = properties.gputype || 'physical';
 
         // gputype field is shown at the top level, not in categories
-        if (fieldKey === "gputype") {
+        if (fieldKey === 'gputype') {
           return false;
         }
 
         // Fields for gpu_physical (container and VM)
-        if (gputype === "physical") {
+        if (gputype === 'physical') {
           // All fields available: id, pci, productid, vendorid, uid, gid, mode
           return true;
         }
 
         // Fields for gpu_mdev (VM only)
-        if (gputype === "mdev") {
+        if (gputype === 'mdev') {
           // Available: id, mdev (required), productid, vendorid
           // Hide: pci, uid, gid, mode
-          if (["pci", "uid", "gid", "mode"].includes(fieldKey)) {
+          if (['pci', 'uid', 'gid', 'mode'].includes(fieldKey)) {
             return false;
           }
           // mig fields should be hidden
-          if (fieldKey.startsWith("mig.")) {
+          if (fieldKey.startsWith('mig.')) {
             return false;
           }
           return true;
         }
 
         // Fields for gpu_mig (container only)
-        if (gputype === "mig") {
+        if (gputype === 'mig') {
           // Available: id, mig.ci, mig.gi, mig.uuid, pci, productid, vendorid
           // Hide: mdev, uid, gid, mode
-          if (["mdev", "uid", "gid", "mode"].includes(fieldKey)) {
+          if (['mdev', 'uid', 'gid', 'mode'].includes(fieldKey)) {
             return false;
           }
           return true;
         }
 
         // Fields for gpu_sriov (VM only)
-        if (gputype === "sriov") {
+        if (gputype === 'sriov') {
           // Available: id, pci, productid, vendorid
           // Hide: mdev, mig.*, uid, gid, mode
           if (
-            ["mdev", "uid", "gid", "mode"].includes(fieldKey) ||
-            fieldKey.startsWith("mig.")
+            ['mdev', 'uid', 'gid', 'mode'].includes(fieldKey) ||
+            fieldKey.startsWith('mig.')
           ) {
             return false;
           }
@@ -1464,19 +1462,19 @@ function AddDeviceForm({
 
       return true;
     },
-    [isRoot, flags, deviceType, properties, isNetworkDevice, isGPUDevice]
+    [isRoot, flags, deviceType, properties, isNetworkDevice, isGPUDevice],
   );
 
   const renderField = (
     key: string,
     config: ConfigOption & { fullKey?: string },
-    isTopLevel: boolean = false
+    isTopLevel: boolean = false,
   ) => {
     const fieldId = `config-${config.fullKey || key}`;
     const fieldKey = config.fullKey || key;
-    const isBool = config.type === "bool";
+    const isBool = config.type === 'bool';
     const hasCondition =
-      config.condition && typeof config.condition === "string";
+      config.condition && typeof config.condition === 'string';
     const hasError = !!fieldErrors[fieldKey];
     const errorId = `${fieldId}-error`;
 
@@ -1487,22 +1485,22 @@ function AddDeviceForm({
 
     // Mark field as required in certain conditions
     let effectiveConfig = config;
-    if (isRoot && fieldKey === "pool") {
-      effectiveConfig = { ...config, required: "yes" as const };
+    if (isRoot && fieldKey === 'pool') {
+      effectiveConfig = { ...config, required: 'yes' as const };
     } else if (
       isNetworkDevice &&
-      fieldKey === "parent" &&
+      fieldKey === 'parent' &&
       properties.nictype &&
       !properties.network
     ) {
-      effectiveConfig = { ...config, required: "yes" as const };
+      effectiveConfig = { ...config, required: 'yes' as const };
     } else if (
       isGPUDevice &&
-      fieldKey === "mdev" &&
-      properties.gputype === "mdev"
+      fieldKey === 'mdev' &&
+      properties.gputype === 'mdev'
     ) {
       // mdev field is required for gpu_mdev type
-      effectiveConfig = { ...config, required: "yes" as const };
+      effectiveConfig = { ...config, required: 'yes' as const };
     }
 
     return (
@@ -1510,11 +1508,11 @@ function AddDeviceForm({
         <Label
           htmlFor={fieldId}
           className={
-            isTopLevel ? "text-sm font-semibold" : "text-xs font-medium"
+            isTopLevel ? 'text-sm font-semibold' : 'text-xs font-medium'
           }
         >
           {formatLabel(key)}
-          {effectiveConfig.required === "yes" && (
+          {effectiveConfig.required === 'yes' && (
             <span className="text-destructive ml-1">*</span>
           )}
         </Label>
@@ -1526,22 +1524,22 @@ function AddDeviceForm({
         {isBool ? (
           <div className="flex items-center justify-between">
             <label htmlFor={fieldId} className="text-xs text-muted-foreground">
-              {effectiveConfig.default === "true"
-                ? "Enabled by default"
-                : "Disabled by default"}
+              {effectiveConfig.default === 'true'
+                ? 'Enabled by default'
+                : 'Disabled by default'}
             </label>
             <Switch
               id={fieldId}
-              checked={properties[fieldKey] === "true"}
+              checked={properties[fieldKey] === 'true'}
               onCheckedChange={(checked) =>
                 setProperties((prev) => ({
                   ...prev,
-                  [fieldKey]: checked ? "true" : "false",
+                  [fieldKey]: checked ? 'true' : 'false',
                 }))
               }
             />
           </div>
-        ) : fieldKey === "pool" && storagePools ? (
+        ) : fieldKey === 'pool' && storagePools ? (
           <Combobox
             key={`pool-${resetCounter}`}
             value={properties[fieldKey] || undefined}
@@ -1554,7 +1552,7 @@ function AddDeviceForm({
             allowDeselect
           >
             <ComboboxTrigger
-              placeholder={effectiveConfig.default || "Select storage pool"}
+              placeholder={effectiveConfig.default || 'Select storage pool'}
             />
             <ComboboxContent
               searchPlaceholder="Search storage pools..."
@@ -1571,18 +1569,18 @@ function AddDeviceForm({
               ))}
             </ComboboxContent>
           </Combobox>
-        ) : fieldKey === "source" &&
-          deviceType === "disk" &&
+        ) : fieldKey === 'source' &&
+          deviceType === 'disk' &&
           properties.pool &&
           storageVolumes ? (
           <Combobox
             value={(() => {
-              const source = properties[fieldKey] || "";
-              return source.split("/")[0];
+              const source = properties[fieldKey] || '';
+              return source.split('/')[0];
             })()}
             onValueChange={(value) => {
-              const currentSource = properties[fieldKey] || "";
-              const currentPath = currentSource.split("/").slice(1).join("/");
+              const currentSource = properties[fieldKey] || '';
+              const currentPath = currentSource.split('/').slice(1).join('/');
               const newSource = currentPath ? `${value}/${currentPath}` : value;
               setProperties((prev) => ({
                 ...prev,
@@ -1591,7 +1589,7 @@ function AddDeviceForm({
             }}
           >
             <ComboboxTrigger
-              placeholder={effectiveConfig.default || "Select storage volume"}
+              placeholder={effectiveConfig.default || 'Select storage volume'}
             />
             <ComboboxContent
               searchPlaceholder="Search storage volumes..."
@@ -1608,9 +1606,9 @@ function AddDeviceForm({
               ))}
             </ComboboxContent>
           </Combobox>
-        ) : fieldKey === "bind" ? (
+        ) : fieldKey === 'bind' ? (
           <Select
-            value={properties[fieldKey] || ""}
+            value={properties[fieldKey] || ''}
             onValueChange={(value) =>
               setProperties((prev) => ({
                 ...prev,
@@ -1619,10 +1617,10 @@ function AddDeviceForm({
             }
           >
             <SelectTrigger
-              className={isTopLevel ? "h-9 w-full" : "h-8 text-xs w-full"}
+              className={isTopLevel ? 'h-9 w-full' : 'h-8 text-xs w-full'}
             >
               <SelectValue
-                placeholder={effectiveConfig.default || "Select bind mode"}
+                placeholder={effectiveConfig.default || 'Select bind mode'}
               />
             </SelectTrigger>
             <SelectContent>
@@ -1630,12 +1628,12 @@ function AddDeviceForm({
               <SelectItem value="instance">Instance</SelectItem>
             </SelectContent>
           </Select>
-        ) : isGPUDevice && fieldKey === "pci" && resources?.gpu?.cards ? (
+        ) : isGPUDevice && fieldKey === 'pci' && resources?.gpu?.cards ? (
           <Combobox
             value={properties[fieldKey] || undefined}
             onValueChange={(value) => {
               const card = resources.gpu?.cards?.find(
-                (c) => c.pci_address === value
+                (c) => c.pci_address === value,
               );
               setProperties((prev) => ({
                 ...prev,
@@ -1655,7 +1653,7 @@ function AddDeviceForm({
               {resources.gpu.cards.map((card, idx) => (
                 <ComboboxItem
                   key={card.pci_address || idx}
-                  value={card.pci_address || ""}
+                  value={card.pci_address || ''}
                   description={card.product || card.vendor}
                 >
                   {card.pci_address} — {card.vendor} {card.product}
@@ -1663,7 +1661,7 @@ function AddDeviceForm({
               ))}
             </ComboboxContent>
           </Combobox>
-        ) : isGPUDevice && fieldKey === "vendorid" && resources?.gpu?.cards ? (
+        ) : isGPUDevice && fieldKey === 'vendorid' && resources?.gpu?.cards ? (
           <Combobox
             value={properties[fieldKey] || undefined}
             onValueChange={(value) =>
@@ -1682,14 +1680,14 @@ function AddDeviceForm({
               {[
                 ...new Map(
                   (resources.gpu.cards || []).map((c) => [
-                    c.vendor_id || "",
+                    c.vendor_id || '',
                     { id: c.vendor_id, name: c.vendor },
-                  ])
+                  ]),
                 ).values(),
               ].map((v) => (
                 <ComboboxItem
                   key={v.id || v.name}
-                  value={v.id || ""}
+                  value={v.id || ''}
                   description={v.name}
                 >
                   {v.id} — {v.name}
@@ -1697,7 +1695,7 @@ function AddDeviceForm({
               ))}
             </ComboboxContent>
           </Combobox>
-        ) : isGPUDevice && fieldKey === "productid" && resources?.gpu?.cards ? (
+        ) : isGPUDevice && fieldKey === 'productid' && resources?.gpu?.cards ? (
           <Combobox
             value={properties[fieldKey] || undefined}
             onValueChange={(value) =>
@@ -1716,12 +1714,12 @@ function AddDeviceForm({
               {(resources.gpu.cards || [])
                 .filter(
                   (c) =>
-                    !properties.vendorid || c.vendor_id === properties.vendorid
+                    !properties.vendorid || c.vendor_id === properties.vendorid,
                 )
                 .map((card, idx) => (
                   <ComboboxItem
                     key={card.product_id || idx}
-                    value={card.product_id || ""}
+                    value={card.product_id || ''}
                     description={card.product}
                   >
                     {card.product_id} — {card.product}
@@ -1731,7 +1729,7 @@ function AddDeviceForm({
           </Combobox>
         ) : hasCondition ? (
           <Select
-            value={properties[fieldKey] || ""}
+            value={properties[fieldKey] || ''}
             onValueChange={(value) =>
               setProperties((prev) => ({
                 ...prev,
@@ -1739,11 +1737,11 @@ function AddDeviceForm({
               }))
             }
           >
-            <SelectTrigger className={isTopLevel ? "h-9" : "h-8 text-xs"}>
+            <SelectTrigger className={isTopLevel ? 'h-9' : 'h-8 text-xs'}>
               <SelectValue placeholder={effectiveConfig.default || fieldKey} />
             </SelectTrigger>
             <SelectContent>
-              {effectiveConfig.condition?.split("|").map((option: string) => (
+              {effectiveConfig.condition?.split('|').map((option: string) => (
                 <SelectItem
                   key={option.trim()}
                   value={option.trim()}
@@ -1757,16 +1755,16 @@ function AddDeviceForm({
         ) : (
           <Input
             id={fieldId}
-            type={effectiveConfig.type === "integer" ? "number" : "text"}
+            type={effectiveConfig.type === 'integer' ? 'number' : 'text'}
             placeholder={effectiveConfig.default || fieldKey}
-            value={properties[fieldKey] || ""}
+            value={properties[fieldKey] || ''}
             onChange={(e) =>
               setProperties((prev) => ({
                 ...prev,
                 [fieldKey]: e.target.value,
               }))
             }
-            className={isTopLevel ? "h-9" : "h-8 text-xs"}
+            className={isTopLevel ? 'h-9' : 'h-8 text-xs'}
           />
         )}
       </div>
@@ -1775,11 +1773,11 @@ function AddDeviceForm({
 
   const renderCategory = (
     category: FieldCategory,
-    isTopLevel: boolean = false
+    isTopLevel: boolean = false,
   ) => {
     // Filter fields based on visibility rules
     const visibleFields = category.fields.filter(({ config }) =>
-      shouldShowField(config.fullKey || "", config)
+      shouldShowField(config.fullKey || '', config),
     );
 
     // Don't render empty categories
@@ -1789,14 +1787,14 @@ function AddDeviceForm({
 
     return (
       <div key={category.name} className="space-y-3">
-        {category.name !== "General" && (
+        {category.name !== 'General' && (
           <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             {formatLabel(category.name)}
           </h5>
         )}
         <div className="space-y-4">
           {visibleFields.map(({ key, config }) =>
-            renderField(key, config, isTopLevel)
+            renderField(key, config, isTopLevel),
           )}
         </div>
       </div>
@@ -1817,10 +1815,10 @@ function AddDeviceForm({
                 Failed to load configuration data
               </p>
               <p className="text-xs text-destructive/80 mt-1">
-                {storagePoolsError ? "Storage pools unavailable. " : ""}
-                {storageVolumesError ? "Storage volumes unavailable. " : ""}
-                {networksError ? "Networks unavailable. " : ""}
-                {resourcesError ? "GPU resources unavailable. " : ""}
+                {storagePoolsError ? 'Storage pools unavailable. ' : ''}
+                {storageVolumesError ? 'Storage volumes unavailable. ' : ''}
+                {networksError ? 'Networks unavailable. ' : ''}
+                {resourcesError ? 'GPU resources unavailable. ' : ''}
               </p>
             </div>
           )}
@@ -1837,8 +1835,8 @@ function AddDeviceForm({
                     DEVICE_TYPES.find(
                       (t) =>
                         t.value === deviceType ||
-                        (isNetworkDevice && t.value === "nic")
-                    )?.placeholder || "device0"
+                        (isNetworkDevice && t.value === 'nic'),
+                    )?.placeholder || 'device0'
                   }
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -1851,10 +1849,10 @@ function AddDeviceForm({
             {isNetworkDevice
               ? renderNetworkFields()
               : isGPUDevice
-              ? null
-              : deviceType === "proxy"
-              ? renderProxyFields()
-              : null}
+                ? null
+                : deviceType === 'proxy'
+                  ? renderProxyFields()
+                  : null}
             {requiredCategories.length > 0 && (
               <div className="space-y-6">
                 {requiredCategories.map((category) => (
@@ -1879,14 +1877,14 @@ function AddDeviceForm({
                       // Count visible fields for this category
                       const visibleFieldCount = category.fields.filter(
                         ({ config }) =>
-                          shouldShowField(config.fullKey || "", config)
+                          shouldShowField(config.fullKey || '', config),
                       ).length;
 
                       // Add source path field if applicable
                       const hasSourcePath =
-                        deviceType === "disk" &&
+                        deviceType === 'disk' &&
                         properties.pool &&
-                        category.name === "General";
+                        category.name === 'General';
 
                       const totalVisibleFields =
                         visibleFieldCount + (hasSourcePath ? 1 : 0);
@@ -1907,7 +1905,7 @@ function AddDeviceForm({
                               <span>{formatLabel(category.name)}</span>
                               <span className="text-muted-foreground text-[10px] font-normal">
                                 {totalVisibleFields} Option
-                                {totalVisibleFields !== 1 ? "s" : ""}
+                                {totalVisibleFields !== 1 ? 's' : ''}
                               </span>
                             </div>
                           </AccordionTrigger>
@@ -1929,17 +1927,17 @@ function AddDeviceForm({
                                   type="text"
                                   placeholder="e.g., /data"
                                   value={(() => {
-                                    const source = properties.source || "";
-                                    const parts = source.split("/");
+                                    const source = properties.source || '';
+                                    const parts = source.split('/');
                                     return parts.length > 1
-                                      ? "/" + parts.slice(1).join("/")
-                                      : "";
+                                      ? '/' + parts.slice(1).join('/')
+                                      : '';
                                   })()}
                                   onChange={(e) => {
                                     const path = e.target.value;
                                     const sourceVolume = (() => {
-                                      const source = properties.source || "";
-                                      return source.split("/")[0];
+                                      const source = properties.source || '';
+                                      return source.split('/')[0];
                                     })();
                                     if (path && sourceVolume) {
                                       setProperties((prev) => ({
@@ -1958,7 +1956,7 @@ function AddDeviceForm({
                               </div>
                             )}
                             {category.fields.map(({ key, config }) =>
-                              renderField(key, config)
+                              renderField(key, config),
                             )}
                           </AccordionContent>
                         </AccordionItem>
@@ -1989,8 +1987,8 @@ function AddDeviceForm({
           <Button
             onClick={() => {
               // Clear local state before delegating cancel
-              setName("");
-              setProperties(isCreatingRootDisk ? { path: "/" } : {});
+              setName('');
+              setProperties(isCreatingRootDisk ? { path: '/' } : {});
               setFieldErrors({});
               setResetCounter((c) => c + 1);
               onCancelEdit?.();
@@ -2011,16 +2009,16 @@ function AddDeviceForm({
             ? `Save ${editingDevice.name}`
             : `Add ${(() => {
                 const deviceType_ = DEVICE_TYPES.find(
-                  (t) => t.value === deviceType
+                  (t) => t.value === deviceType,
                 );
-                if (!deviceType_) return "Device";
+                if (!deviceType_) return 'Device';
                 const label = deviceType_.label;
                 // Handle "Proxies" -> "Proxy"
-                if (label.endsWith("ies")) {
-                  return label.slice(0, -3) + "y";
+                if (label.endsWith('ies')) {
+                  return label.slice(0, -3) + 'y';
                 }
                 // Handle "Networks", "Disks", "GPUs" -> singular
-                if (label.endsWith("s") && !label.endsWith("ss")) {
+                if (label.endsWith('s') && !label.endsWith('ss')) {
                   return label.slice(0, -1);
                 }
                 return label;
@@ -2038,7 +2036,7 @@ export default function Devices({
   readonly = false,
   flags,
 }: DevicesProps) {
-  const [selectedType, setSelectedType] = React.useState("disk");
+  const [selectedType, setSelectedType] = React.useState('disk');
   const [localDevices, setLocalDevices] =
     React.useState<Record<string, Device>>(devices);
   const [selectedDevice, setSelectedDevice] = React.useState<{
@@ -2070,8 +2068,8 @@ export default function Devices({
     const allDevices = { ...inheritedDevices, ...localDevices };
     return Object.entries(allDevices).filter(([, device]) => {
       // For GPU type, match all gpu_* types
-      if (selectedType === "gpu") {
-        return device.type === "gpu" || device.type.startsWith("gpu_");
+      if (selectedType === 'gpu') {
+        return device.type === 'gpu' || device.type.startsWith('gpu_');
       }
       return device.type === selectedType;
     });
@@ -2085,16 +2083,16 @@ export default function Devices({
   const hasRootDisk = React.useMemo(() => {
     const allDevices = { ...inheritedDevices, ...localDevices };
     return Object.values(allDevices).some(
-      (device) => device.type === "disk" && device.path === "/"
+      (device) => device.type === 'disk' && device.path === '/',
     );
   }, [localDevices, inheritedDevices]);
 
   const hasIssues = (name: string, device: Device) => {
-    const isRootDisk = device.path === "/" && device.type === "disk";
+    const isRootDisk = device.path === '/' && device.type === 'disk';
 
     // Special case: root disk must have a pool
     if (isRootDisk) {
-      if (!device.pool || device.pool === "") {
+      if (!device.pool || device.pool === '') {
         return true;
       }
     }
@@ -2104,11 +2102,11 @@ export default function Devices({
 
     for (const keyObj of deviceConfig.keys) {
       for (const [key, config] of Object.entries(keyObj)) {
-        if (config.required === "yes") {
+        if (config.required === 'yes') {
           // For root disk, path/source are auto-managed
           if (isRootDisk) {
-            if (key.startsWith("path") || key.startsWith("source")) continue;
-            if (key === "pool") continue; // already checked above
+            if (key.startsWith('path') || key.startsWith('source')) continue;
+            if (key === 'pool') continue; // already checked above
           }
           if (!device[key as keyof Device]) {
             return true;
@@ -2145,7 +2143,7 @@ export default function Devices({
 
   const handleRemove = (name: string) => {
     const device = localDevices[name];
-    const isRootDisk = device && device.path === "/" && device.type === "disk";
+    const isRootDisk = device && device.path === '/' && device.type === 'disk';
 
     // Prevent removal of root disk or inherited devices
     if (isRootDisk || (name in inheritedDevices && !(name in localDevices))) {
@@ -2204,7 +2202,7 @@ export default function Devices({
         ...inheritedDevices,
         ...localDevices,
       }).filter(
-        (d) => d.type === type.value || d.type.startsWith(`${type.value}_`)
+        (d) => d.type === type.value || d.type.startsWith(`${type.value}_`),
       ).length;
 
       return {
@@ -2234,22 +2232,22 @@ export default function Devices({
         <h3 className="font-semibold text-sm">
           {selectedDevice
             ? `Edit ${selectedDevice.name}`
-            : isCreatingRootDisk && !hasRootDisk && selectedType === "disk"
-            ? "Add Root Disk"
-            : `Add ${(() => {
-                const deviceType = DEVICE_TYPES.find(
-                  (t) => t.value === selectedType
-                );
-                if (!deviceType) return "Device";
-                const label = deviceType.label;
-                if (label.endsWith("ies")) {
-                  return label.slice(0, -3) + "y";
-                }
-                if (label.endsWith("s") && !label.endsWith("ss")) {
-                  return label.slice(0, -1);
-                }
-                return label;
-              })()}`}
+            : isCreatingRootDisk && !hasRootDisk && selectedType === 'disk'
+              ? 'Add Root Disk'
+              : `Add ${(() => {
+                  const deviceType = DEVICE_TYPES.find(
+                    (t) => t.value === selectedType,
+                  );
+                  if (!deviceType) return 'Device';
+                  const label = deviceType.label;
+                  if (label.endsWith('ies')) {
+                    return label.slice(0, -3) + 'y';
+                  }
+                  if (label.endsWith('s') && !label.endsWith('ss')) {
+                    return label.slice(0, -1);
+                  }
+                  return label;
+                })()}`}
         </h3>
         <div className="ml-auto md:hidden">
           {/* Mobile close button if needed, or just rely on back */}
@@ -2270,7 +2268,7 @@ export default function Devices({
           deviceType={selectedType}
           deviceConfig={
             configurableOptions?.configs?.devices?.[
-              selectedType.startsWith("nic_") ? "nic_bridged" : selectedType
+              selectedType.startsWith('nic_') ? 'nic_bridged' : selectedType
             ]
           }
           onAdd={(name, device) => {
@@ -2332,7 +2330,7 @@ export default function Devices({
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-3">
             {!readonly &&
-              selectedType === "disk" &&
+              selectedType === 'disk' &&
               !hasRootDisk &&
               !isCreatingRootDisk && (
                 <Card className="border-dashed border-primary/50 bg-primary/5">

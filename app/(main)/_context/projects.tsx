@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   createContext,
@@ -7,14 +7,14 @@ import {
   useMemo,
   useState,
   use,
-} from "react";
-import { useProjects } from "@/app/(main)/_hooks/projects";
-import type { Project } from "@/app/(main)/_lib/projects.d";
-import { mutate } from "swr";
-import IsClientContext from "@/app/_context/isClient";
+} from 'react';
+import { useProjects } from '@/app/(main)/_hooks/projects';
+import type { Project } from '@/app/(main)/_lib/projects.d';
+import { mutate } from 'swr';
+import IsClientContext from '@/app/_context/isClient';
 
-export const ALL_PROJECTS_VALUE = "all";
-const STORAGE_KEY = "ararat-selected-project";
+export const ALL_PROJECTS_VALUE = 'all';
+const STORAGE_KEY = 'ararat-selected-project';
 
 interface ProjectsContextValue {
   projects: Project[];
@@ -49,7 +49,7 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [data, isValidating]);
   const [storedProject, setStoredProject] = useState<string>(() => {
-    if (typeof window === "undefined") return ALL_PROJECTS_VALUE;
+    if (typeof window === 'undefined') return ALL_PROJECTS_VALUE;
     return window.localStorage.getItem(STORAGE_KEY) ?? ALL_PROJECTS_VALUE;
   });
 
@@ -64,7 +64,7 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
   }, [data, storedProject]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
     window.localStorage.setItem(STORAGE_KEY, currentProject);
   }, [currentProject]);
 
