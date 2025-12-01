@@ -1,19 +1,3 @@
-import type { Device } from './instances.d';
-
-/**
- * Check if a valid root disk exists in the devices (either direct or inherited)
- */
-export function hasValidRootDisk(
-  devices: Record<string, Device>,
-  inheritedDevices: Record<string, Device>,
-): boolean {
-  const allDevices = { ...inheritedDevices, ...devices };
-  const rootDisk = Object.values(allDevices).find(
-    (device) => device.type === 'disk' && device.path === '/',
-  );
-  return rootDisk !== undefined && !!rootDisk.pool;
-}
-
 /**
  * Create a new instance via POST /1.0/instances
  */

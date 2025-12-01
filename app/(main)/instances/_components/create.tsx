@@ -39,11 +39,22 @@ import ImageSelector, { SelectableImage } from './imageSelector';
 import InstanceProperties from '@/app/(main)/instances/_components/properties';
 import InstanceDevices from './devices';
 import type { Device } from '@/app/(main)/instances/_lib/instances.d';
-import {
-  hasValidRootDisk,
-  createInstance,
-} from '@/app/(main)/instances/_lib/instances';
+import { createInstance } from '@/app/(main)/instances/_lib/instances';
 import { toYaml, fromYaml } from '@/app/(main)/_lib/yaml';
+
+/**
+ * Check if a valid root disk exists in the devices (either direct or inherited)
+ */
+function hasValidRootDisk(
+  devices: Record<string, Device>,
+  inheritedDevices: Record<string, Device>,
+): boolean {
+  const allDevices = { ...inheritedDevices, ...devices };
+  const rootDisk = Object.values(allDevices).find(
+    (device) => device.type === 'disk' && device.path === '/',
+  );
+  return rootDisk !== undefined && !!rootDisk.pool;
+}
 
 import GeneralConfiguration from './general-configuration';
 import { useProfiles } from '@/app/(main)/_hooks/profiles';
