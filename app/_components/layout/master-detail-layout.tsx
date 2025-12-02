@@ -5,8 +5,8 @@ import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
-} from '@/app/_components/ui/resizable';
-import { useMobile } from '@/app/_components/ui/hooks/use-mobile';
+} from 'ui-web/components/resizable';
+import { useMobile } from 'ui-web/hooks/use-mobile';
 
 interface MasterDetailLayoutProps {
   // Desktop Props

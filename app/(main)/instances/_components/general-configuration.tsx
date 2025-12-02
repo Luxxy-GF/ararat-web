@@ -1,13 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import { Input } from '@/app/_components/ui/input';
-import { Switch } from '@/app/_components/ui/switch';
-import { Button } from '@/app/_components/ui/button';
+import { Input } from 'ui-web/components/input';
+import { Switch } from 'ui-web/components/switch';
+import { Button } from 'ui-web/components/button';
 import { IconRotateClockwise } from '@tabler/icons-react';
 import { useConfigurableOptions } from '@/app/_hooks/server';
 import { ConfigOption } from '@/app/_lib/server.d';
-import { ScrollArea } from '@/app/_components/ui/scroll-area';
+import { ScrollArea } from 'ui-web/components/scroll-area';
 import { SearchIcon } from 'lucide-react';
 import { VerticalTabsLayout } from '@/app/_components/layout/vertical-tabs-layout';
 import {
@@ -15,7 +15,7 @@ import {
   FieldLabel,
   FieldDescription,
   FieldContent,
-} from '@/app/_components/ui/field';
+} from 'ui-web/components/field';
 
 interface GeneralConfigurationProps {
   config: Record<string, string>;

@@ -5,7 +5,7 @@ import { useInstanceContext } from '../_context/instance';
 import { useBackups } from '../_hooks/backups';
 import { useStoragePools } from '../../_hooks/storagePools';
 import { getRootDiskPool } from '../_lib/utils';
-import { Spinner } from '@/app/_components/ui/spinner';
+import { Spinner } from 'ui-web/components/spinner';
 import { BackupList } from '../../_components/backups';
 
 export default function BackupsPage() {

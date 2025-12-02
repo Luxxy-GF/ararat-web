@@ -3,14 +3,10 @@
 import React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { InstanceProvider, useInstanceContext } from './_context/instance';
-import { Spinner } from '@/app/_components/ui/spinner';
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from '@/app/_components/ui/alert';
+import { Spinner } from 'ui-web/components/spinner';
+import { Alert, AlertDescription, AlertTitle } from 'ui-web/components/alert';
 import { Instance } from '../instances/_lib/instances.d';
-import { Button } from '@/app/_components/ui/button';
+import { Button } from 'ui-web/components/button';
 import {
   PlayIcon,
   SquareIcon,
@@ -18,7 +14,7 @@ import {
   SnowflakeIcon,
   ServerIcon,
 } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger } from '@/app/_components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from 'ui-web/components/tabs';
 import { OSLogo } from '@/app/_components/OSLogo';
 import { getBaseImage } from './_lib/utils';
 import { performInstanceAction, type InstanceAction } from './_lib/instance';

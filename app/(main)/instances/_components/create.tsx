@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/app/_components/ui/button';
+import { Button } from 'ui-web/components/button';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/app/_components/ui/dialog';
+} from 'ui-web/components/dialog';
 import {
   Form,
   FormControl,
@@ -17,20 +17,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/app/_components/ui/form';
+} from 'ui-web/components/form';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/app/_components/ui/select';
+} from 'ui-web/components/select';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/app/_components/ui/tabs';
+} from 'ui-web/components/tabs';
 import { useState, useMemo, use, useCallback, useRef } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -59,7 +59,7 @@ function hasValidRootDisk(
 import GeneralConfiguration from './general-configuration';
 import { useProfiles } from '@/app/(main)/_hooks/profiles';
 import ProjectsContext from '@/app/(main)/_context/projects';
-import { Spinner } from '@/app/_components/ui/spinner';
+import { Spinner } from 'ui-web/components/spinner';
 import { toast } from 'sonner';
 import Editor, { OnMount } from '@monaco-editor/react';
 import { useTheme } from 'next-themes';

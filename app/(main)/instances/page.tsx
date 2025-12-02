@@ -11,29 +11,25 @@ import {
 } from 'lucide-react';
 
 import CreateInstance from './_components/create';
-import DataTable from '@/app/_components/ui/data-table';
-import { Input } from '@/app/_components/ui/input';
-import { Skeleton } from '@/app/_components/ui/skeleton';
+import DataTable from 'ui-web/components/data-table';
+import { Input } from 'ui-web/components/input';
+import { Skeleton } from 'ui-web/components/skeleton';
 import { useInstances } from '@/app/(main)/instances/_hooks/instances';
 import type { Instance, InstanceState } from './_lib/instances.d';
 import { deleteInstance } from './_lib/instances';
-import { Badge } from '@/app/_components/ui/badge';
-import { Button } from '@/app/_components/ui/button';
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from '@/app/_components/ui/alert';
+import { Badge } from 'ui-web/components/badge';
+import { Button } from 'ui-web/components/button';
+import { Alert, AlertDescription, AlertTitle } from 'ui-web/components/alert';
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from '@/app/_components/ui/sheet';
-import { Spinner } from '@/app/_components/ui/spinner';
+} from 'ui-web/components/sheet';
+import { Spinner } from 'ui-web/components/spinner';
 import ProjectsContext from '@/app/(main)/_context/projects';
-import { Progress } from '@/app/_components/ui/progress';
+import { Progress } from 'ui-web/components/progress';
 import IsClientContext from '@/app/_context/isClient';
 import {
   AlertDialog,

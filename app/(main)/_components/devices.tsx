@@ -1,39 +1,39 @@
 'use client';
 
 import * as React from 'react';
-import { Button } from '@/app/_components/ui/button';
+import { Button } from 'ui-web/components/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/app/_components/ui/card';
-import { Input } from '@/app/_components/ui/input';
-import { Label } from '@/app/_components/ui/label';
-import { ScrollArea } from '@/app/_components/ui/scroll-area';
-import { Separator } from '@/app/_components/ui/separator';
-import { Badge } from '@/app/_components/ui/badge';
-import { Switch } from '@/app/_components/ui/switch';
+} from 'ui-web/components/card';
+import { Input } from 'ui-web/components/input';
+import { Label } from 'ui-web/components/label';
+import { ScrollArea } from 'ui-web/components/scroll-area';
+import { Separator } from 'ui-web/components/separator';
+import { Badge } from 'ui-web/components/badge';
+import { Switch } from 'ui-web/components/switch';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/app/_components/ui/select';
+} from 'ui-web/components/select';
 import {
   Combobox,
   ComboboxTrigger,
   ComboboxContent,
   ComboboxItem,
-} from '@/app/_components/ui/combobox';
+} from 'ui-web/components/combobox';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/app/_components/ui/accordion';
+} from 'ui-web/components/accordion';
 import {
   IconPlus,
   IconTrash,
@@ -54,7 +54,7 @@ import type { Device } from '@/app/(main)/instances/_lib/instances.d';
 import type { ConfigOption } from '@/app/_lib/server.d';
 import { useResources } from '@/app/(main)/_hooks/resources';
 import { VerticalTabsLayout } from '@/app/_components/layout/vertical-tabs-layout';
-import { useMobile } from '@/app/_components/ui/hooks/use-mobile';
+import { useMobile } from 'ui-web/hooks/use-mobile';
 
 // Utility function to validate port specifications (Issue 3)
 function validatePort(portSpec: string): boolean {

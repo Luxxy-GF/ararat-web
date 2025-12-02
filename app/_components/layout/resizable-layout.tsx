@@ -5,7 +5,7 @@ import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
-} from '@/app/_components/ui/resizable';
+} from 'ui-web/components/resizable';
 
 interface ResizableLayoutProps {
   sidebar: React.ReactNode;

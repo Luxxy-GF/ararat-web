@@ -4,7 +4,7 @@ import React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useInstanceContext } from '../_context/instance';
 import { useFiles } from '../_hooks/files';
-import { Spinner } from '@/app/_components/ui/spinner';
+import { Spinner } from 'ui-web/components/spinner';
 import { FileBrowser } from '../../_components/files';
 
 export default function FilesPage() {

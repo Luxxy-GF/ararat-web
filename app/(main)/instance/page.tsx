@@ -2,16 +2,16 @@
 
 import React from 'react';
 import { useInstanceContext } from './_context/instance';
-import { Spinner } from '@/app/_components/ui/spinner';
+import { Spinner } from 'ui-web/components/spinner';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/app/_components/ui/card';
-import { Progress } from '@/app/_components/ui/progress';
-import { Badge } from '@/app/_components/ui/badge';
+} from 'ui-web/components/card';
+import { Progress } from 'ui-web/components/progress';
+import { Badge } from 'ui-web/components/badge';
 import {
   formatBytes,
   formatDate,

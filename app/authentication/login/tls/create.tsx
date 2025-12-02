@@ -5,24 +5,24 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/app/_components/ui/accordion';
-import { Button } from '@/app/_components/ui/button';
+} from 'ui-web/components/accordion';
+import { Button } from 'ui-web/components/button';
 import {
   Dialog,
+  DialogTitle,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-} from '@/app/_components/ui/dialog';
-import { Input } from '@/app/_components/ui/input';
-import { Label } from '@/app/_components/ui/label';
+} from 'ui-web/components/dialog';
+import { Input } from 'ui-web/components/input';
+import { Label } from 'ui-web/components/label';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/app/_components/ui/tabs';
-import { DialogTitle } from '@radix-ui/react-dialog';
+} from 'ui-web/components/tabs';
 import { useEffect, useRef, useState } from 'react';
 
 export default function CreateCertificate() {

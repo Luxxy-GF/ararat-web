@@ -3,9 +3,9 @@
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Row } from '@tanstack/react-table';
 
-import { Badge } from '@/app/_components/ui/badge';
-import { Button } from '@/app/_components/ui/button';
-import DataTable from '@/app/_components/ui/data-table';
+import { Badge } from 'ui-web/components/badge';
+import { Button } from 'ui-web/components/button';
+import DataTable from 'ui-web/components/data-table';
 import {
   Dialog,
   DialogContent,
@@ -14,17 +14,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/app/_components/ui/dialog';
-import { Input } from '@/app/_components/ui/input';
-import { Label } from '@/app/_components/ui/label';
+} from 'ui-web/components/dialog';
+import { Input } from 'ui-web/components/input';
+import { Label } from 'ui-web/components/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/app/_components/ui/select';
-import { Spinner } from '@/app/_components/ui/spinner';
+} from 'ui-web/components/select';
+import { Spinner } from 'ui-web/components/spinner';
 import { useImages } from '@/app/(main)/images/_hooks/images';
 import { Image } from '@/app/(main)/images/_lib/images';
 import ProjectsContext from '@/app/(main)/_context/projects';
