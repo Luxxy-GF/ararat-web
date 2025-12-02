@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Spinner } from "@/app/_components/ui/spinner";
-import { Button } from "@/app/_components/ui/button";
+import React from 'react';
+import { Spinner } from '@/app/_components/ui/spinner';
+import { Button } from '@/app/_components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/app/_components/ui/dropdown-menu";
+} from '@/app/_components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -19,25 +19,25 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/app/_components/ui/dialog";
-import { Input } from "@/app/_components/ui/input";
-import { Label } from "@/app/_components/ui/label";
-import { Checkbox } from "@/app/_components/ui/checkbox";
+} from '@/app/_components/ui/dialog';
+import { Input } from '@/app/_components/ui/input';
+import { Label } from '@/app/_components/ui/label';
+import { Checkbox } from '@/app/_components/ui/checkbox';
 import {
   MoreHorizontal,
   PlusIcon,
   TrashIcon,
   DownloadIcon,
   PencilIcon,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from "@/app/_components/ui/alert";
-import { formatDate } from "@/app/(main)/instance/_lib/utils";
-import DataTable from "@/app/_components/ui/data-table";
-import { ColumnDef } from "@tanstack/react-table";
+} from '@/app/_components/ui/alert';
+import { formatDate } from '@/app/(main)/instance/_lib/utils';
+import DataTable from '@/app/_components/ui/data-table';
+import { ColumnDef } from '@tanstack/react-table';
 
 export interface Backup {
   name: string;
@@ -55,7 +55,7 @@ interface BackupListProps {
   onCreate: (
     name: string,
     instanceOnly: boolean,
-    optimizedStorage: boolean
+    optimizedStorage: boolean,
   ) => Promise<void>;
   onDelete: (name: string) => Promise<void>;
   onRename: (oldName: string, newName: string) => Promise<void>;
@@ -82,42 +82,40 @@ export function BackupList({
 
   const columns: ColumnDef<Backup>[] = [
     {
-      accessorKey: "name",
-      header: "Name",
+      accessorKey: 'name',
+      header: 'Name',
       cell: ({ row }) => {
         const name = row.original.name;
-        const shortName = name.split("/").pop() || "";
+        const shortName = name.split('/').pop() || '';
         return <span className="font-medium">{shortName}</span>;
       },
     },
     {
-      accessorKey: "created_at",
-      header: "Created At",
+      accessorKey: 'created_at',
+      header: 'Created At',
       cell: ({ row }) => formatDate(row.original.created_at),
     },
     {
-      accessorKey: "expires_at",
-      header: "Expires At",
+      accessorKey: 'expires_at',
+      header: 'Expires At',
       cell: ({ row }) =>
-        row.original.expires_at
-          ? formatDate(row.original.expires_at)
-          : "Never",
+        row.original.expires_at ? formatDate(row.original.expires_at) : 'Never',
     },
     {
-      id: "exclude_snapshots",
-      header: "Exclude Snapshots",
+      id: 'exclude_snapshots',
+      header: 'Exclude Snapshots',
       cell: ({ row }) =>
         row.original.container_only || row.original.instance_only
-          ? "Yes"
-          : "No",
+          ? 'Yes'
+          : 'No',
     },
     {
-      accessorKey: "optimized_storage",
-      header: "Optimized Storage",
-      cell: ({ row }) => (row.original.optimized_storage ? "Yes" : "No"),
+      accessorKey: 'optimized_storage',
+      header: 'Optimized Storage',
+      cell: ({ row }) => (row.original.optimized_storage ? 'Yes' : 'No'),
     },
     {
-      id: "actions",
+      id: 'actions',
       cell: ({ row }) => {
         const backup = row.original;
         return (
@@ -179,7 +177,7 @@ export function BackupList({
           onOpenChange={setIsCreateOpen}
           onCreate={(name, instanceOnly, optimizedStorage) =>
             onCreate(name, instanceOnly, optimizedStorage).catch((e: any) =>
-              setActionError(e.message)
+              setActionError(e.message),
             )
           }
           canUseOptimizedStorage={canUseOptimizedStorage}
@@ -193,13 +191,11 @@ export function BackupList({
         </Alert>
       )}
 
-      <div className="rounded-md border">
-        <DataTable data={backups} cols={columns as any} />
-      </div>
+      <DataTable data={backups} cols={columns as any} />
 
       {renameBackup && (
         <RenameBackupDialog
-          currentName={renameBackup.name.split("/").pop() || ""}
+          currentName={renameBackup.name.split('/').pop() || ''}
           open={!!renameBackup}
           onOpenChange={(open) => !open && setRenameBackup(null)}
           onRename={(newName) =>
@@ -212,7 +208,7 @@ export function BackupList({
 
       {deleteBackup && (
         <DeleteBackupDialog
-          name={deleteBackup.name.split("/").pop() || ""}
+          name={deleteBackup.name.split('/').pop() || ''}
           open={!!deleteBackup}
           onOpenChange={(open) => !open && setDeleteBackup(null)}
           onConfirm={() =>
@@ -237,11 +233,11 @@ function CreateBackupDialog({
   onCreate: (
     name: string,
     instanceOnly: boolean,
-    optimizedStorage: boolean
+    optimizedStorage: boolean,
   ) => Promise<void>;
   canUseOptimizedStorage: boolean;
 }) {
-  const [name, setName] = React.useState("");
+  const [name, setName] = React.useState('');
   const [instanceOnly, setInstanceOnly] = React.useState(false);
   const [optimizedStorage, setOptimizedStorage] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -252,7 +248,7 @@ function CreateBackupDialog({
     try {
       await onCreate(name, instanceOnly, optimizedStorage);
       onOpenChange(false);
-      setName("");
+      setName('');
       setInstanceOnly(false);
       setOptimizedStorage(false);
     } finally {
