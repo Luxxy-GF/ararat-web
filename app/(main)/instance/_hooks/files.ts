@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import useSWR, { mutate } from 'swr';
 import {
   uploadFile as apiUploadFile,
@@ -6,6 +7,7 @@ import {
   downloadFile as apiDownloadFile,
   fetchFileContent as apiFetchFileContent,
   saveFileContent as apiSaveFileContent,
+  getFileMetadata as apiFetchFileMetadata,
 } from '../_lib/files';
 
 const directoryFetcher = async (url: string) => {
@@ -38,6 +40,49 @@ export function useFiles(instanceName: string, path: string) {
     `/1.0/instances/${instanceName}/files?path=${encodeURIComponent(normalizedPath)}`,
     directoryFetcher,
   );
+
+  const [filesWithMetadata, setFilesWithMetadata] = useState<any[]>([]);
+  const [isMetadataLoading, setIsMetadataLoading] = useState(false);
+
+  useEffect(() => {
+    if (!data?.metadata || !Array.isArray(data.metadata)) {
+      setFilesWithMetadata([]);
+      return;
+    }
+
+    const fetchMetadata = async () => {
+      setIsMetadataLoading(true);
+      try {
+        const files = data.metadata as string[];
+        const metadataPromises = files.map(async (fileName) => {
+          try {
+            const filePath = `${normalizedPath === '/' ? '' : normalizedPath}/${fileName}`;
+            const meta = await apiFetchFileMetadata(instanceName, filePath);
+            return {
+              name: fileName,
+              type: meta.type,
+              size: meta.size ? parseInt(meta.size, 10) : undefined,
+              mode: meta.mode,
+              uid: meta.uid,
+              gid: meta.gid,
+            };
+          } catch (e) {
+            console.error(`Failed to fetch metadata for ${fileName}`, e);
+            return { name: fileName };
+          }
+        });
+
+        const results = await Promise.all(metadataPromises);
+        setFilesWithMetadata(results);
+      } catch (e) {
+        console.error('Error fetching metadata', e);
+      } finally {
+        setIsMetadataLoading(false);
+      }
+    };
+
+    fetchMetadata();
+  }, [data, instanceName, normalizedPath]);
 
   const uploadFile = async (currentPath: string, file: File) => {
     await apiUploadFile(instanceName, currentPath, file);
@@ -79,8 +124,8 @@ export function useFiles(instanceName: string, path: string) {
   };
 
   return {
-    files: data?.metadata || [],
-    isLoading,
+    files: filesWithMetadata,
+    isLoading: isLoading || isMetadataLoading,
     isError: error,
     uploadFile,
     createDirectory,

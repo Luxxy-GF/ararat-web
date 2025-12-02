@@ -53,7 +53,7 @@ import DataTable from '@/app/_components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
 
 interface FileBrowserProps {
-  files: string[];
+  files: (string | FileItem)[];
   isLoading: boolean;
   isError: any;
   currentPath: string;
@@ -70,8 +70,27 @@ interface FileBrowserProps {
   ) => Promise<void>;
 }
 
-interface FileItem {
+export interface FileItem {
   name: string;
+  type?: string;
+  size?: number;
+  mode?: string;
+  uid?: string;
+  gid?: string;
+}
+
+function formatBytes(value?: number) {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return '—';
+  }
+  const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
+  if (value === 0) return '0 B';
+  const exponent = Math.min(
+    Math.max(Math.floor(Math.log(value) / Math.log(1024)), 0),
+    units.length - 1,
+  );
+  const num = value / Math.pow(1024, exponent);
+  return `${num.toFixed(num >= 10 ? 0 : 1)} ${units[exponent]}`;
 }
 
 export function FileBrowser({
@@ -99,8 +118,12 @@ export function FileBrowser({
   const [isSaving, setIsSaving] = React.useState(false);
 
   // Prepare data for DataTable
+  // If files already have metadata, use them. If they are just strings (legacy), map them.
   const fileData: FileItem[] = React.useMemo(() => {
-    return files.map((f) => ({ name: f }));
+    return files.map((f: any) => {
+      if (typeof f === 'string') return { name: f };
+      return f;
+    });
   }, [files]);
 
   const handleUp = () => {
@@ -174,10 +197,13 @@ export function FileBrowser({
       header: 'Name',
       cell: ({ row }) => {
         const name = row.original.name;
-        const isLikelyDirectory = !name.includes('.');
+        const type = row.original.type;
+        // Fallback to extension check if type is missing
+        const isDirectory = type === 'directory' || (!type && !name.includes('.'));
+
         return (
           <div className="flex items-center gap-2">
-            {isLikelyDirectory ? (
+            {isDirectory ? (
               <FolderIcon className="h-4 w-4 text-blue-500" />
             ) : (
               <FileIcon className="h-4 w-4 text-gray-500" />
@@ -185,7 +211,7 @@ export function FileBrowser({
             <span
               className="font-medium cursor-pointer hover:underline"
               onClick={() => {
-                if (isLikelyDirectory) {
+                if (isDirectory) {
                   onNavigate(
                     `${currentPath === '/' ? '' : currentPath}/${name}`,
                   );
@@ -203,59 +229,68 @@ export function FileBrowser({
     {
       id: 'size',
       header: 'Size',
-      cell: () => '—', // Placeholder as size is not available in simple listing
+      cell: ({ row }) => {
+        if (row.original.type === 'directory') return '—';
+        return formatBytes(row.original.size);
+      },
     },
     {
       id: 'type',
       header: 'Type',
       cell: ({ row }) => {
         const name = row.original.name;
+        const type = row.original.type;
+        if (type) return type === 'directory' ? 'Directory' : 'File';
         return !name.includes('.') ? 'Directory' : 'File';
       },
     },
     {
       id: 'actions',
+      size: 50,
       cell: ({ row }) => {
         const name = row.original.name;
-        const isLikelyDirectory = !name.includes('.');
+        const type = row.original.type;
+        const isDirectory = type === 'directory' || (!type && !name.includes('.'));
         const fullPath = `${currentPath === '/' ? '' : currentPath}/${name}`;
 
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              {!isLikelyDirectory && (
-                <DropdownMenuItem onClick={() => handleEdit(name)}>
-                  <PencilIcon className="mr-2 h-4 w-4" />
-                  Edit
+          <div className="flex justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                {!isDirectory && (
+                  <DropdownMenuItem onClick={() => handleEdit(name)}>
+                    <PencilIcon className="mr-2 h-4 w-4" />
+                    Edit
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => onDownload(fullPath)}>
+                  <DownloadIcon className="mr-2 h-4 w-4" />
+                  Download
                 </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={() => onDownload(fullPath)}>
-                <DownloadIcon className="mr-2 h-4 w-4" />
-                Download
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onNavigate(fullPath)}>
-                <FolderIcon className="mr-2 h-4 w-4" />
-                Open
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() =>
-                  onDelete(fullPath).catch((e) => setActionError(e.message))
-                }
-                className="text-destructive focus:text-destructive"
-              >
-                <TrashIcon className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuItem onClick={() => onNavigate(fullPath)}>
+                  <FolderIcon className="mr-2 h-4 w-4" />
+                  Open
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() =>
+                    onDelete(fullPath).catch((e) => setActionError(e.message))
+                  }
+                  className="text-red-600"
+                >
+                  <TrashIcon className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         );
       },
     },

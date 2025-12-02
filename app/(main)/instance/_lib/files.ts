@@ -123,3 +123,29 @@ export async function saveFileContent(
     throw new Error(res.statusText);
   }
 }
+
+export async function getFileMetadata(
+  instanceName: string,
+  filePath: string,
+) {
+  const res = await fetch(
+    getApiUrl(
+      `/1.0/instances/${instanceName}/files?path=${encodeURIComponent(filePath)}`,
+    ),
+    {
+      method: 'HEAD',
+    },
+  );
+
+  if (!res.ok) {
+    throw new Error(res.statusText);
+  }
+
+  return {
+    uid: res.headers.get('X-Incus-uid'),
+    gid: res.headers.get('X-Incus-gid'),
+    mode: res.headers.get('X-Incus-mode'),
+    type: res.headers.get('X-Incus-type'),
+    size: res.headers.get('Content-Length'),
+  };
+}
