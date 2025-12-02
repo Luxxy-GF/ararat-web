@@ -45,6 +45,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './_components/alert-dialog';
+import { useRouter } from 'next/navigation';
 
 type InstanceAction = 'start' | 'stop' | 'restart' | 'freeze';
 
@@ -138,8 +139,11 @@ export default function Instances() {
           return (
             <button
               type="button"
-              className="text-left font-medium text-primary underline focus:outline-none"
-              onClick={(event) => event.stopPropagation()}
+              className="text-left font-medium text-primary underline focus:outline-none cursor-pointer"
+              onClick={(event) => {
+                event.stopPropagation();
+                router.push(`/instance?name=${instance.name}`);
+              }}
             >
               {instance.name}
             </button>
@@ -190,11 +194,11 @@ export default function Instances() {
           const instance = row.original as Instance;
           const memoryUsage = instance.state?.memory?.usage ?? 0;
           const diskUsage = getRootDiskUsage(instance.state) ?? 0;
-          const memoryPercent = calcUsagePercent(
+          const memoryPercent = calcResourcePercent(
             memoryUsage,
             instance.state?.memory?.total ?? instance.state?.memory?.usage_peak,
           );
-          const diskPercent = calcUsagePercent(
+          const diskPercent = calcResourcePercent(
             diskUsage,
             instance.state?.disk?.root?.total,
           );
@@ -276,8 +280,11 @@ export default function Instances() {
     setSelectedInstances(rows.map((row) => row.original as Instance));
   }, []);
 
+  const router = useRouter();
+
   const handleRowClick = React.useCallback((row: Row<object>) => {
-    setInspectorInstance(row.original as Instance);
+    const instance = row.original as Instance;
+    setInspectorInstance(instance);
     setIsSheetOpen(true);
   }, []);
 
@@ -889,7 +896,7 @@ function getRootDiskPool(instance: Instance) {
   return rootDisk?.pool ?? null;
 }
 
-function calcUsagePercent(current?: number, peak?: number) {
+function calcResourcePercent(current?: number, peak?: number) {
   if (!peak || peak <= 0) {
     return 0;
   }

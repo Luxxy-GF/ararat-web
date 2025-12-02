@@ -10,7 +10,7 @@ export async function getProfiles(profiles: string[] | undefined) {
       query += `&filter=${profiles.map((p) => `name eq ${p}`).join(' or ')}`;
     }
   }
-  return jsonFetcher(`/1.0/profiles?recursion=1${query}`).then(
-    (data) => data.metadata as Profile[],
+  return jsonFetcher<Profile[]>(`/1.0/profiles?recursion=1${query}`).then(
+    (data) => data.metadata,
   );
 }
