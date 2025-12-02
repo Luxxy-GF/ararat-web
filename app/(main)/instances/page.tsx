@@ -63,6 +63,15 @@ function isDeleteProtected(instance: Instance): boolean {
   return config['security.protection.delete'] === 'true';
 }
 
+function isRunning(instance: Instance): boolean {
+  const status = instance.status?.toLowerCase();
+  return status === 'running' || status === 'started';
+}
+
+function canDelete(instance: Instance): boolean {
+  return !isDeleteProtected(instance) && !isRunning(instance);
+}
+
 async function performInstanceAction({
   action,
   instance,
@@ -272,13 +281,20 @@ export default function Instances() {
     setIsSheetOpen(true);
   }, []);
 
-  // Compute deletable and protected instances for mass deletion
+  // Compute deletable, protected, and running instances for mass deletion
   const deletableInstances = React.useMemo(
-    () => selectedInstances.filter((instance) => !isDeleteProtected(instance)),
+    () => selectedInstances.filter((instance) => canDelete(instance)),
     [selectedInstances],
   );
   const protectedInstances = React.useMemo(
     () => selectedInstances.filter((instance) => isDeleteProtected(instance)),
+    [selectedInstances],
+  );
+  const runningInstances = React.useMemo(
+    () =>
+      selectedInstances.filter(
+        (instance) => isRunning(instance) && !isDeleteProtected(instance),
+      ),
     [selectedInstances],
   );
 
@@ -317,8 +333,10 @@ export default function Instances() {
       const errors = results.filter((r) => r.error).map((r) => r.error);
       if (errors.length > 0) {
         setActionError(errors.join('; '));
+        return; // Keep dialog open when there are errors
       }
       await mutate();
+      setSelectedInstances([]); // Clear selection after successful deletion
       setDeleteDialogOpen(false);
       setSingleDeleteInstance(null);
       if (singleDeleteInstance && isSheetOpen) {
@@ -455,7 +473,7 @@ export default function Instances() {
             <InstanceDetails
               instance={inspectorInstance}
               onDelete={
-                !isDeleteProtected(inspectorInstance)
+                canDelete(inspectorInstance)
                   ? () => openSingleDeleteDialog(inspectorInstance)
                   : undefined
               }
@@ -492,6 +510,17 @@ export default function Instances() {
                       <li key={instance.name}>{instance.name}</li>
                     ))}
                   </ul>
+                  {runningInstances.length > 0 && (
+                    <div className="mt-3 p-3 rounded-md bg-muted text-muted-foreground">
+                      <strong>Note:</strong> The following instances are currently
+                      running and must be stopped before deletion:
+                      <ul className="list-disc list-inside mt-1">
+                        {runningInstances.map((instance) => (
+                          <li key={instance.name}>{instance.name}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   {protectedInstances.length > 0 && (
                     <div className="mt-3 p-3 rounded-md bg-muted text-muted-foreground">
                       <strong>Note:</strong> The following instances have delete
