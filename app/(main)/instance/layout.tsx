@@ -1,32 +1,30 @@
-"use client";
+'use client';
 
-import React, { Suspense } from "react";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useInstance } from "./_hooks/instance";
-import { Spinner } from "@/app/_components/ui/spinner";
+import React from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { InstanceProvider, useInstanceContext } from './_context/instance';
+import { Spinner } from '@/app/_components/ui/spinner';
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from "@/app/_components/ui/alert";
-import { Instance } from "../instances/_lib/instances.d";
-import { Button } from "@/app/_components/ui/button";
+} from '@/app/_components/ui/alert';
+import { Instance } from '../instances/_lib/instances.d';
+import { Button } from '@/app/_components/ui/button';
 import {
   PlayIcon,
   SquareIcon,
   RotateCcwIcon,
   SnowflakeIcon,
   ServerIcon,
-} from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/app/_components/ui/tabs";
-import { OSLogo } from "@/app/_components/OSLogo";
-import { getBaseImage } from "./_lib/utils";
+} from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/app/_components/ui/tabs';
+import { OSLogo } from '@/app/_components/OSLogo';
+import { getBaseImage } from './_lib/utils';
+import { performInstanceAction, type InstanceAction } from './_lib/instance';
 
 function InstanceLayoutContent({ children }: { children: React.ReactNode }) {
-  const searchParams = useSearchParams();
-  const name = searchParams.get("name");
-
-  const { instance, isLoading, isError, mutate } = useInstance(name);
+  const { name, instance, isLoading, isError, mutate } = useInstanceContext();
 
   if (!name) {
     return (
@@ -52,7 +50,7 @@ function InstanceLayoutContent({ children }: { children: React.ReactNode }) {
       <Alert variant="destructive">
         <AlertTitle>Error</AlertTitle>
         <AlertDescription>
-          {isError?.message || "Instance not found."}
+          {isError?.message || 'Instance not found.'}
         </AlertDescription>
       </Alert>
     );
@@ -76,58 +74,23 @@ export default function InstanceLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={<Spinner />}>
+    <InstanceProvider>
       <InstanceLayoutContent>{children}</InstanceLayoutContent>
-    </Suspense>
+    </InstanceProvider>
   );
 }
 
 // --- Inlined Components ---
 
-type InstanceAction = "start" | "stop" | "restart" | "freeze";
-
 const instanceActionDetails: Record<
   InstanceAction,
   { label: string; Icon: React.ComponentType<{ className?: string }> }
 > = {
-  start: { label: "Start", Icon: PlayIcon },
-  stop: { label: "Stop", Icon: SquareIcon },
-  restart: { label: "Restart", Icon: RotateCcwIcon },
-  freeze: { label: "Freeze", Icon: SnowflakeIcon },
+  start: { label: 'Start', Icon: PlayIcon },
+  stop: { label: 'Stop', Icon: SquareIcon },
+  restart: { label: 'Restart', Icon: RotateCcwIcon },
+  freeze: { label: 'Freeze', Icon: SnowflakeIcon },
 };
-
-async function performInstanceAction({
-  action,
-  instance,
-}: {
-  action: InstanceAction;
-  instance: Instance;
-}) {
-  const projectSuffix = instance.project
-    ? `?project=${encodeURIComponent(instance.project)}`
-    : "";
-  const res = await fetch(
-    `/1.0/instances/${encodeURIComponent(instance.name)}/state${projectSuffix}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        action,
-        timeout: 30,
-        force: false,
-        stateful: false,
-      }),
-    }
-  );
-  if (!res.ok) {
-    const payload = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(
-      payload?.error || `Unable to ${action} instance ${instance.name}`
-    );
-  }
-}
 
 function InstanceHeader({
   instance,
@@ -136,9 +99,8 @@ function InstanceHeader({
   instance: Instance;
   onMutate: () => Promise<any>;
 }) {
-  const [actionInFlight, setActionInFlight] = React.useState<InstanceAction | null>(
-    null
-  );
+  const [actionInFlight, setActionInFlight] =
+    React.useState<InstanceAction | null>(null);
   const [actionError, setActionError] = React.useState<string | null>(null);
 
   const handleAction = async (action: InstanceAction) => {
@@ -149,7 +111,7 @@ function InstanceHeader({
       await onMutate();
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Unable to update instance.";
+        err instanceof Error ? err.message : 'Unable to update instance.';
       setActionError(message);
     } finally {
       setActionInFlight(null);
@@ -157,17 +119,17 @@ function InstanceHeader({
   };
 
   const status = instance.status?.toLowerCase();
-  const isRunning = status === "running";
-  const isStopped = status === "stopped";
-  const isFrozen = status === "frozen";
+  const isRunning = status === 'running';
+  const isStopped = status === 'stopped';
+  const isFrozen = status === 'frozen';
 
   const availableActions: InstanceAction[] = [];
   if (isRunning) {
-    availableActions.push("stop", "restart", "freeze");
+    availableActions.push('stop', 'restart', 'freeze');
   } else if (isStopped) {
-    availableActions.push("start");
+    availableActions.push('start');
   } else if (isFrozen) {
-    availableActions.push("start");
+    availableActions.push('start');
   }
 
   return (
@@ -220,7 +182,7 @@ function InstanceHeader({
                 )}
                 {label}
               </Button>
-            )
+            );
           })}
         </div>
       </div>
@@ -236,35 +198,34 @@ function InstanceHeader({
 }
 
 const TABS = [
-  { value: "dashboard", label: "Dashboard" },
-  { value: "backups", label: "Backups" },
-  { value: "console", label: "Console" },
-  { value: "files", label: "Files" },
-  { value: "snapshots", label: "Snapshots" },
-  { value: "devices", label: "Devices" },
-  { value: "configuration", label: "Configuration" },
+  { value: 'dashboard', label: 'Dashboard' },
+  { value: 'backups', label: 'Backups' },
+  { value: 'console', label: 'Console' },
+  { value: 'files', label: 'Files' },
+  { value: 'snapshots', label: 'Snapshots' },
+  { value: 'devices', label: 'Devices' },
+  { value: 'configuration', label: 'Configuration' },
 ];
 
 function InstanceTabs() {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const instanceName = searchParams.get("name");
+  const { name: instanceName } = useInstanceContext();
 
   // Determine current tab based on pathname
   // /instance -> dashboard
   // /instance/backups -> backups
   // etc.
-  const currentTab = pathname === "/instance"
-    ? "dashboard"
-    : pathname.split("/").pop() || "dashboard";
+  const currentTab =
+    pathname === '/instance'
+      ? 'dashboard'
+      : pathname.split('/').pop() || 'dashboard';
 
   const handleTabChange = (value: string) => {
     if (!instanceName) return;
 
-    const targetPath = value === "dashboard"
-      ? "/instance"
-      : `/instance/${value}`;
+    const targetPath =
+      value === 'dashboard' ? '/instance' : `/instance/${value}`;
 
     router.push(`${targetPath}?name=${instanceName}`);
   };
