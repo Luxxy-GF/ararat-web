@@ -6,11 +6,13 @@ export async function getServerConfiguration() {
 }
 
 export async function getConfigurableOptions() {
-  return jsonFetcher<ConfigurableOptions>('/1.0/metadata/configuration').then((data) => {
-    const config = data.metadata;
-    processConfigurableOptions(config);
-    return config;
-  });
+  return jsonFetcher<ConfigurableOptions>('/1.0/metadata/configuration').then(
+    (data) => {
+      const config = data.metadata;
+      processConfigurableOptions(config);
+      return config;
+    },
+  );
 }
 
 function processConfigurableOptions(config: ConfigurableOptions) {
