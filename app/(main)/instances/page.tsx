@@ -28,12 +28,12 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/app/_components/ui/sheet";
-import { Spinner } from "@/app/_components/ui/spinner";
-import ProjectsContext from "@/app/(main)/_context/projects";
-import { Progress } from "@/app/_components/ui/progress";
-import IsClientContext from "@/app/_context/isClient";
-import { useRouter } from "next/navigation";
+} from '@/app/_components/ui/sheet';
+import { Spinner } from '@/app/_components/ui/spinner';
+import ProjectsContext from '@/app/(main)/_context/projects';
+import { Progress } from '@/app/_components/ui/progress';
+import IsClientContext from '@/app/_context/isClient';
+import { useRouter } from 'next/navigation';
 
 type InstanceAction = 'start' | 'stop' | 'restart' | 'freeze';
 
