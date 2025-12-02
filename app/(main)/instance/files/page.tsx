@@ -1,79 +1,92 @@
-"use client";
+'use client';
 
-import React from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { useInstance } from "../_hooks/instance";
-import { useFiles } from "../_hooks/files";
-import { Spinner } from "@/app/_components/ui/spinner";
-import { FileBrowser } from "../../_components/files";
+import React from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { useInstanceContext } from '../_context/instance';
+import { useFiles } from '../_hooks/files';
+import { Spinner } from '@/app/_components/ui/spinner';
+import { FileBrowser } from '../../_components/files';
 
 export default function FilesPage() {
-    const searchParams = useSearchParams();
-    const name = searchParams.get("name");
-    const { instance, isLoading } = useInstance(name);
+  const { instance, isLoading } = useInstanceContext();
 
-    if (isLoading) {
-        return <Spinner />;
-    }
+  if (isLoading) {
+    return <Spinner />;
+  }
 
-    if (!instance) {
-        return null;
-    }
+  if (!instance) {
+    return null;
+  }
 
-    return <Files instance={instance} />;
+  return <Files instance={instance} />;
 }
 
 function Files({ instance }: { instance: any }) {
-    const router = useRouter();
-    const pathname = usePathname();
-    const searchParams = useSearchParams();
-    const initialPath = searchParams.get("path") || "/";
-    const [currentPath, setCurrentPath] = React.useState(initialPath);
+  const router = useRouter();
+  const pathname = usePathname();
+  const [currentPath, setCurrentPath] = React.useState('/');
 
-    // Sync state if URL changes (e.g. back button)
-    React.useEffect(() => {
-        const pathParam = searchParams.get("path") || "/";
-        if (pathParam !== currentPath) {
-            setCurrentPath(pathParam);
-        }
-    }, [searchParams]);
+  // Read path from URL on mount using manual JS
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const pathParam = params.get('path') || '/';
+      setCurrentPath(pathParam);
+    }
+  }, []);
 
-    const handleNavigate = (path: string) => {
-        setCurrentPath(path);
-        const params = new URLSearchParams(searchParams.toString());
-        if (path === "/") {
-            params.delete("path");
-        } else {
-            params.set("path", path);
-        }
-        router.push(`${pathname}?${params.toString()}`);
+  // Listen for back/forward navigation
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const pathParam = params.get('path') || '/';
+      setCurrentPath(pathParam);
     };
 
-    const {
-        files,
-        isLoading,
-        isError,
-        uploadFile,
-        createDirectory,
-        deleteFile,
-        downloadFile,
-        fetchFileContent,
-        saveFileContent
-    } = useFiles(instance.name, currentPath);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
-    return (
-        <FileBrowser
-            files={files}
-            isLoading={isLoading}
-            isError={isError}
-            currentPath={currentPath}
-            onNavigate={handleNavigate}
-            onUpload={(file) => uploadFile(currentPath, file)}
-            onCreateDirectory={(name) => createDirectory(currentPath, name)}
-            onDelete={deleteFile}
-            onDownload={downloadFile}
-            onFetchContent={fetchFileContent}
-            onSaveContent={saveFileContent}
-        />
-    );
+  const handleNavigate = (path: string) => {
+    setCurrentPath(path);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (path === '/') {
+        params.delete('path');
+      } else {
+        params.set('path', path);
+      }
+      router.push(`${pathname}?${params.toString()}`);
+    }
+  };
+
+  const {
+    files,
+    isLoading,
+    isError,
+    uploadFile,
+    createDirectory,
+    deleteFile,
+    downloadFile,
+    fetchFileContent,
+    saveFileContent,
+  } = useFiles(instance.name, currentPath);
+
+  return (
+    <FileBrowser
+      files={files}
+      isLoading={isLoading}
+      isError={isError}
+      currentPath={currentPath}
+      onNavigate={handleNavigate}
+      onUpload={(file) => uploadFile(currentPath, file)}
+      onCreateDirectory={(name) => createDirectory(currentPath, name)}
+      onDelete={deleteFile}
+      onDownload={downloadFile}
+      onFetchContent={fetchFileContent}
+      onSaveContent={saveFileContent}
+    />
+  );
 }
