@@ -39,8 +39,8 @@ export function useNetworks(project?: string | null) {
   );
 
   const fetcher = async (u: string): Promise<Network[]> => {
-    const res = await jsonFetcher(u);
-    return (res as any)?.metadata ?? [];
+    const res = await jsonFetcher<Network[]>(u);
+    return res.metadata;
   };
 
   const { data, error, isLoading, isValidating, mutate } = useSWR<Network[]>(

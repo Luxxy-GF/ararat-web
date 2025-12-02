@@ -472,7 +472,7 @@ export default function CreateInstance({ className }: { className?: string }) {
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-sm text-muted-foreground">
                         Edit the raw YAML configuration. Changes will be synced
-                        with the form fields.
+                        with the wizard.
                       </p>
                     </div>
                     {yamlError && (
