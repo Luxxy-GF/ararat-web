@@ -381,7 +381,11 @@ export function FileBrowser({
                 <AlertDescription>Failed to load files.</AlertDescription>
               </Alert>
             ) : (
-              <DataTable data={fileData} cols={columns as any} disablePagination />
+              <DataTable
+                data={fileData}
+                cols={columns as any}
+                disablePagination
+              />
             )}
           </>
         )}
