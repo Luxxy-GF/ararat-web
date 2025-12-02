@@ -512,8 +512,8 @@ export default function Instances() {
                   </ul>
                   {runningInstances.length > 0 && (
                     <div className="mt-3 p-3 rounded-md bg-muted text-muted-foreground">
-                      <strong>Note:</strong> The following instances are currently
-                      running and must be stopped before deletion:
+                      <strong>Note:</strong> The following instances are
+                      currently running and must be stopped before deletion:
                       <ul className="list-disc list-inside mt-1">
                         {runningInstances.map((instance) => (
                           <li key={instance.name}>{instance.name}</li>
