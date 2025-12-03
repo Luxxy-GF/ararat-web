@@ -24,7 +24,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   useSidebar,
-} from '@/app/_components/ui/sidebar';
+} from 'ui-web/components/sidebar';
 import {
   BoxesIcon,
   ChevronDownIcon,
@@ -39,7 +39,7 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '../_components/ui/collapsible';
+} from 'ui-web/components/collapsible';
 import Link from 'next/link';
 import AuthenticationContext from '../_context/authentication';
 import {
@@ -49,10 +49,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../_components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '../_components/ui/avatar';
+} from 'ui-web/components/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from 'ui-web/components/avatar';
 import UserContext from './_context/user';
-import { Skeleton } from '../_components/ui/skeleton';
+import { Skeleton } from 'ui-web/components/skeleton';
 
 type NavMainItem = {
   title: string;

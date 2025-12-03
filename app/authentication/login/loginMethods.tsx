@@ -1,6 +1,6 @@
 'use client';
-import { Button } from '@/app/_components/ui/button';
-import { Skeleton } from '@/app/_components/ui/skeleton';
+import { Button } from 'ui-web/components/button';
+import { Skeleton } from 'ui-web/components/skeleton';
 import { useServerConfiguration } from '@/app/_hooks/server';
 import { useRouter } from 'next/navigation';
 import React, { startTransition, useEffect } from 'react';

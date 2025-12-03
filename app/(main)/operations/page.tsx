@@ -3,18 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ColumnDef, Row } from '@tanstack/react-table';
 
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from '@/app/_components/ui/alert';
-import { Badge } from '@/app/_components/ui/badge';
-import DataTable from '@/app/_components/ui/data-table';
-import { Input } from '@/app/_components/ui/input';
-import { Skeleton } from '@/app/_components/ui/skeleton';
-import { cn } from '@/app/_components/ui/lib/utils';
-import { Button } from '@/app/_components/ui/button';
-import { Spinner } from '@/app/_components/ui/spinner';
+import { Alert, AlertDescription, AlertTitle } from 'ui-web/components/alert';
+import { Badge } from 'ui-web/components/badge';
+import DataTable from 'ui-web/components/data-table';
+import { Input } from 'ui-web/components/input';
+import { Skeleton } from 'ui-web/components/skeleton';
+import { cn } from 'ui-web/lib/utils';
+import { Button } from 'ui-web/components/button';
+import { Spinner } from 'ui-web/components/spinner';
 import {
   cancelOperation,
   fetchOperationsList,
@@ -25,7 +21,7 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from '@/app/_components/ui/sheet';
+} from 'ui-web/components/sheet';
 import type { IncusOperation } from '@/app/(main)/operations/_lib/operations.d';
 
 const STATUS_STYLES: Record<

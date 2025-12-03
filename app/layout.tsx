@@ -6,7 +6,7 @@ import SwrProvider from '@/app/_context/swr';
 import { AuthenticationProvider } from '@/app/_context/authentication';
 import Router from './router';
 import { EventEmitterProvider } from '@/app/_context/events';
-import { Toaster } from '@/app/_components/ui/sonner';
+import { Toaster } from 'ui-web/components/sonner';
 import { IsClientProvider } from './_context/isClient';
 
 const geistSans = Geist({

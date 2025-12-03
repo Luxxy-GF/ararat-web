@@ -5,11 +5,11 @@ import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
-} from '@/app/_components/ui/resizable';
-import { ScrollArea } from '@/app/_components/ui/scroll-area';
-import { Badge } from '@/app/_components/ui/badge';
-import { useMobile } from '@/app/_components/ui/hooks/use-mobile';
-import { cn } from '@/app/_components/ui/lib/utils';
+} from 'ui-web/components/resizable';
+import { ScrollArea } from 'ui-web/components/scroll-area';
+import { Badge } from 'ui-web/components/badge';
+import { useMobile } from 'ui-web/hooks/use-mobile';
+import { cn } from 'ui-web/lib/utils';
 
 export interface TabItem {
   value: string;

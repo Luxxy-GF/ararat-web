@@ -5,7 +5,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/app/_components/ui/tabs';
+} from 'ui-web/components/tabs';
 import ImportCertificate from './import';
 import CreateCertificate from './create';
 

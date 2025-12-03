@@ -1,6 +1,6 @@
 'use client';
-import { Separator } from '@/app/_components/ui/separator';
-import { SidebarTrigger } from '@/app/_components/ui/sidebar';
+import { Separator } from 'ui-web/components/separator';
+import { SidebarTrigger } from 'ui-web/components/sidebar';
 import { GlobeIcon } from 'lucide-react';
 import {
   Select,
@@ -11,7 +11,7 @@ import {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from '../../_components/ui/select';
+} from 'ui-web/components/select';
 import { use } from 'react';
 import ProjectsContext from '@/app/(main)/_context/projects';
 

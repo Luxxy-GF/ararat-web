@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Spinner } from '@/app/_components/ui/spinner';
-import { Button } from '@/app/_components/ui/button';
+import { Spinner } from 'ui-web/components/spinner';
+import { Button } from 'ui-web/components/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/app/_components/ui/dropdown-menu';
+} from 'ui-web/components/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -19,16 +19,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/app/_components/ui/dialog';
-import { Input } from '@/app/_components/ui/input';
-import { Label } from '@/app/_components/ui/label';
+} from 'ui-web/components/dialog';
+import { Input } from 'ui-web/components/input';
+import { Label } from 'ui-web/components/label';
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbSeparator,
-} from '@/app/_components/ui/breadcrumb';
+} from 'ui-web/components/breadcrumb';
 import {
   FileIcon,
   FolderIcon,
@@ -43,13 +43,9 @@ import {
   XIcon,
   PencilIcon,
 } from 'lucide-react';
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from '@/app/_components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from 'ui-web/components/alert';
 import Editor from '@monaco-editor/react';
-import DataTable from '@/app/_components/ui/data-table';
+import DataTable from 'ui-web/components/data-table';
 import { ColumnDef } from '@tanstack/react-table';
 
 interface FileBrowserProps {
