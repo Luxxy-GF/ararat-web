@@ -49,6 +49,10 @@ export default class Instance implements IInstance {
     const response = await fetch(
       `/1.0/instances/${encodeURIComponent(this.name)}/console`,
     );
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to fetch console output: ${response.status} ${response.statusText} - ${errorText}`);
+    }
     return await response.text();
   }
 }
