@@ -71,9 +71,7 @@ export default function InstanceLayout({
 }) {
   return (
     <InstanceProvider>
-      <InstanceProvider>
-        <InstanceLayoutContent>{children}</InstanceLayoutContent>
-      </InstanceProvider>
+      <InstanceLayoutContent>{children}</InstanceLayoutContent>
     </InstanceProvider>
   );
 }
