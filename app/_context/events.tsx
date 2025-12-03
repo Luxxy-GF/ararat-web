@@ -115,29 +115,24 @@ export function EventEmitterProvider({
           description: progressDetails || op.status,
         });
       } else if (op.status === 'Success') {
-        if (activeOperations.current.has(toastId)) {
-          toast.success(description, {
-            id: toastId,
-            description: 'Completed successfully',
-          });
-          activeOperations.current.delete(toastId);
-        }
+        // Always show a toast for terminal states, even if not previously tracked
+        toast.success(description, {
+          id: toastId,
+          description: 'Completed successfully',
+        });
+        activeOperations.current.delete(toastId);
       } else if (op.status === 'Failure') {
-        if (activeOperations.current.has(toastId)) {
-          toast.error(description, {
-            id: toastId,
-            description: op.err || 'Operation failed',
-          });
-          activeOperations.current.delete(toastId);
-        }
+        toast.error(description, {
+          id: toastId,
+          description: op.err || 'Operation failed',
+        });
+        activeOperations.current.delete(toastId);
       } else if (op.status === 'Cancelled') {
-        if (activeOperations.current.has(toastId)) {
-          toast.info(description, {
-            id: toastId,
-            description: 'Cancelled',
-          });
-          activeOperations.current.delete(toastId);
-        }
+        toast.info(description, {
+          id: toastId,
+          description: 'Cancelled',
+        });
+        activeOperations.current.delete(toastId);
       }
     };
 
