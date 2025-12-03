@@ -24,7 +24,6 @@ export default class Instance implements IInstance {
       },
     );
     const data = await response.json();
-    console.log(data);
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
     return {
       data: new WebSocket(
