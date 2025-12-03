@@ -146,7 +146,9 @@ export function EventEmitterProvider({
     return () => {
       if (wsRef.current) {
         wsRef.current.close();
+        wsRef.current = null;
       }
+      activeOperations.current.clear();
     };
   }, []);
 
