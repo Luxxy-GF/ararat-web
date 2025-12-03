@@ -1,11 +1,5 @@
 'use client';
-
-import React from 'react';
-
+import InstanceTextConsole from 'ararat-ui-web/components/instance/textConsole';
 export default function ConsolePage() {
-  return (
-    <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-      Console Under Construction
-    </div>
-  );
+  return <InstanceTextConsole />;
 }
