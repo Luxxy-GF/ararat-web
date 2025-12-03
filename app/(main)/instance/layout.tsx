@@ -12,7 +12,6 @@ import {
   SquareIcon,
   RotateCcwIcon,
   SnowflakeIcon,
-  ServerIcon,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from 'ui-web/components/tabs';
 import { OSLogo } from '@/app/_components/OSLogo';
