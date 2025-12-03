@@ -8,7 +8,7 @@ type EventType = 'operation' | 'logging' | 'lifecycle';
 interface IncusEvent {
   type: EventType;
   timestamp: string;
-  metadata: any;
+  metadata: unknown;
 }
 
 interface OperationMetadata {
