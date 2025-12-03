@@ -23,6 +23,16 @@ export default class Instance implements IInstance {
         }),
       },
     );
+    if (!response.ok) {
+      let errorMessage = `Failed to open console socket: ${response.status} ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage += ` - ${JSON.stringify(errorData)}`;
+      } catch (e) {
+        // Ignore JSON parse errors, use default message
+      }
+      throw new Error(errorMessage);
+    }
     const data = await response.json();
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
     return {
