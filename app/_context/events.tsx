@@ -70,6 +70,8 @@ export function EventEmitterProvider({
         console.log('Events WebSocket connected');
         setIsConnected(true);
         reconnectAttempts = 0;
+        // Clear activeOperations on reconnect to avoid memory leaks
+        activeOperations.current.clear();
       };
 
       ws.onclose = () => {
