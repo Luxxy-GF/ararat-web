@@ -106,7 +106,7 @@ export function EventEmitterProvider({
     };
 
     const handleOperationEvent = (op: OperationMetadata) => {
-      // We only care about task operations usually, but let's handle all for now
+      // Handle all operation events: status can be Pending, Running, Success, Failure, or Cancelled
       // status: Pending, Running, Success, Failure, Cancelled
 
       const toastId = op.id;
