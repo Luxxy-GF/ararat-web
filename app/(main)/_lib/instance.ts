@@ -37,6 +37,9 @@ export default class Instance implements IInstance {
   }
 
   async getConsoleOutput() {
-    return '';
+    const response = await fetch(
+      `/1.0/instances/${encodeURIComponent(this.name)}/console`,
+    );
+    return await response.text();
   }
 }
