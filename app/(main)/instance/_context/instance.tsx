@@ -22,13 +22,13 @@ interface InstanceContextValue {
   mutate: () => Promise<any>;
 }
 
-const InstanceContext = createContext<InstanceContextValue | undefined>({
+const InstanceContext = createContext<InstanceContextValue>({
   name: null,
   instance: undefined,
   isLoading: true,
   isError: null,
   isValidating: true,
-  mutate: async () => {},
+  mutate: async () => { },
 });
 
 function InstanceProviderInner({ children }: { children: ReactNode }) {
