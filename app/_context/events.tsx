@@ -20,7 +20,11 @@ interface OperationMetadata {
   status: string;
   status_code: number;
   resources: Record<string, string[]>;
-  metadata: any; // specific operation metadata (e.g. progress)
+  metadata: {
+    download_progress?: string;
+    percent?: number;
+    [key: string]: unknown;
+  } | null; // specific operation metadata (e.g. progress)
   may_cancel: boolean;
   err: string;
   location: string;
