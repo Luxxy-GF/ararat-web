@@ -1477,6 +1477,8 @@ function AddDeviceForm({
       config.condition && typeof config.condition === 'string';
     const hasError = !!fieldErrors[fieldKey];
     // errorId removed (unused variable)
+    
+    const errorId = `${fieldId}-error`;
 
     // Check if field should be shown using centralized logic
     if (!shouldShowField(fieldKey, config)) {
@@ -2044,7 +2046,6 @@ export default function Devices({
     device: Device;
   } | null>(null);
   const [isCreatingRootDisk, setIsCreatingRootDisk] = React.useState(false);
-  const { isMobile } = useMobile();
 
   const { data: configurableOptions } = useConfigurableOptions();
   const isInternalUpdate = React.useRef(false);
