@@ -1475,7 +1475,7 @@ function AddDeviceForm({
     const isBool = config.type === 'bool';
     const hasCondition =
       config.condition && typeof config.condition === 'string';
-    const hasError = !!fieldErrors[fieldKey];
+    
     const errorId = `${fieldId}-error`;
 
     // Check if field should be shown using centralized logic
