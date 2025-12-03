@@ -55,6 +55,9 @@ export function EventEmitterProvider({
       return;
     }
 
+    let reconnectAttempts = 0;
+    let reconnectTimeout: number | undefined;
+
     const connect = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
       const url = `${protocol}://${window.location.host}/1.0/events?type=operation,lifecycle,logging`;
@@ -66,13 +69,21 @@ export function EventEmitterProvider({
       ws.onopen = () => {
         console.log('Events WebSocket connected');
         setIsConnected(true);
+        reconnectAttempts = 0;
       };
 
       ws.onclose = () => {
         console.log('Events WebSocket disconnected');
         setIsConnected(false);
-        // Optional: Implement reconnection logic here if needed
-        // setTimeout(connect, 1000);
+        wsRef.current = null;
+
+        // Reconnect after 3 seconds with exponential backoff
+        const reconnectDelay = Math.min(
+          3000 * Math.pow(2, reconnectAttempts),
+          30000,
+        );
+        reconnectAttempts++;
+        reconnectTimeout = window.setTimeout(connect, reconnectDelay);
       };
 
       ws.onerror = (error) => {
@@ -143,7 +154,11 @@ export function EventEmitterProvider({
     connect();
 
     return () => {
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
       if (wsRef.current) {
+        wsRef.current.onclose = null;
         wsRef.current.close();
         wsRef.current = null;
       }
