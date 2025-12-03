@@ -6,7 +6,10 @@ export default class Instance implements IInstance {
     this.name = name;
   }
 
-  async openConsoleSocket(type: 'vga' | 'console' = 'console') {
+  async openConsoleSocket(
+    type: 'vga' | 'console' = 'console',
+    options?: { width?: number; height?: number },
+  ) {
     const response = await fetch(
       `/1.0/instances/${encodeURIComponent(this.name)}/console`,
       {
@@ -14,6 +17,9 @@ export default class Instance implements IInstance {
         body: JSON.stringify({
           type: type,
           'wait-for-websocket': true,
+          force: true,
+          width: options?.width,
+          height: options?.height,
         }),
       },
     );
@@ -28,5 +34,9 @@ export default class Instance implements IInstance {
         `${protocol}://${window.location.host}${data.operation}/websocket?secret=${data.metadata.metadata.fds['control']}`,
       ),
     };
+  }
+
+  async getConsoleOutput() {
+    return '';
   }
 }
