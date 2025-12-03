@@ -2044,7 +2044,6 @@ export default function Devices({
     device: Device;
   } | null>(null);
   const [isCreatingRootDisk, setIsCreatingRootDisk] = React.useState(false);
-  const { isMobile } = useMobile();
 
   const { data: configurableOptions } = useConfigurableOptions();
   const isInternalUpdate = React.useRef(false);
