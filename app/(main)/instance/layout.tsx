@@ -33,7 +33,7 @@ function InstanceLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (isLoading) {
+  if (isLoading && !instance) {
     return (
       <div className="flex h-full items-center justify-center p-8">
         <Spinner className="size-8" />
