@@ -1475,7 +1475,6 @@ function AddDeviceForm({
     const isBool = config.type === 'bool';
     const hasCondition =
       config.condition && typeof config.condition === 'string';
-    const hasError = !!fieldErrors[fieldKey];
     // errorId removed (unused variable)
     
     const errorId = `${fieldId}-error`;
