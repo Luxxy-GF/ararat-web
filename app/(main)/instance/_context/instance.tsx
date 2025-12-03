@@ -60,7 +60,7 @@ function InstanceProviderInner({ children }: { children: ReactNode }) {
           instance: inst,
           isLoading,
           isValidating: isValidating,
-          isError: null,
+          isError: isError,
         }}
       >
         {children}
