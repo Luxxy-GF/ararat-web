@@ -432,6 +432,7 @@ export function FileBrowser({
     switch (ext) {
       case 'js':
       case 'jsx':
+        return 'javascript';
       case 'ts':
       case 'tsx':
         return 'typescript';
