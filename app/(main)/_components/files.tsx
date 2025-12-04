@@ -416,25 +416,9 @@ export function FileBrowser({
     const files = Array.from(e.dataTransfer.files);
     if (files.length === 0) return;
 
-    // Upload files sequentially or parallel
-    // For simplicity, upload the first one using the dialog logic (or direct upload)
-    // To show progress, we should probably use the dialog or a toast.
-    // Let's just trigger the upload function directly for each file.
-    // But we need to show progress.
-    // Let's just open the upload dialog with the first file pre-selected?
-    // Or better, implement a direct upload with toast progress.
-    // For now, let's just upload them one by one and show a toast.
-    // Actually, the requirement says "dropzone should appear".
-    // And "File uploads should display progress".
-    // I'll reuse the onUpload prop which now supports progress.
+    // Upload each dropped file using the provided onUpload function and handle errors.
 
     for (const file of files) {
-      // We can't easily show a progress dialog for drag & drop without more state.
-      // Let's just do it in background for now, or maybe open the dialog?
-      // Opening the dialog with the file is a good UX.
-      // But what if multiple files?
-      // Let's stick to single file for now as the dialog supports one.
-      // Or just upload directly.
       try {
         await onUpload(file);
       } catch (err: any) {
