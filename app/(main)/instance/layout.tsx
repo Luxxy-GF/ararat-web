@@ -17,49 +17,100 @@ import { Tabs, TabsList, TabsTrigger } from 'ui-web/components/tabs';
 import { OSLogo } from '@/app/_components/OSLogo';
 import { getBaseImage } from './_lib/utils';
 import { performInstanceAction, type InstanceAction } from './_lib/instance';
+import { SiteHeader } from '@/app/(main)/_components/header';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from 'ui-web/components/breadcrumb';
+import Link from 'next/link';
 
 function InstanceLayoutContent({ children }: { children: React.ReactNode }) {
   const { name, instance, isLoading, isError, mutate } = useInstanceContext();
 
-  if (!name) {
-    return (
-      <Alert variant="destructive">
-        <AlertTitle>Missing Parameter</AlertTitle>
-        <AlertDescription>
-          The "name" query parameter is required.
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  const pathname = usePathname();
+  const currentTab = pathname === '/instance' ? 'Dashboard' : (pathname.split('/').pop() || 'Dashboard');
+  const formattedTab = currentTab.charAt(0).toUpperCase() + currentTab.slice(1);
 
-  if (isLoading && !instance) {
+  const renderContent = () => {
+    if (!name) {
+      return (
+        <div className="p-6">
+          <Alert variant="destructive">
+            <AlertTitle>Missing Parameter</AlertTitle>
+            <AlertDescription>
+              The "name" query parameter is required.
+            </AlertDescription>
+          </Alert>
+        </div>
+      );
+    }
+
+    if (isLoading && !instance) {
+      return (
+        <div className="flex h-full items-center justify-center p-8">
+          <Spinner className="size-8" />
+        </div>
+      );
+    }
+
+    if (isError || !instance) {
+      return (
+        <div className="p-6">
+          <Alert variant="destructive">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+              {isError?.message || 'Instance not found.'}
+            </AlertDescription>
+          </Alert>
+        </div>
+      );
+    }
+
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Spinner className="size-8" />
+      <div className="flex flex-col gap-6 p-6">
+        <InstanceHeader instance={instance} onMutate={mutate} />
+
+        <div className="flex flex-col gap-4">
+          <InstanceTabs />
+          <div className="mt-4">{children}</div>
+        </div>
       </div>
     );
-  }
-
-  if (isError || !instance) {
-    return (
-      <Alert variant="destructive">
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          {isError?.message || 'Instance not found.'}
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  };
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <InstanceHeader instance={instance} onMutate={mutate} />
-
-      <div className="flex flex-col gap-4">
-        <InstanceTabs />
-        <div className="mt-4">{children}</div>
-      </div>
-    </div>
+    <>
+      <SiteHeader>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/instances">Instances</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            {name && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href={`/instance?name=${name}`}>{name}</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{formattedTab}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </>
+            )}
+          </BreadcrumbList>
+        </Breadcrumb>
+      </SiteHeader>
+      {renderContent()}
+    </>
   );
 }
 
