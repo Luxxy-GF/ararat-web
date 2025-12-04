@@ -160,7 +160,7 @@ function InstanceHeader({
       toast.success('Instance renamed successfully');
       setIsEditingName(false);
       // Redirect to new URL
-      router.push(`/instance?name=${newName}`);
+      router.push(`/instance?name=${encodeURIComponent(newName)}`);
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : 'Failed to rename instance',
