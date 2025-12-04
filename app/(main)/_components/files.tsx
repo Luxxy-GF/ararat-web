@@ -412,18 +412,26 @@ export function FileBrowser({
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(false);
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length === 0) return;
-
-    // Upload each dropped file using the provided onUpload function and handle errors.
-
-    for (const file of files) {
+    // Upload all files in parallel and handle errors individually
+    const uploadPromises = files.map(async (file) => {
       try {
         await onUpload(file);
+        return { file, status: 'fulfilled' };
       } catch (err: any) {
-        setActionError(err.message);
+        return { file, status: 'rejected', reason: err.message };
       }
+    });
+    const results = await Promise.allSettled(uploadPromises);
+    // Optionally, show errors for failed uploads
+    const failed = results.filter(
+      (r: any) => r.status === 'fulfilled' && r.value?.status === 'rejected'
+    );
+    if (failed.length > 0) {
+      setActionError(
+        `Failed to upload ${failed.length} file(s): ${failed
+          .map((f: any) => f.value.file.name + ' (' + f.value.reason + ')')
+          .join(', ')}`
+      );
     }
   };
 
