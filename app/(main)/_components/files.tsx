@@ -449,6 +449,7 @@ export function FileBrowser({
         return 'go';
       case 'sh':
       case 'bash':
+        return 'shell';
       case 'yaml':
       case 'yml':
         return 'yaml';
