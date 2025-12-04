@@ -435,12 +435,18 @@ export function FileBrowser({
     // And "File uploads should display progress".
     // I'll reuse the onUpload prop which now supports progress.
 
-    const errors: string[] = [];
     for (const file of files) {
+      // We can't easily show a progress dialog for drag & drop without more state.
+      // Let's just do it in background for now, or maybe open the dialog?
+      // Opening the dialog with the file is a good UX.
+      // But what if multiple files?
+      // Let's stick to single file for now as the dialog supports one.
+      // Or just upload directly.
       try {
         await onUpload(file);
+        return { file, status: 'fulfilled' };
       } catch (err: any) {
-        errors.push(`Failed to upload ${file.name}: ${err.message}`);
+        setActionError(err.message);
       }
     }
 
@@ -454,6 +460,7 @@ export function FileBrowser({
     switch (ext) {
       case 'js':
       case 'jsx':
+        return 'javascript';
       case 'ts':
       case 'tsx':
         return 'typescript';
@@ -471,6 +478,7 @@ export function FileBrowser({
         return 'go';
       case 'sh':
       case 'bash':
+        return 'shell';
       case 'yaml':
       case 'yml':
         return 'yaml';
@@ -688,20 +696,8 @@ export function FileBrowser({
                     Download
                   </button>
                   <button
-                    role="menuitem"
-                    tabIndex={0}
-                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground"
-                    onClick={() => {
-                      onNavigate(fullPath);
-                      setContextMenu(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        onNavigate(fullPath);
-                        setContextMenu(null);
-                      }
-                    }}
+                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                    onClick={() => onNavigate(fullPath)}
                   >
                     <FolderIcon className="mr-2 h-4 w-4" />
                     Open
