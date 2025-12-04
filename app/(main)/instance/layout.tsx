@@ -235,7 +235,7 @@ function InstanceTabs() {
   return (
     <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
       <div className="overflow-x-auto pb-2">
-        <TabsList className="w-full justify-start">
+        <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
           {TABS.map((tab) => (
             <TabsTrigger
               key={tab.value}
