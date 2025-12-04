@@ -161,7 +161,9 @@ export function EventEmitterProvider({
             mutate(resource);
             // Also mutate the parent collection if applicable (simple heuristic)
             // e.g. /1.0/instances/foo -> /1.0/instances
-            const parts = resource.split('/');
+            // Normalize path to handle trailing slashes and query params
+            const normalizedResource = resource.replace(/\/$/, '').split('?')[0];
+            const parts = normalizedResource.split('/');
             if (parts.length > 3) {
               const collection = parts.slice(0, parts.length - 1).join('/');
               mutate(collection);
