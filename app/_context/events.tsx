@@ -2,6 +2,7 @@
 
 import React, { createContext, useEffect, useState, useRef } from 'react';
 import { toast } from 'sonner';
+import { mutate } from 'swr';
 
 type EventType = 'operation' | 'logging' | 'lifecycle';
 
@@ -150,6 +151,23 @@ export function EventEmitterProvider({
           description: 'Cancelled',
         });
         activeOperations.current.delete(toastId);
+      }
+
+      // Perform mutations on affected resources
+      if (op.resources) {
+        Object.values(op.resources).forEach((resourceList) => {
+          resourceList.forEach((resource) => {
+            // Mutate the exact resource path
+            mutate(resource);
+            // Also mutate the parent collection if applicable (simple heuristic)
+            // e.g. /1.0/instances/foo -> /1.0/instances
+            const parts = resource.split('/');
+            if (parts.length > 3) {
+              const collection = parts.slice(0, parts.length - 1).join('/');
+              mutate(collection);
+            }
+          });
+        });
       }
     };
 
