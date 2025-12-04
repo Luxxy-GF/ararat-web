@@ -253,7 +253,7 @@ function NavMain({
                         <SidebarMenuSub key={subItem.title}>
                           <SidebarMenuSubItem>
                             <SidebarMenuSubButton asChild>
-                              <Link href={subItem.url}>
+                              <Link href={subItem.url} aria-label={subItem.title}>
                                 <span>{subItem.title}</span>
                               </Link>
                             </SidebarMenuSubButton>
