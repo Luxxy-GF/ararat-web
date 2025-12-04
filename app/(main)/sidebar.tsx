@@ -146,6 +146,15 @@ const data = {
 export default function Sidebar({
   ...props
 }: React.ComponentProps<typeof RawSidebar>) {
+  const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  React.useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  }, [pathname, isMobile, setOpenMobile]);
+
   return (
     <RawSidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -186,6 +195,8 @@ function NavMain({
   }[];
 }) {
   const pathname = usePathname();
+  const { state } = useSidebar();
+
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
@@ -193,28 +204,55 @@ function NavMain({
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               {item.subItems ? (
-                <Collapsible className="group/collapsible">
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title}>
-                      {item.icon && <item.icon />}
-                      <span>{item.title}</span>
-                      <div className="[&>svg]:size-4 ml-auto">
-                        <ChevronDownIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180 " />
-                      </div>
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    {item.subItems.map((subItem) => (
-                      <SidebarMenuSub key={subItem.title}>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton>
+                state === 'collapsed' ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <SidebarMenuButton tooltip={item.title}>
+                        {item.icon && <item.icon />}
+                        <span>{item.title}</span>
+                        <div className="[&>svg]:size-4 ml-auto">
+                          <ChevronDownIcon className="ml-auto transition-transform duration-200" />
+                        </div>
+                      </SidebarMenuButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" align="start" sideOffset={20}>
+                      <DropdownMenuLabel>{item.title}</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {item.subItems.map((subItem) => (
+                        <DropdownMenuItem key={subItem.title} asChild>
+                          <Link href={subItem.url}>
                             <span>{subItem.title}</span>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      </SidebarMenuSub>
-                    ))}
-                  </CollapsibleContent>
-                </Collapsible>
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Collapsible className="group/collapsible">
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton tooltip={item.title}>
+                        {item.icon && <item.icon />}
+                        <span>{item.title}</span>
+                        <div className="[&>svg]:size-4 ml-auto">
+                          <ChevronDownIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180 " />
+                        </div>
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      {item.subItems.map((subItem) => (
+                        <SidebarMenuSub key={subItem.title}>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild>
+                              <Link href={subItem.url}>
+                                <span>{subItem.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                )
               ) : (
                 <Link href={item.url}>
                   <SidebarMenuButton
@@ -348,16 +386,14 @@ function NavUser() {
                   )}
                 </Avatar>
                 <div
-                  className={`grid flex-1 text-left text-sm leading-tight ${
-                    authIsValidating ? 'animate-pulse' : ''
-                  }`}
+                  className={`grid flex-1 text-left text-sm leading-tight ${authIsValidating ? 'animate-pulse' : ''
+                    }`}
                 >
                   {authData?.method == 'tls' ? (
                     <>
                       <span
-                        className={`truncate font-medium ${
-                          userIsValidating ? 'animate-pulse' : ''
-                        }`}
+                        className={`truncate font-medium ${userIsValidating ? 'animate-pulse' : ''
+                          }`}
                       >
                         {userData?.name}
                       </span>
