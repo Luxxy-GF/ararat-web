@@ -7,8 +7,12 @@ import {
   IconDotsVertical,
   IconLogout,
   IconSettings,
+  IconSun,
+  IconMoon,
+  IconDeviceDesktop,
   type Icon,
 } from '@tabler/icons-react';
+import { useTheme } from 'next-themes';
 
 import {
   Sidebar as RawSidebar,
@@ -49,6 +53,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from 'ui-web/components/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from 'ui-web/components/avatar';
 import UserContext from './_context/user';
@@ -276,13 +283,14 @@ function NavUser() {
     isValidating: userIsValidating,
     isLoading: userIsLoading,
   } = React.use(UserContext);
+  const { setTheme } = useTheme();
   return (
     <SidebarMenu className={authIsValidating ? 'animate-pulse' : ''}>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger
             asChild
-            disabled={authIsLoading ? true : authData?.method == 'tls'}
+            disabled={authIsLoading}
           >
             <SidebarMenuButton
               size="lg"
@@ -348,16 +356,14 @@ function NavUser() {
                   )}
                 </Avatar>
                 <div
-                  className={`grid flex-1 text-left text-sm leading-tight ${
-                    authIsValidating ? 'animate-pulse' : ''
-                  }`}
+                  className={`grid flex-1 text-left text-sm leading-tight ${authIsValidating ? 'animate-pulse' : ''
+                    }`}
                 >
                   {authData?.method == 'tls' ? (
                     <>
                       <span
-                        className={`truncate font-medium ${
-                          userIsValidating ? 'animate-pulse' : ''
-                        }`}
+                        className={`truncate font-medium ${userIsValidating ? 'animate-pulse' : ''
+                          }`}
                       >
                         {userData?.name}
                       </span>
@@ -376,6 +382,27 @@ function NavUser() {
                 </div>
               </div>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <IconSun className="mr-2 size-4" />
+                <span>Theme</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem onClick={() => setTheme('light')}>
+                  <IconSun className="mr-2 size-4" />
+                  <span>Light</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme('dark')}>
+                  <IconMoon className="mr-2 size-4" />
+                  <span>Dark</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme('system')}>
+                  <IconDeviceDesktop className="mr-2 size-4" />
+                  <span>System</span>
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
             {authData?.method == 'oidc' ? (
               <>
                 <DropdownMenuSeparator />
