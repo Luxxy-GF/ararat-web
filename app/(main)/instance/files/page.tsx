@@ -91,7 +91,7 @@ function Files({ instance }: { instance: any }) {
       isError={isError}
       currentPath={currentPath}
       onNavigate={handleNavigate}
-      onUpload={(file) => uploadFile(currentPath, file)}
+      onUpload={(file, onProgress) => uploadFile(currentPath, file, onProgress)}
       onCreateDirectory={(name) => createDirectory(currentPath, name)}
       onCreateFile={(name) => createFile(currentPath, name)}
       onDelete={deleteFile}
