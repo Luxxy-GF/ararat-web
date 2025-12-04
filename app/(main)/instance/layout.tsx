@@ -237,7 +237,11 @@ function InstanceTabs() {
       <div className="overflow-x-auto pb-2">
         <TabsList className="w-full justify-start">
           {TABS.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2"
+            >
               <tab.icon className="mr-2 h-4 w-4" />
               {tab.label}
             </TabsTrigger>
