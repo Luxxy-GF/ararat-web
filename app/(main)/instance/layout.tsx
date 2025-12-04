@@ -12,14 +12,26 @@ import {
   SquareIcon,
   RotateCcwIcon,
   SnowflakeIcon,
+  PencilIcon,
+  CheckIcon,
+  XIcon,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from 'ui-web/components/tabs';
 import { OSLogo } from '@/app/_components/OSLogo';
 import { getBaseImage } from './_lib/utils';
-import { performInstanceAction, type InstanceAction } from './_lib/instance';
+import {
+  performInstanceAction,
+  type InstanceAction,
+  updateInstance,
+  renameInstance,
+} from './_lib/instance';
+import { Input } from 'ui-web/components/input';
+import { toast } from 'sonner';
 
 function InstanceLayoutContent({ children }: { children: React.ReactNode }) {
   const { name, instance, isLoading, isError, mutate } = useInstanceContext();
+
+  const [isRenaming, setIsRenaming] = React.useState(false);
 
   if (!name) {
     return (
@@ -40,7 +52,7 @@ function InstanceLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (isError || !instance) {
+  if ((isError || !instance) && !isRenaming) {
     return (
       <Alert variant="destructive">
         <AlertTitle>Error</AlertTitle>
@@ -53,7 +65,12 @@ function InstanceLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <InstanceHeader instance={instance} onMutate={mutate} />
+      <InstanceHeader
+        instance={instance || ({ name } as Instance)}
+        onMutate={mutate}
+        onRenameStart={() => setIsRenaming(true)}
+        onRenameEnd={() => setIsRenaming(false)}
+      />
 
       <div className="flex flex-col gap-4">
         <InstanceTabs />
@@ -90,13 +107,27 @@ const instanceActionDetails: Record<
 function InstanceHeader({
   instance,
   onMutate,
+  onRenameStart,
+  onRenameEnd,
 }: {
   instance: Instance;
   onMutate: () => Promise<any>;
+  onRenameStart: () => void;
+  onRenameEnd: () => void;
 }) {
   const [actionInFlight, setActionInFlight] =
     React.useState<InstanceAction | null>(null);
   const [actionError, setActionError] = React.useState<string | null>(null);
+  const router = useRouter();
+
+  // Editing state
+  const [isEditingName, setIsEditingName] = React.useState(false);
+  const [newName, setNewName] = React.useState(instance.name);
+  const [isEditingDescription, setIsEditingDescription] = React.useState(false);
+  const [newDescription, setNewDescription] = React.useState(
+    instance.description || '',
+  );
+  const [isSaving, setIsSaving] = React.useState(false);
 
   const handleAction = async (action: InstanceAction) => {
     try {
@@ -110,6 +141,57 @@ function InstanceHeader({
       setActionError(message);
     } finally {
       setActionInFlight(null);
+    }
+  };
+
+  const handleSaveName = async () => {
+    if (newName === instance.name) {
+      setIsEditingName(false);
+      return;
+    }
+    try {
+      setIsSaving(true);
+      onRenameStart();
+      await renameInstance({
+        name: instance.name,
+        newName,
+        project: instance.project,
+      });
+      toast.success('Instance renamed successfully');
+      setIsEditingName(false);
+      // Redirect to new URL
+      router.push(`/instance?name=${newName}`);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to rename instance',
+      );
+      onRenameEnd();
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveDescription = async () => {
+    if (newDescription === instance.description) {
+      setIsEditingDescription(false);
+      return;
+    }
+    try {
+      setIsSaving(true);
+      await updateInstance({
+        name: instance.name,
+        description: newDescription,
+        project: instance.project,
+      });
+      await onMutate();
+      toast.success('Description updated successfully');
+      setIsEditingDescription(false);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to update description',
+      );
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -152,10 +234,105 @@ function InstanceHeader({
           )}
         </div>
 
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">{instance.name}</h1>
-          {instance.description && (
-            <p className="text-muted-foreground">{instance.description}</p>
+        <div className="flex-1 space-y-1">
+          {isEditingName ? (
+            <div className="flex items-center gap-2">
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="h-8 w-auto font-bold min-w-[4ch]"
+                style={{ width: `${Math.max(newName.length, 1) + 4}ch` }}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveName();
+                  if (e.key === 'Escape') {
+                    setIsEditingName(false);
+                    setNewName(instance.name);
+                  }
+                }}
+              />
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 text-green-500 hover:text-green-600"
+                onClick={handleSaveName}
+                disabled={isSaving}
+              >
+                <CheckIcon className="size-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 text-red-500 hover:text-red-600"
+                onClick={() => {
+                  setIsEditingName(false);
+                  setNewName(instance.name);
+                }}
+                disabled={isSaving}
+              >
+                <XIcon className="size-4" />
+              </Button>
+            </div>
+          ) : (
+            <div
+              className="group flex items-center gap-2 cursor-pointer"
+              onClick={() => setIsEditingName(true)}
+            >
+              <h1 className="text-2xl font-bold">{instance.name}</h1>
+              <PencilIcon className="size-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+            </div>
+          )}
+
+          {isEditingDescription ? (
+            <div className="flex items-center gap-2">
+              <Input
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                className="h-8 w-auto min-w-[10ch]"
+                style={{ width: `${Math.max(newDescription.length, 1) + 4}ch` }}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveDescription();
+                  if (e.key === 'Escape') {
+                    setIsEditingDescription(false);
+                    setNewDescription(instance.description || '');
+                  }
+                }}
+              />
+              <div className="flex gap-1">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-green-500 hover:text-green-600"
+                  onClick={handleSaveDescription}
+                  disabled={isSaving}
+                >
+                  <CheckIcon className="size-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-red-500 hover:text-red-600"
+                  onClick={() => {
+                    setIsEditingDescription(false);
+                    setNewDescription(instance.description || '');
+                  }}
+                  disabled={isSaving}
+                >
+                  <XIcon className="size-4" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="group flex items-center gap-2 cursor-pointer min-h-[24px]"
+              onClick={() => setIsEditingDescription(true)}
+            >
+              <p className="text-muted-foreground">
+                {instance.description || 'Add a description...'}
+              </p>
+              <PencilIcon className="size-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+            </div>
           )}
         </div>
 

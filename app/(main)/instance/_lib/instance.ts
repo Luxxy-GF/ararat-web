@@ -34,3 +34,97 @@ export async function performInstanceAction({
     );
   }
 }
+
+export async function updateInstance({
+  name,
+  description,
+  project,
+}: {
+  name: string;
+  description: string;
+  project?: string;
+}) {
+  const projectSuffix = project
+    ? `?project=${encodeURIComponent(project)}`
+    : '';
+  const res = await fetch(
+    `/1.0/instances/${encodeURIComponent(name)}${projectSuffix}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        description,
+      }),
+    },
+  );
+  if (!res.ok) {
+    const payload = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(payload?.error || `Unable to update instance ${name}`);
+  }
+}
+
+export async function renameInstance({
+  name,
+  newName,
+  project,
+}: {
+  name: string;
+  newName: string;
+  project?: string;
+}) {
+  const projectSuffix = project
+    ? `?project=${encodeURIComponent(project)}`
+    : '';
+  const res = await fetch(
+    `/1.0/instances/${encodeURIComponent(name)}${projectSuffix}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: newName,
+      }),
+    },
+  );
+  if (!res.ok) {
+    const payload = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(payload?.error || `Unable to rename instance ${name}`);
+  }
+
+  const data = await res.json();
+  if (data.type === 'async' && data.operation) {
+    await waitForOperation(data.operation);
+  }
+}
+
+async function waitForOperation(operationUrl: string) {
+  // Poll the operation URL until it's done
+  const maxAttempts = 20;
+  const delay = 500; // ms
+
+  for (let i = 0; i < maxAttempts; i++) {
+    const res = await fetch(operationUrl);
+    if (!res.ok) {
+      // If we can't check the operation, assume it failed or network issue
+      throw new Error('Failed to check operation status');
+    }
+    const data = await res.json();
+    // Operation status: Running, Pending, Success, Failure, Cancelled
+    if (data.metadata?.status === 'Success') {
+      return;
+    }
+    if (data.metadata?.status === 'Failure') {
+      throw new Error(data.metadata.err || 'Operation failed');
+    }
+    if (data.metadata?.status === 'Cancelled') {
+      throw new Error('Operation cancelled');
+    }
+
+    // Wait before next poll
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+  throw new Error('Operation timed out');
+}
