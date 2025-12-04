@@ -155,10 +155,11 @@ export function EventEmitterProvider({
 
       // Perform mutations on affected resources
       if (op.resources) {
+        const uniqueResources = new Set<string>();
         Object.values(op.resources).forEach((resourceList) => {
           resourceList.forEach((resource) => {
-            // Mutate the exact resource path
-            mutate(resource);
+            uniqueResources.add(resource);
+
             // Also mutate the parent collection if applicable (simple heuristic)
             // e.g. /1.0/instances/foo -> /1.0/instances
             // Normalize path to handle trailing slashes and query params
@@ -166,10 +167,11 @@ export function EventEmitterProvider({
             const parts = normalizedResource.split('/');
             if (parts.length > 3) {
               const collection = parts.slice(0, parts.length - 1).join('/');
-              mutate(collection);
+              uniqueResources.add(collection);
             }
           });
         });
+        uniqueResources.forEach((path) => mutate(path));
       }
     };
 
