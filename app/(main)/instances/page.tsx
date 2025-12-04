@@ -111,7 +111,7 @@ function canPerformAction(action: InstanceAction, instance: Instance): boolean {
     case 'start':
       return status === 'stopped';
     case 'stop':
-      return status === 'running' || status === 'frozen';
+      return status === 'running' || status === 'started' || status === 'frozen';
     case 'restart':
       return status === 'running' || status === 'started';
     case 'freeze':
