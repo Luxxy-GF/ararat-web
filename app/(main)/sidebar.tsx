@@ -217,9 +217,7 @@ function NavMain({
                           <SidebarMenuButton>
                             {item.icon && <item.icon />}
                             <span>{item.title}</span>
-                            <div className="[&>svg]:size-4 ml-auto">
-                              <ChevronDownIcon className="ml-auto transition-transform duration-200" />
-                            </div>
+                            {/* ChevronDownIcon removed for collapsed state, as dropdown menu provides indicator */}
                           </SidebarMenuButton>
                         </DropdownMenuTrigger>
                       </TooltipTrigger>
