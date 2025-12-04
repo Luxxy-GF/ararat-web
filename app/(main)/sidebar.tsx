@@ -53,6 +53,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from 'ui-web/components/avatar';
 import UserContext from './_context/user';
 import { Skeleton } from 'ui-web/components/skeleton';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from 'ui-web/components/tooltip';
 
 type NavMainItem = {
   title: string;
@@ -206,15 +211,22 @@ function NavMain({
               {item.subItems ? (
                 state === 'collapsed' ? (
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <SidebarMenuButton tooltip={item.title}>
-                        {item.icon && <item.icon />}
-                        <span>{item.title}</span>
-                        <div className="[&>svg]:size-4 ml-auto">
-                          <ChevronDownIcon className="ml-auto transition-transform duration-200" />
-                        </div>
-                      </SidebarMenuButton>
-                    </DropdownMenuTrigger>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                          <SidebarMenuButton>
+                            {item.icon && <item.icon />}
+                            <span>{item.title}</span>
+                            <div className="[&>svg]:size-4 ml-auto">
+                              <ChevronDownIcon className="ml-auto transition-transform duration-200" />
+                            </div>
+                          </SidebarMenuButton>
+                        </DropdownMenuTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" align="center">
+                        {item.title}
+                      </TooltipContent>
+                    </Tooltip>
                     <DropdownMenuContent side="right" align="start" sideOffset={20}>
                       <DropdownMenuLabel>{item.title}</DropdownMenuLabel>
                       <DropdownMenuSeparator />
