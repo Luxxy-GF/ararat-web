@@ -160,8 +160,10 @@ export function EventEmitterProvider({
           resourceList.forEach((resource) => {
             uniqueResources.add(resource);
 
-            // Also mutate the parent collection if applicable (simple heuristic)
-            // e.g. /1.0/instances/foo -> /1.0/instances
+            // Also mutate the parent collection if applicable (simple heuristic).
+            // The threshold `parts.length > 3` assumes paths follow the pattern `/version/collection/resource`
+            // (e.g., `/1.0/instances/foo`), where the first part is empty due to the leading slash.
+            // Thus, length > 3 means there is a resource within a collection, and we can derive the parent collection path.
             // Normalize path to handle trailing slashes and query params
             const normalizedResource = resource.replace(/\/$/, '').split('?')[0];
             const parts = normalizedResource.split('/');
