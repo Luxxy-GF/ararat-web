@@ -102,8 +102,12 @@ function formatBytes(value?: number) {
   return `${num.toFixed(num >= 10 ? 0 : 1)} ${units[exponent]}`;
 }
 
+function getFileExtension(filename: string) {
+  return filename.split('.').pop()?.toLowerCase();
+}
+
 function getFileIcon(filename: string) {
-  const ext = filename.split('.').pop()?.toLowerCase();
+  const ext = getFileExtension(filename);
   const className = "h-4 w-4 text-gray-500";
 
   switch (ext) {
@@ -407,6 +411,9 @@ export function FileBrowser({
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
+    if (e.currentTarget.contains(e.relatedTarget as Node)) {
+      return;
+    }
     setIsDragging(false);
   };
 
@@ -428,23 +435,22 @@ export function FileBrowser({
     // And "File uploads should display progress".
     // I'll reuse the onUpload prop which now supports progress.
 
+    const errors: string[] = [];
     for (const file of files) {
-      // We can't easily show a progress dialog for drag & drop without more state.
-      // Let's just do it in background for now, or maybe open the dialog?
-      // Opening the dialog with the file is a good UX.
-      // But what if multiple files?
-      // Let's stick to single file for now as the dialog supports one.
-      // Or just upload directly.
       try {
         await onUpload(file);
       } catch (err: any) {
-        setActionError(err.message);
+        errors.push(`Failed to upload ${file.name}: ${err.message}`);
       }
+    }
+
+    if (errors.length > 0) {
+      setActionError(errors.join('\n'));
     }
   };
 
   const getLanguageFromFilename = (filename: string) => {
-    const ext = filename.split('.').pop()?.toLowerCase();
+    const ext = getFileExtension(filename);
     switch (ext) {
       case 'js':
       case 'jsx':
@@ -577,7 +583,9 @@ export function FileBrowser({
       {actionError && (
         <Alert variant="destructive">
           <AlertTitle>Action Failed</AlertTitle>
-          <AlertDescription>{actionError}</AlertDescription>
+          <AlertDescription className="whitespace-pre-wrap">
+            {actionError}
+          </AlertDescription>
         </Alert>
       )}
 
@@ -626,6 +634,7 @@ export function FileBrowser({
 
       {contextMenu && (
         <div
+          role="menu"
           className="fixed z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2"
           style={{ top: contextMenu.y, left: contextMenu.x }}
         >
@@ -640,31 +649,79 @@ export function FileBrowser({
                 <>
                   {!isDirectory && (
                     <button
-                      className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-                      onClick={() => handleEdit(name)}
+                      role="menuitem"
+                      tabIndex={0}
+                      className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground"
+                      onClick={() => {
+                        handleEdit(name);
+                        setContextMenu(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleEdit(name);
+                          setContextMenu(null);
+                        }
+                      }}
                     >
                       <PencilIcon className="mr-2 h-4 w-4" />
                       Edit
                     </button>
                   )}
                   <button
-                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-                    onClick={() => onDownload(fullPath)}
+                    role="menuitem"
+                    tabIndex={0}
+                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground"
+                    onClick={() => {
+                      onDownload(fullPath);
+                      setContextMenu(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onDownload(fullPath);
+                        setContextMenu(null);
+                      }
+                    }}
                   >
                     <DownloadIcon className="mr-2 h-4 w-4" />
                     Download
                   </button>
                   <button
-                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-                    onClick={() => onNavigate(fullPath)}
+                    role="menuitem"
+                    tabIndex={0}
+                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground"
+                    onClick={() => {
+                      onNavigate(fullPath);
+                      setContextMenu(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onNavigate(fullPath);
+                        setContextMenu(null);
+                      }
+                    }}
                   >
                     <FolderIcon className="mr-2 h-4 w-4" />
                     Open
                   </button>
                   <div className="h-px my-1 bg-muted" />
                   <button
-                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-red-600"
-                    onClick={() => onDelete(fullPath).catch((e) => setActionError(e.message))}
+                    role="menuitem"
+                    tabIndex={0}
+                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-red-600 focus:bg-accent focus:text-accent-foreground"
+                    onClick={() => {
+                      onDelete(fullPath).catch((e) => setActionError(e.message));
+                      setContextMenu(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onDelete(fullPath).catch((e) => setActionError(e.message));
+                        setContextMenu(null);
+                      }
+                    }}
                   >
                     <TrashIcon className="mr-2 h-4 w-4" />
                     Delete
