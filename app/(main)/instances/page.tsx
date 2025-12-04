@@ -105,6 +105,22 @@ async function performInstanceAction({
   }
 }
 
+function canPerformAction(action: InstanceAction, instance: Instance): boolean {
+  const status = instance.status?.toLowerCase();
+  switch (action) {
+    case 'start':
+      return status === 'stopped';
+    case 'stop':
+      return status === 'running' || status === 'frozen';
+    case 'restart':
+      return status === 'running';
+    case 'freeze':
+      return status === 'running';
+    default:
+      return false;
+  }
+}
+
 export default function Instances() {
   const { currentProject } = use(ProjectsContext);
   const { data, error, isLoading, isValidating, mutate } =
@@ -244,12 +260,16 @@ export default function Instances() {
 
   const handleMassAction = React.useCallback(
     async (action: InstanceAction) => {
-      if (!selectedInstances.length) return;
+      const targetInstances = selectedInstances.filter((instance) =>
+        canPerformAction(action, instance),
+      );
+
+      if (!targetInstances.length) return;
       try {
         setActionError(null);
         setActionInFlight(action);
         await Promise.all(
-          selectedInstances.map((instance) =>
+          targetInstances.map((instance) =>
             performInstanceAction({
               action,
               instance,
@@ -395,22 +415,28 @@ export default function Instances() {
                       Icon: React.ComponentType<{ className?: string }>;
                     },
                   ][]
-                ).map(([action, { label, Icon }]) => (
-                  <Button
-                    key={action}
-                    variant="outline"
-                    size="sm"
-                    disabled={actionInFlight !== null || deleteInFlight}
-                    onClick={() => handleMassAction(action)}
-                  >
-                    {actionInFlight === action ? (
-                      <Spinner className="mr-2 size-3" />
-                    ) : (
-                      <Icon className="mr-2 size-3" />
-                    )}
-                    {label}
-                  </Button>
-                ))}
+                )
+                  .filter(([action]) =>
+                    selectedInstances.some((instance) =>
+                      canPerformAction(action, instance),
+                    ),
+                  )
+                  .map(([action, { label, Icon }]) => (
+                    <Button
+                      key={action}
+                      variant="outline"
+                      size="sm"
+                      disabled={actionInFlight !== null || deleteInFlight}
+                      onClick={() => handleMassAction(action)}
+                    >
+                      {actionInFlight === action ? (
+                        <Spinner className="mr-2 size-3" />
+                      ) : (
+                        <Icon className="mr-2 size-3" />
+                      )}
+                      {label}
+                    </Button>
+                  ))}
                 {deletableInstances.length > 0 && (
                   <Button
                     variant="destructive"
