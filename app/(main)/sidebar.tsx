@@ -232,7 +232,7 @@ function NavMain({
                       <DropdownMenuSeparator />
                       {item.subItems.map((subItem) => (
                         <DropdownMenuItem key={subItem.title} asChild>
-                          <Link href={subItem.url}>
+                          <Link href={subItem.url} aria-label={subItem.title}>
                             <span>{subItem.title}</span>
                           </Link>
                         </DropdownMenuItem>
