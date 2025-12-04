@@ -42,7 +42,7 @@ function Files({ instance }: { instance: any }) {
         router.replace(`${pathname}?${newParams.toString()}`);
       }
     }
-  }, [instance.expanded_config, pathname, router]);
+  }, []);
 
   // Listen for back/forward navigation
   React.useEffect(() => {
