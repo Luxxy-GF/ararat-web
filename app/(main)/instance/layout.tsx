@@ -32,7 +32,8 @@ function InstanceLayoutContent({ children }: { children: React.ReactNode }) {
   const { name, instance, isLoading, isError, mutate } = useInstanceContext();
 
   const pathname = usePathname();
-  const currentTab = pathname === '/instance' ? 'Dashboard' : (pathname.split('/').pop() || 'Dashboard');
+  const segments = pathname.split('/').filter(Boolean);
+  const currentTab = segments.length > 1 ? segments[1] : 'Dashboard';
   const formattedTab = currentTab.charAt(0).toUpperCase() + currentTab.slice(1);
 
   const renderContent = () => {
