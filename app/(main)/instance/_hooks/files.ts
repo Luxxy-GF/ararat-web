@@ -8,6 +8,7 @@ import {
   fetchFileContent as apiFetchFileContent,
   saveFileContent as apiSaveFileContent,
   getFileMetadata as apiFetchFileMetadata,
+  createFile as apiCreateFile,
 } from '../_lib/files';
 
 const directoryFetcher = async (url: string) => {
@@ -84,8 +85,19 @@ export function useFiles(instanceName: string, path: string) {
     fetchMetadata();
   }, [data, instanceName, normalizedPath]);
 
-  const uploadFile = async (currentPath: string, file: File) => {
-    await apiUploadFile(instanceName, currentPath, file);
+  const uploadFile = async (
+    currentPath: string,
+    file: File,
+    onProgress?: (progress: number) => void,
+  ) => {
+    await apiUploadFile(instanceName, currentPath, file, onProgress);
+    await mutate(
+      `/1.0/instances/${instanceName}/files?path=${encodeURIComponent(currentPath)}`,
+    );
+  };
+
+  const createFile = async (currentPath: string, fileName: string) => {
+    await apiCreateFile(instanceName, currentPath, fileName);
     await mutate(
       `/1.0/instances/${instanceName}/files?path=${encodeURIComponent(currentPath)}`,
     );
@@ -129,6 +141,7 @@ export function useFiles(instanceName: string, path: string) {
     isError: error,
     uploadFile,
     createDirectory,
+    createFile,
     deleteFile,
     downloadFile,
     fetchFileContent,
