@@ -153,8 +153,8 @@ export function EventEmitterProvider({
         activeOperations.current.delete(toastId);
       }
 
-      // Perform mutations on affected resources
-      if (op.resources) {
+      // Perform mutations on affected resources only for terminal states
+      if (['Success', 'Failure', 'Cancelled'].includes(op.status) && op.resources) {
         const uniqueResources = new Set<string>();
         Object.values(op.resources).forEach((resourceList) => {
           resourceList.forEach((resource) => {
