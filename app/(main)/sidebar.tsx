@@ -385,7 +385,7 @@ function NavUser() {
             <DropdownMenuSeparator />
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <IconSun className="mr-2 size-4" />
+                <IconDeviceDesktop className="mr-2 size-4" />
                 <span>Theme</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
