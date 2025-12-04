@@ -12,6 +12,13 @@ import {
   SquareIcon,
   RotateCcwIcon,
   SnowflakeIcon,
+  LayoutDashboard,
+  Archive,
+  Terminal,
+  Folder,
+  Camera,
+  Cpu,
+  Settings,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from 'ui-web/components/tabs';
 import { OSLogo } from '@/app/_components/OSLogo';
@@ -193,13 +200,13 @@ function InstanceHeader({
 }
 
 const TABS = [
-  { value: 'dashboard', label: 'Dashboard' },
-  { value: 'backups', label: 'Backups' },
-  { value: 'console', label: 'Console' },
-  { value: 'files', label: 'Files' },
-  { value: 'snapshots', label: 'Snapshots' },
-  { value: 'devices', label: 'Devices' },
-  { value: 'configuration', label: 'Configuration' },
+  { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { value: 'backups', label: 'Backups', icon: Archive },
+  { value: 'console', label: 'Console', icon: Terminal },
+  { value: 'files', label: 'Files', icon: Folder },
+  { value: 'snapshots', label: 'Snapshots', icon: Camera },
+  { value: 'devices', label: 'Devices', icon: Cpu },
+  { value: 'configuration', label: 'Configuration', icon: Settings },
 ];
 
 function InstanceTabs() {
@@ -228,9 +235,10 @@ function InstanceTabs() {
   return (
     <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
       <div className="overflow-x-auto pb-2">
-        <TabsList className="w-auto justify-start">
+        <TabsList className="w-full justify-start">
           {TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
+              <tab.icon className="mr-2 h-4 w-4" />
               {tab.label}
             </TabsTrigger>
           ))}
