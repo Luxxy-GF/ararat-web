@@ -34,3 +34,32 @@ export async function performInstanceAction({
     );
   }
 }
+
+export async function updateInstance(
+  name: string,
+  config: Record<string, string>,
+  project: string | null = null,
+) {
+  const projectSuffix = project
+    ? `?project=${encodeURIComponent(project)}`
+    : '';
+  const res = await fetch(
+    `/1.0/instances/${encodeURIComponent(name)}${projectSuffix}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        config,
+      }),
+    },
+  );
+
+  if (!res.ok) {
+    const payload = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(
+      payload?.error || `Unable to update instance ${name}`,
+    );
+  }
+}

@@ -52,12 +52,12 @@ function InstanceLayoutContent({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col h-[calc(100vh-var(--header-height))] gap-6 p-6">
       <InstanceHeader instance={instance} onMutate={mutate} />
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col flex-1 min-h-0 gap-4">
         <InstanceTabs />
-        <div className="mt-4">{children}</div>
+        <div className="flex-1 min-h-0 mt-4 overflow-auto">{children}</div>
       </div>
     </div>
   );
