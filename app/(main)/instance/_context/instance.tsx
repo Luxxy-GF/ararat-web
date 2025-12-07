@@ -10,7 +10,6 @@ import React, {
 import { useSearchParams } from 'next/navigation';
 import { useInstance } from '../_hooks/instance';
 import { Instance } from '../../instances/_lib/instances.d';
-import { InstanceProvider as MainInstanceProvider } from 'ararat-ui-web/context/instance/instance';
 import InstanceClass from '../../_lib/instance';
 
 interface InstanceContextValue {
@@ -20,6 +19,7 @@ interface InstanceContextValue {
   isError: any;
   isValidating: boolean;
   mutate: () => Promise<any>;
+  instanceClass: InstanceClass | null;
 }
 
 const InstanceContext = createContext<InstanceContextValue>({
@@ -29,7 +29,9 @@ const InstanceContext = createContext<InstanceContextValue>({
   isError: null,
   isValidating: true,
   mutate: async () => {},
+  instanceClass: null,
 });
+
 
 function InstanceProviderInner({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
@@ -44,6 +46,7 @@ function InstanceProviderInner({ children }: { children: ReactNode }) {
     isError,
     isValidating,
     mutate,
+    instanceClass: inst,
   };
   const [inst, setInst] = useState<InstanceClass | null>(null);
 
@@ -55,16 +58,7 @@ function InstanceProviderInner({ children }: { children: ReactNode }) {
 
   return (
     <InstanceContext.Provider value={value}>
-      <MainInstanceProvider
-        value={{
-          instance: inst,
-          isLoading,
-          isValidating,
-          isError: isError,
-        }}
-      >
-        {children}
-      </MainInstanceProvider>
+      {children}
     </InstanceContext.Provider>
   );
 }
@@ -84,3 +78,5 @@ export function useInstanceContext() {
   }
   return context;
 }
+
+export { InstanceContext };
