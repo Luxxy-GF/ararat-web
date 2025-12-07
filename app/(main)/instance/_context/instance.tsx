@@ -4,8 +4,6 @@ import React, {
   createContext,
   useContext,
   ReactNode,
-  useState,
-  useEffect,
   useMemo,
 } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -29,7 +27,7 @@ const InstanceContext = createContext<InstanceContextValue>({
   isLoading: true,
   isError: null,
   isValidating: true,
-  mutate: async () => {},
+  mutate: async () => { },
   instanceClass: null,
 });
 
@@ -38,7 +36,10 @@ function InstanceProviderInner({ children }: { children: ReactNode }) {
   const name = searchParams.get('name');
   const { instance, isLoading, isError, mutate, isValidating } =
     useInstance(name);
-  const [instanceClass, setInstanceClass] = useState<InstanceClass | null>(null);
+  const instanceClass = useMemo(
+    () => (instance ? new InstanceClass(instance.name) : null),
+    [instance]
+  );
 
   const value: InstanceContextValue = useMemo(
     () => ({
@@ -53,11 +54,7 @@ function InstanceProviderInner({ children }: { children: ReactNode }) {
     [instance, instanceClass, isError, isLoading, isValidating, mutate, name],
   );
 
-  useEffect(() => {
-    if (instance) {
-      setInstanceClass(new InstanceClass(instance.name));
-    }
-  }, [instance]);
+
 
   return (
     <InstanceContext.Provider value={value}>

@@ -76,6 +76,7 @@ export default function InstanceTextConsole() {
   const textEncoderRef = useRef(new TextEncoder());
 
   // Detect dark mode with live updates
+  const [retryTrigger, setRetryTrigger] = useState(0);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window === 'undefined') return false;
     return document.documentElement.classList.contains('dark');
@@ -105,7 +106,6 @@ export default function InstanceTextConsole() {
 
   const logError = useCallback((err: unknown, context: string) => {
     if (process.env.NODE_ENV === 'production') return;
-    // eslint-disable-next-line no-console
     console.error(`[console] ${context}`, err);
   }, []);
 
@@ -134,6 +134,7 @@ export default function InstanceTextConsole() {
       };
 
       sock.onerror = (err) => {
+        socketAttachedRef.current = false;
         try {
           term.writeln("\r\n[console] Data socket error. Try clicking 'Retry attach' below.");
         } catch (writeErr) {
@@ -254,7 +255,7 @@ export default function InstanceTextConsole() {
       logError(err, 'attach console sockets');
       initializedRef.current = false;
     });
-  }, [isLoading, instance, attachToSocket]);
+  }, [isLoading, instance, attachToSocket, logError, retryTrigger]);
 
   // Create and initialize the terminal instance, and attach add-ons
   useEffect(() => {
@@ -349,7 +350,8 @@ export default function InstanceTextConsole() {
       termRef.current = null;
       fitRef.current = null;
     };
-  }, [attachToSocket]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attachToSocket, logError]);
 
   // Update terminal theme without full recreation
   useEffect(() => {
@@ -372,7 +374,7 @@ export default function InstanceTextConsole() {
         logError(err, 'close control socket on unmount');
       }
     };
-  }, []);
+  }, [logError]);
 
   return (
     <div className="w-full" style={{ height: '60vh', minHeight: '300px' }}>
@@ -413,7 +415,7 @@ export default function InstanceTextConsole() {
                 if (sock && sock.readyState !== WebSocket.OPEN) {
                   sock.close();
                 }
-                attachToSocket();
+                setRetryTrigger((n) => n + 1);
               } catch (err) {
                 logError(err, 'retry attach');
               }
