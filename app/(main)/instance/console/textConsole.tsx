@@ -133,7 +133,7 @@ export default function InstanceTextConsole() {
     })().catch(() => {
       initializedRef.current = false;
     });
-  }, [isLoading, instance]);
+  }, [isLoading, instance, attachToSocket]);
 
   // Initialize terminal once and wire everything
   useEffect(() => {
