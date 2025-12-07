@@ -1,7 +1,7 @@
 'use client';
 import '@xterm/xterm/css/xterm.css';
 
-import { useCallback, useEffect, use, useRef, useMemo } from 'react';
+import { useCallback, useEffect, use, useRef, useState } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -20,17 +20,36 @@ export default function InstanceTextConsole() {
   const inputDisposableRef = useRef<{ dispose: () => void } | null>(null);
   const socketAttachedRef = useRef(false);
   const connectedNameRef = useRef<string | null>(null);
+  const instanceTokenRef = useRef(0);
   const textEncoderRef = useRef(new TextEncoder());
 
-  // Detect dark mode and subscribe to theme changes
-  const isDark = useMemo(() => {
+  // Detect dark mode with live updates
+  const [isDark, setIsDark] = useState(() => {
     if (typeof window === 'undefined') return false;
-    
-    const updateDarkMode = () => {
-      return document.documentElement.classList.contains('dark');
+    return document.documentElement.classList.contains('dark');
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const update = () => setIsDark(document.documentElement.classList.contains('dark'));
+
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaHandler = () => update();
+    media.addEventListener('change', mediaHandler);
+
+    return () => {
+      observer.disconnect();
+      media.removeEventListener('change', mediaHandler);
     };
-    
-    return updateDarkMode();
+  }, []);
+
+  const logError = useCallback((err: unknown, context: string) => {
+    if (process.env.NODE_ENV === 'production') return;
+    // eslint-disable-next-line no-console
+    console.error(`[console] ${context}`, err);
   }, []);
 
   // Initialize terminal once and wire everything
@@ -48,19 +67,26 @@ export default function InstanceTextConsole() {
         try {
           const text = await ev.data.text();
           term.write(text);
-        } catch {}
+        } catch (err) {
+          logError(err, 'data socket onmessage');
+        }
       };
 
-      sock.onerror = () => {
+      sock.onerror = (err) => {
         try {
           term.writeln('\r\n[console] Data socket error.');
-        } catch {}
+        } catch (writeErr) {
+          logError(writeErr, 'write data socket error message');
+        }
+        logError(err, 'data socket error');
       };
 
       sock.onclose = () => {
         try {
           term.writeln('[console] Data socket closed.');
-        } catch {}
+        } catch (err) {
+          logError(err, 'write data socket closed');
+        }
       };
 
       // Dispose previous listener if any
@@ -72,7 +98,9 @@ export default function InstanceTextConsole() {
           if (sock.readyState === WebSocket.OPEN) {
             sock.send(textEncoderRef.current.encode(data));
           }
-        } catch {}
+        } catch (err) {
+          logError(err, 'send terminal data');
+        }
       });
 
       term.focus();
@@ -93,15 +121,21 @@ export default function InstanceTextConsole() {
   useEffect(() => {
     if (isLoading || !instance) return;
 
+    const token = ++instanceTokenRef.current;
+
     // If instance name changed, reset
     if (connectedNameRef.current !== instance.name) {
       initializedRef.current = false;
       try {
         dataSocketRef.current?.close();
-      } catch {}
+      } catch (err) {
+        logError(err, 'close data socket on name change');
+      }
       try {
         controlSocketRef.current?.close();
-      } catch {}
+      } catch (err) {
+        logError(err, 'close control socket on name change');
+      }
       connectedNameRef.current = instance.name;
     }
 
@@ -112,6 +146,7 @@ export default function InstanceTextConsole() {
       // Preload previous log before attaching
       try {
         const prelog = await instance.getConsoleOutput();
+        if (token !== instanceTokenRef.current) return;
         if (prelog && termRef.current) {
           termRef.current.write(prelog);
         }
@@ -122,12 +157,22 @@ export default function InstanceTextConsole() {
             `\r\n[console] Failed to load previous log.\r\n`,
           );
         }
+        logError(err, 'getConsoleOutput');
       }
 
       const { data, control } = await instance.openConsoleSocket('console', {
         width: termRef.current?.cols,
         height: termRef.current?.rows,
       });
+      if (token !== instanceTokenRef.current) {
+        try {
+          data.close();
+        } catch {}
+        try {
+          control.close();
+        } catch {}
+        return;
+      }
       dataSocketRef.current = data;
       controlSocketRef.current = control;
 
@@ -141,7 +186,21 @@ export default function InstanceTextConsole() {
   // Create and initialize the terminal instance, and attach add-ons
   useEffect(() => {
     const host = terminalRef.current;
-    if (!host || termRef.current) return;
+    if (!host) return;
+    if (termRef.current) {
+      try {
+        termRef.current.dispose();
+      } catch (err) {
+        logError(err, 'dispose terminal before reinit');
+      }
+      try {
+        fitRef.current?.dispose?.();
+      } catch (err) {
+        logError(err, 'dispose fit before reinit');
+      }
+      termRef.current = null;
+      fitRef.current = null;
+    }
 
     // Theme matching your UI's card background and text colors
     const term = new Terminal({
@@ -259,24 +318,32 @@ export default function InstanceTextConsole() {
       socketAttachedRef.current = false;
       try {
         inputDisposableRef.current?.dispose();
-      } catch {}
+      } catch (err) {
+        logError(err, 'dispose input on unmount');
+      }
       try {
         termRef.current?.dispose();
-      } catch {}
+      } catch (err) {
+        logError(err, 'dispose terminal on unmount');
+      }
       termRef.current = null;
       fitRef.current = null;
     };
-  }, [attachToSocket]);
+  }, [attachToSocket, isDark]);
 
   // Cleanup sockets on unmount
   useEffect(() => {
     return () => {
       try {
         dataSocketRef.current?.close();
-      } catch {}
+      } catch (err) {
+        logError(err, 'close data socket on unmount');
+      }
       try {
         controlSocketRef.current?.close();
-      } catch {}
+      } catch (err) {
+        logError(err, 'close control socket on unmount');
+      }
     };
   }, []);
 
@@ -294,7 +361,9 @@ export default function InstanceTextConsole() {
           onClick={() => {
             try {
               termRef.current?.focus();
-            } catch {}
+            } catch (err) {
+              logError(err, 'focus terminal');
+            }
           }}
         />
         {/* Simple retry control */}
@@ -304,35 +373,26 @@ export default function InstanceTextConsole() {
             className="underline"
             onClick={() => {
               try {
+                inputDisposableRef.current?.dispose();
+              } catch (err) {
+                logError(err, 'dispose input on retry');
+              }
+              try {
                 socketAttachedRef.current = false;
                 const sock = dataSocketRef.current;
                 if (sock && sock.readyState !== WebSocket.OPEN) {
                   sock.close();
                 }
                 attachToSocket();
-              } catch {}
+              } catch (err) {
+                logError(err, 'retry attach');
+              }
             }}
           >
             Retry attach
           </button>
         </div>
       </div>
-      <style jsx global>{`
-        /* Ensure xterm elements never exceed their container width */
-        .xterm,
-        .xterm .xterm-viewport,
-        .xterm .xterm-screen {
-          width: 100% !important;
-          max-width: 100% !important;
-        }
-        .xterm {
-          box-sizing: border-box !important;
-          overflow: hidden !important;
-        }
-        .xterm .xterm-viewport {
-          overflow-x: hidden !important;
-        }
-      `}</style>
     </div>
   );
 }

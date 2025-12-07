@@ -6,6 +6,7 @@ import React, {
   ReactNode,
   useState,
   useEffect,
+  useMemo,
 } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useInstance } from '../_hooks/instance';
@@ -38,17 +39,20 @@ function InstanceProviderInner({ children }: { children: ReactNode }) {
   const name = searchParams.get('name');
   const { instance, isLoading, isError, mutate, isValidating } =
     useInstance(name);
-
-  const value: InstanceContextValue = {
-    name,
-    instance,
-    isLoading,
-    isError,
-    isValidating,
-    mutate,
-    instanceClass: inst,
-  };
   const [inst, setInst] = useState<InstanceClass | null>(null);
+
+  const value: InstanceContextValue = useMemo(
+    () => ({
+      name,
+      instance,
+      isLoading,
+      isError,
+      isValidating,
+      mutate,
+      instanceClass: inst,
+    }),
+    [instance, inst, isError, isLoading, isValidating, mutate, name],
+  );
 
   useEffect(() => {
     if (instance) {
