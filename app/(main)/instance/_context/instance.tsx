@@ -27,7 +27,7 @@ const InstanceContext = createContext<InstanceContextValue>({
   isLoading: true,
   isError: null,
   isValidating: true,
-  mutate: async () => { },
+  mutate: async () => {},
   instanceClass: null,
 });
 
