@@ -413,7 +413,7 @@ export default function InstanceTextConsole() {
                 socketAttachedRef.current = false;
                 socketAttachingRef.current = false;
                 const sock = dataSocketRef.current;
-                if (sock && sock.readyState !== WebSocket.OPEN) {
+                if (sock) {
                   sock.close();
                 }
                 setRetryTrigger((n) => n + 1);
