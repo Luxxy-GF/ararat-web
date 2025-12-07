@@ -258,7 +258,7 @@ export default function InstanceTextConsole() {
       termRef.current = null;
       fitRef.current = null;
     };
-  }, [terminalRef.current]);
+  }, []);
 
   // Cleanup sockets on unmount
   useEffect(() => {
