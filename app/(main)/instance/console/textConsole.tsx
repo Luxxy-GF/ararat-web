@@ -130,7 +130,7 @@ export default function InstanceTextConsole() {
     })().catch(() => {
       initializedRef.current = false;
     });
-  }, [isLoading, instance?.name]);
+  }, [isLoading, instance]);
 
   // Initialize terminal once and wire everything
 
