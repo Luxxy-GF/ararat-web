@@ -1,4 +1,4 @@
-# Hye Ararat Web Client for Incus
+# Hye Ararat Web Client
 
 Copyright 2025 Hye Hosting LLC
 
