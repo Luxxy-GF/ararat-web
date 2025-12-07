@@ -920,7 +920,7 @@ function AddDeviceForm({
       });
     });
 
-    // Moved sortCategories to useCallback below, to improve performance.
+    // Moved sortCategories to useCallback above, to improve performance.
 
     return {
       requiredCategories: sortCategories(requiredMap),
