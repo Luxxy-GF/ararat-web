@@ -350,13 +350,14 @@ export default function InstanceTextConsole() {
       termRef.current = null;
       fitRef.current = null;
     };
+    // terminalTheme is intentionally omitted to prevent full recreation on theme change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attachToSocket, logError]);
 
   // Update terminal theme without full recreation
   useEffect(() => {
     if (termRef.current) {
-      termRef.current.setOption('theme', terminalTheme);
+      termRef.current.options.theme = terminalTheme;
     }
   }, [terminalTheme]);
 
@@ -379,11 +380,11 @@ export default function InstanceTextConsole() {
   return (
     <div className="w-full" style={{ height: '60vh', minHeight: '300px' }}>
       {/* Outer visual container controls padding/border without affecting terminal fit */}
-      <div className="h-full w-full rounded-lg border bg-card shadow-sm font-mono p-3 box-border overflow-hidden">
+      <div className="flex flex-col h-full w-full rounded-lg border bg-card shadow-sm font-mono p-3 box-border overflow-hidden">
         {/* Host element must be padding-free to let FitAddon calculate width correctly */}
         <div
           ref={terminalRef}
-          className="h-full w-full"
+          className="flex-1 min-h-0 w-full"
           tabIndex={0}
           role="application"
           aria-label="Instance Console"
