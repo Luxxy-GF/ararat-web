@@ -33,13 +33,12 @@ const InstanceContext = createContext<InstanceContextValue>({
   instanceClass: null,
 });
 
-
 function InstanceProviderInner({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
   const name = searchParams.get('name');
   const { instance, isLoading, isError, mutate, isValidating } =
     useInstance(name);
-  const [inst, setInst] = useState<InstanceClass | null>(null);
+  const [instanceClass, setInstanceClass] = useState<InstanceClass | null>(null);
 
   const value: InstanceContextValue = useMemo(
     () => ({
@@ -49,14 +48,14 @@ function InstanceProviderInner({ children }: { children: ReactNode }) {
       isError,
       isValidating,
       mutate,
-      instanceClass: inst,
+      instanceClass,
     }),
-    [instance, inst, isError, isLoading, isValidating, mutate, name],
+    [instance, instanceClass, isError, isLoading, isValidating, mutate, name],
   );
 
   useEffect(() => {
     if (instance) {
-      setInst(new InstanceClass(instance.name));
+      setInstanceClass(new InstanceClass(instance.name));
     }
   }, [instance]);
 
