@@ -138,7 +138,7 @@ export default function InstanceTextConsole() {
     });
   }, [isLoading, instance, attachToSocket]);
 
-  // Initialize terminal once and wire everything
+  // Create and initialize the terminal instance, and attach add-ons
   useEffect(() => {
     const host = terminalRef.current;
     if (!host || termRef.current) return;
