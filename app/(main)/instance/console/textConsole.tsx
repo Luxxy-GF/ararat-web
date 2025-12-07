@@ -115,7 +115,7 @@ export default function InstanceTextConsole() {
       };
       sock.addEventListener('open', onOpen);
     }
-  }, []);
+  }, [logError]);
 
   // Open sockets once when instance is ready
   useEffect(() => {
@@ -167,10 +167,14 @@ export default function InstanceTextConsole() {
       if (token !== instanceTokenRef.current) {
         try {
           data.close();
-        } catch {}
+        } catch (err) {
+          logError(err, 'close stale data socket');
+        }
         try {
           control.close();
-        } catch {}
+        } catch (err) {
+          logError(err, 'close stale control socket');
+        }
         return;
       }
       dataSocketRef.current = data;
@@ -178,7 +182,8 @@ export default function InstanceTextConsole() {
 
       // Attach immediately if terminal is ready
       attachToSocket();
-    })().catch(() => {
+    })().catch((err) => {
+      logError(err, 'attach console sockets');
       initializedRef.current = false;
     });
   }, [isLoading, instance, attachToSocket]);
@@ -270,7 +275,9 @@ export default function InstanceTextConsole() {
         if (host.clientWidth > 0 && host.clientHeight > 0) {
           fitRef.current?.fit();
         }
-      } catch {}
+      } catch (err) {
+        logError(err, 'fit terminal');
+      }
     };
     // Initial fit and next-tick retry
     fitIfReady();
@@ -291,7 +298,9 @@ export default function InstanceTextConsole() {
               },
             }),
           );
-        } catch {}
+        } catch (err) {
+          logError(err, 'send resize metadata');
+        }
       }
     };
     window.addEventListener('resize', handleResize);
@@ -307,7 +316,9 @@ export default function InstanceTextConsole() {
     ) {
       try {
         inputDisposableRef.current?.dispose();
-      } catch {}
+      } catch (err) {
+        logError(err, 'dispose input before reattach');
+      }
       socketAttachedRef.current = false;
       attachToSocket();
     }
