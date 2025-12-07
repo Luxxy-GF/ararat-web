@@ -22,13 +22,16 @@ export default function InstanceTextConsole() {
   const connectedNameRef = useRef<string | null>(null);
   const textEncoderRef = useRef(new TextEncoder());
 
-  // Detect dark mode once
-  const isDark = useMemo(
-    () =>
-      typeof window !== 'undefined' &&
-      document.documentElement.classList.contains('dark'),
-    [],
-  );
+  // Detect dark mode and subscribe to theme changes
+  const isDark = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    
+    const updateDarkMode = () => {
+      return document.documentElement.classList.contains('dark');
+    };
+    
+    return updateDarkMode();
+  }, []);
 
   // Initialize terminal once and wire everything
   const attachToSocket = useCallback(() => {
@@ -294,6 +297,7 @@ export default function InstanceTextConsole() {
         {/* Simple retry control */}
         <div className="mt-2 text-xs text-muted-foreground">
           <button
+            type="button"
             className="underline"
             onClick={() => {
               try {
