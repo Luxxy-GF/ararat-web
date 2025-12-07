@@ -1,7 +1,7 @@
 'use client';
 import '@xterm/xterm/css/xterm.css';
 
-import { useEffect, use, useRef } from 'react';
+import { useCallback, useEffect, use, useRef, useMemo } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -20,15 +20,18 @@ export default function InstanceTextConsole() {
   const inputDisposableRef = useRef<{ dispose: () => void } | null>(null);
   const socketAttachedRef = useRef(false);
   const connectedNameRef = useRef<string | null>(null);
-  const textEncoder = new TextEncoder();
+  const textEncoderRef = useRef(new TextEncoder());
 
-  // Detect dark mode
-  const isDark =
-    typeof window !== 'undefined' &&
-    document.documentElement.classList.contains('dark');
+  // Detect dark mode once
+  const isDark = useMemo(
+    () =>
+      typeof window !== 'undefined' &&
+      document.documentElement.classList.contains('dark'),
+    [],
+  );
 
   // Initialize terminal once and wire everything
-  const attachToSocket = () => {
+  const attachToSocket = useCallback(() => {
     const sock = dataSocketRef.current;
     const term = termRef.current;
     if (!sock || !term || socketAttachedRef.current) return;
@@ -64,7 +67,7 @@ export default function InstanceTextConsole() {
       inputDisposableRef.current = term.onData((data: string) => {
         try {
           if (sock.readyState === WebSocket.OPEN) {
-            sock.send(textEncoder.encode(data));
+            sock.send(textEncoderRef.current.encode(data));
           }
         } catch {}
       });
@@ -81,7 +84,7 @@ export default function InstanceTextConsole() {
       };
       sock.addEventListener('open', onOpen);
     }
-  };
+  }, []);
 
   // Open sockets once when instance is ready
   useEffect(() => {
@@ -133,7 +136,6 @@ export default function InstanceTextConsole() {
   }, [isLoading, instance]);
 
   // Initialize terminal once and wire everything
-
   useEffect(() => {
     const host = terminalRef.current;
     if (!host || termRef.current) return;
