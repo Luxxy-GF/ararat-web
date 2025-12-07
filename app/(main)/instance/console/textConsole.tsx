@@ -246,6 +246,9 @@ export default function InstanceTextConsole() {
       dataSocketRef.current &&
       dataSocketRef.current.readyState === WebSocket.OPEN
     ) {
+      try {
+        inputDisposableRef.current?.dispose();
+      } catch {}
       socketAttachedRef.current = false;
       attachToSocket();
     }
