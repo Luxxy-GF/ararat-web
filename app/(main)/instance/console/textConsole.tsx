@@ -286,7 +286,7 @@ export default function InstanceTextConsole() {
           ref={terminalRef}
           className="h-full w-full"
           tabIndex={0}
-          role="textbox"
+          role="application"
           aria-label="Instance Console"
           onClick={() => {
             try {
