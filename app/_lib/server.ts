@@ -53,18 +53,27 @@ function processConfigurableOptions(config: ConfigurableOptions) {
 
     // Default to supporting both types
     option.supported_types = ['container', 'virtual-machine'];
-
+    let matchedType = 'both';
     // Check for container-only patterns
     if (
       TYPE_PATTERNS.container.some((pattern) => textToCheck.includes(pattern))
     ) {
       option.supported_types = ['container'];
+      matchedType = 'container';
     }
     // Check for VM-only patterns
     else if (
       TYPE_PATTERNS.vm.some((pattern) => textToCheck.includes(pattern))
     ) {
       option.supported_types = ['virtual-machine'];
+      matchedType = 'virtual-machine';
+    }
+    // Warn if no pattern matched and falling back to both
+    if (matchedType === 'both') {
+      console.warn(
+        `[processOption] Option ${option.name || option.key || '[unknown key]'} uses the default 'both' instance types due to unmatched pattern:`,
+        textToCheck
+      );
     }
 
     // Determine required types
