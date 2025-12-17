@@ -5,6 +5,9 @@ import { useServerConfiguration } from "@/app/_hooks/server";
 import { useRouter } from "next/navigation";
 import React, { startTransition, useEffect } from "react";
 
+// Timeout duration for resetting authenticating state (in milliseconds)
+const AUTHENTICATING_RESET_TIMEOUT = 5000; // 5 seconds
+
 function TLSButton(props: React.ComponentProps<typeof Button>) {
   return <Button {...props}>TLS</Button>;
 }
@@ -23,7 +26,7 @@ export default function LoginMethodsComponent() {
     if (authenticating) {
       const timeout = setTimeout(() => {
         setAuthenticating(false);
-      }, 5000);
+      }, AUTHENTICATING_RESET_TIMEOUT);
       return () => clearTimeout(timeout);
     }
   }, [authenticating]);
@@ -38,11 +41,13 @@ export default function LoginMethodsComponent() {
         });
         if (data.auth_methods[0] === "tls") {
           console.log("Redirecting to TLS auth");
+          // Defer navigation to next tick to ensure loading state is visible
           setTimeout(() => {
             router.replace("/authentication/login/tls");
           }, 1);
         } else if (data.auth_methods[0] === "oidc") {
           console.log("Redirecting to OIDC auth");
+          // Defer navigation to next tick to ensure loading state is visible
           setTimeout(() => {
             router.replace("/authentication/login/oidc");
           }, 1);

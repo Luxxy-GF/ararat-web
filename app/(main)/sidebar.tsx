@@ -290,7 +290,7 @@ function NavUser() {
       }
 
       // Clear the client-side OIDC cookie regardless of server response
-      document.cookie = "oidc_id=; path=/; max-age=0";
+      document.cookie = "oidc_id=; path=/; max-age=0; Secure; SameSite=Lax";
 
       window.location.href = "/ui/authentication/login";
       return;
@@ -298,14 +298,14 @@ function NavUser() {
 
     // For TLS, just return to login
     window.location.href = "/ui/authentication/login";
-  }, [authData?.method]);
+  }, [authData]);
   return (
     <SidebarMenu className={authIsValidating ? "animate-pulse" : ""}>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger
             asChild
-            disabled={authIsLoading ? true : authData?.method == "tls"}
+            disabled={authIsLoading ? true : authData?.method === "tls"}
           >
             <SidebarMenuButton
               size="lg"
@@ -313,13 +313,28 @@ function NavUser() {
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
                 {!authIsLoading ? (
-                  authData?.method == "oidc" ? (
+                  authData?.method === "oidc" ? (
                     <>
                       <AvatarImage
                         src={userData?.picture || ""}
                         alt={userData?.name || "user"}
                       />
-                      <AvatarFallback className="rounded-lg">JM</AvatarFallback>
+                      <AvatarFallback className="rounded-lg">
+                        {(() => {
+                          const source =
+                            (userData?.name && userData.name.trim()) ||
+                            (authData?.identifier && authData.identifier.trim()) ||
+                            "User";
+                          const parts = source.split(/\s+/).filter(Boolean);
+                          if (parts.length === 0) return "U";
+                          const initials = parts
+                            .map((part) => (part && part[0]) || "")
+                            .join("")
+                            .slice(0, 2)
+                            .toUpperCase();
+                          return initials || "U";
+                        })()}
+                      </AvatarFallback>
                     </>
                   ) : (
                     <>
@@ -342,13 +357,13 @@ function NavUser() {
                 </span>
                 <span className="text-muted-foreground truncate text-xs">
                   {!authIsLoading
-                    ? authData?.method == "oidc"
+                    ? authData?.method === "oidc"
                       ? authData?.identifier
                       : ""
                     : ""}
                 </span>
               </div>
-              {authData?.method == "oidc" ? (
+              {authData?.method === "oidc" ? (
                 <IconDotsVertical className="ml-auto size-4" />
               ) : null}
             </SidebarMenuButton>
@@ -362,7 +377,7 @@ function NavUser() {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  {authData?.method == "tls" ? (
+                  {authData?.method === "tls" ? (
                     <IconCertificate className="m-auto" />
                   ) : (
                     <>
@@ -370,7 +385,22 @@ function NavUser() {
                         src={userData?.picture || ""}
                         alt={userData?.name || "user"}
                       />
-                      <AvatarFallback className="rounded-lg">JM</AvatarFallback>
+                      <AvatarFallback className="rounded-lg">
+                        {(() => {
+                          const source =
+                            (userData?.name && userData.name.trim()) ||
+                            userData?.email ||
+                            "User";
+                          const parts = source.split(/\s+/).filter(Boolean);
+                          if (parts.length === 0) return "U";
+                          const initials = parts
+                            .map((part) => (part && part[0]) || "")
+                            .join("")
+                            .slice(0, 2)
+                            .toUpperCase();
+                          return initials || "U";
+                        })()}
+                      </AvatarFallback>
                     </>
                   )}
                 </Avatar>
@@ -379,7 +409,7 @@ function NavUser() {
                     authIsValidating ? "animate-pulse" : ""
                   }`}
                 >
-                  {authData?.method == "tls" ? (
+                  {authData?.method === "tls" ? (
                     <>
                       <span
                         className={`truncate font-medium ${
@@ -405,7 +435,7 @@ function NavUser() {
                 </div>
               </div>
             </DropdownMenuLabel>
-            {authData?.method == "oidc" ? (
+            {authData?.method === "oidc" ? (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>

@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import type { OidcUserData } from "../_lib/oidc.d";
 import { getOidcUserFromCookie } from "../_lib/oidc";
 
+// Polling interval for checking OIDC cookie updates (in milliseconds)
+const OIDC_COOKIE_POLL_INTERVAL = 60000; // 1 minute
+
 /**
  * Hook to get OIDC user data from the oidc_id cookie
  * Returns user data if available, loading state, and validation state
@@ -33,7 +36,7 @@ export function useOidcUser(enabled: boolean = true) {
       const userData = getOidcUserFromCookie();
       setData(userData);
       setIsValidating(false);
-    }, 60000); // Check every minute
+    }, OIDC_COOKIE_POLL_INTERVAL);
 
     return () => clearInterval(intervalId);
   }, [enabled]);
