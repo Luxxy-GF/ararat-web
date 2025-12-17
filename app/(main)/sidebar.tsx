@@ -201,6 +201,7 @@ function NavMain({
 }) {
   const pathname = usePathname();
   const { state } = useSidebar();
+  const { isMobile } = useSidebar();
 
   return (
     <SidebarGroup>
@@ -209,7 +210,7 @@ function NavMain({
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               {item.subItems ? (
-                state === 'collapsed' ? (
+                state === 'collapsed' && !isMobile ? (
                   <DropdownMenu>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -225,7 +226,11 @@ function NavMain({
                         {item.title}
                       </TooltipContent>
                     </Tooltip>
-                    <DropdownMenuContent side="right" align="start" sideOffset={20}>
+                    <DropdownMenuContent
+                      side="right"
+                      align="start"
+                      sideOffset={20}
+                    >
                       <DropdownMenuLabel>{item.title}</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       {item.subItems.map((subItem) => (
@@ -253,7 +258,10 @@ function NavMain({
                         <SidebarMenuSub key={subItem.title}>
                           <SidebarMenuSubItem>
                             <SidebarMenuSubButton asChild>
-                              <Link href={subItem.url} aria-label={subItem.title}>
+                              <Link
+                                href={subItem.url}
+                                aria-label={subItem.title}
+                              >
                                 <span>{subItem.title}</span>
                               </Link>
                             </SidebarMenuSubButton>
@@ -396,14 +404,16 @@ function NavUser() {
                   )}
                 </Avatar>
                 <div
-                  className={`grid flex-1 text-left text-sm leading-tight ${authIsValidating ? 'animate-pulse' : ''
-                    }`}
+                  className={`grid flex-1 text-left text-sm leading-tight ${
+                    authIsValidating ? 'animate-pulse' : ''
+                  }`}
                 >
                   {authData?.method == 'tls' ? (
                     <>
                       <span
-                        className={`truncate font-medium ${userIsValidating ? 'animate-pulse' : ''
-                          }`}
+                        className={`truncate font-medium ${
+                          userIsValidating ? 'animate-pulse' : ''
+                        }`}
                       >
                         {userData?.name}
                       </span>
