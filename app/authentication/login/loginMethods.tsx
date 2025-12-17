@@ -63,11 +63,14 @@ export default function LoginMethodsComponent() {
             // Manual selection uses push() to allow users to return to this page
             onClick: () => {
               setAuthenticating(true);
-              if (method === "tls") {
-                router.push("/authentication/login/tls");
-              } else if (method === "oidc") {
-                router.push("/authentication/login/oidc");
-              }
+              // Defer navigation to next tick to ensure loading state is visible
+              setTimeout(() => {
+                if (method === "tls") {
+                  router.push("/authentication/login/tls");
+                } else if (method === "oidc") {
+                  router.push("/authentication/login/oidc");
+                }
+              }, 1);
             },
             loading: authenticating,
           };

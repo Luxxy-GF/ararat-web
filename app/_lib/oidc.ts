@@ -51,8 +51,16 @@ function getCookie(name: string): string | null {
   const parts = value.split(`; ${name}=`);
 
   if (parts.length === 2) {
-    const cookieValue = parts.pop()?.split(";").shift();
-    return cookieValue || null;
+    const rawCookieValue = parts.pop()?.split(";").shift();
+    if (!rawCookieValue) {
+      return null;
+    }
+    try {
+      return decodeURIComponent(rawCookieValue);
+    } catch (e) {
+      console.error("Failed to decode cookie:", name, e);
+      return null;
+    }
   }
 
   return null;
@@ -94,8 +102,14 @@ export function getOidcUserFromCookie(): OidcUserData | null {
  * Attempt to refresh the OIDC session/token via server endpoint.
  */
 export async function refreshOidcSession(): Promise<void> {
-  await fetch("/oidc/refresh", {
+  const response = await fetch("/oidc/refresh", {
     method: "GET",
     credentials: "same-origin",
   });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to refresh OIDC session: ${response.status} ${response.statusText}`
+    );
+  }
 }

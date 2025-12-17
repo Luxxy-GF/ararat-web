@@ -65,7 +65,7 @@ export function useOidcUser(enabled: boolean = true) {
     }, OIDC_COOKIE_POLL_INTERVAL);
 
     return () => clearInterval(intervalId);
-  }, [enabled, isRefreshing]);
+  }, [enabled]);
 
   return {
     data,

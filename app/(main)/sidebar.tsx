@@ -9,6 +9,7 @@ import {
   IconSettings,
   type Icon,
 } from "@tabler/icons-react";
+import { getAvatarInitials } from "@/app/_lib/avatarUtils";
 
 import {
   Sidebar as RawSidebar,
@@ -305,7 +306,7 @@ function NavUser() {
         <DropdownMenu>
           <DropdownMenuTrigger
             asChild
-            disabled={authIsLoading ? true : authData?.method === "tls"}
+            disabled={authIsLoading || authData?.method === "tls"}
           >
             <SidebarMenuButton
               size="lg"
@@ -320,20 +321,9 @@ function NavUser() {
                         alt={userData?.name || "user"}
                       />
                       <AvatarFallback className="rounded-lg">
-                        {(() => {
-                          const source =
-                            (userData?.name && userData.name.trim()) ||
-                            (authData?.identifier && authData.identifier.trim()) ||
-                            "User";
-                          const parts = source.split(/\s+/).filter(Boolean);
-                          if (parts.length === 0) return "U";
-                          const initials = parts
-                            .map((part) => (part && part[0]) || "")
-                            .join("")
-                            .slice(0, 2)
-                            .toUpperCase();
-                          return initials || "U";
-                        })()}
+                        {getAvatarInitials(
+                          userData?.name || authData?.identifier
+                        )}
                       </AvatarFallback>
                     </>
                   ) : (
@@ -358,8 +348,8 @@ function NavUser() {
                 <span className="text-muted-foreground truncate text-xs">
                   {!authIsLoading
                     ? authData?.method === "oidc"
-                      ? authData?.identifier
-                      : ""
+                      ? userData?.email || authData?.identifier || ""
+                      : authData?.identifier || ""
                     : ""}
                 </span>
               </div>
@@ -386,20 +376,9 @@ function NavUser() {
                         alt={userData?.name || "user"}
                       />
                       <AvatarFallback className="rounded-lg">
-                        {(() => {
-                          const source =
-                            (userData?.name && userData.name.trim()) ||
-                            userData?.email ||
-                            "User";
-                          const parts = source.split(/\s+/).filter(Boolean);
-                          if (parts.length === 0) return "U";
-                          const initials = parts
-                            .map((part) => (part && part[0]) || "")
-                            .join("")
-                            .slice(0, 2)
-                            .toUpperCase();
-                          return initials || "U";
-                        })()}
+                        {getAvatarInitials(
+                          userData?.name || userData?.email
+                        )}
                       </AvatarFallback>
                     </>
                   )}

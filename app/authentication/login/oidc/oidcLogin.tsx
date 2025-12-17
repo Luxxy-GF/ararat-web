@@ -18,12 +18,15 @@ export default function OidcLogin() {
 
   // Reset redirecting state if the user navigates back or redirect fails
   useEffect(() => {
-    if (isRedirecting) {
-      const timeout = setTimeout(() => {
-        setIsRedirecting(false);
-      }, 5000);
-      return () => clearTimeout(timeout);
+    if (!isRedirecting) {
+      return undefined;
     }
+
+    const timeout = setTimeout(() => {
+      setIsRedirecting(false);
+    }, 5000);
+
+    return () => clearTimeout(timeout);
   }, [isRedirecting]);
 
   function handleOidcLogin() {
