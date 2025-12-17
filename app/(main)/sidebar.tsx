@@ -200,8 +200,7 @@ function NavMain({
   }[];
 }) {
   const pathname = usePathname();
-  const { state } = useSidebar();
-  const { isMobile } = useSidebar();
+  const { state, isMobile } = useSidebar();
 
   return (
     <SidebarGroup>
