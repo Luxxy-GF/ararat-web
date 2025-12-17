@@ -276,6 +276,29 @@ function NavUser() {
     isValidating: userIsValidating,
     isLoading: userIsLoading,
   } = React.use(UserContext);
+
+  const handleLogout = React.useCallback(async () => {
+    if (authData?.method === "oidc") {
+      try {
+        // Call server-side logout to clear session without navigating away
+        await fetch("/oidc/logout", {
+          method: "GET",
+          credentials: "same-origin",
+        });
+      } catch (err) {
+        console.warn("OIDC logout request failed", err);
+      }
+
+      // Clear the client-side OIDC cookie regardless of server response
+      document.cookie = "oidc_id=; path=/; max-age=0";
+
+      window.location.href = "/ui/authentication/login";
+      return;
+    }
+
+    // For TLS, just return to login
+    window.location.href = "/ui/authentication/login";
+  }, [authData?.method]);
   return (
     <SidebarMenu className={authIsValidating ? "animate-pulse" : ""}>
       <SidebarMenuItem>
@@ -292,7 +315,10 @@ function NavUser() {
                 {!authIsLoading ? (
                   authData?.method == "oidc" ? (
                     <>
-                      <AvatarImage src={"user.avatar"} alt={"user.name"} />
+                      <AvatarImage
+                        src={userData?.picture || ""}
+                        alt={userData?.name || "user"}
+                      />
                       <AvatarFallback className="rounded-lg">JM</AvatarFallback>
                     </>
                   ) : (
@@ -312,18 +338,14 @@ function NavUser() {
                     userIsValidating ? "animate-pulse" : ""
                   }`}
                 >
-                  {!userIsLoading
-                    ? authData?.method == "tls"
-                      ? userData?.name
-                      : "First Last"
-                    : "ppp"}
+                  {!userIsLoading && userData?.name ? userData.name : ""}
                 </span>
                 <span className="text-muted-foreground truncate text-xs">
                   {!authIsLoading
-                    ? authData?.method == "tls"
-                      ? authData?.identifier?.slice(0, 12)
-                      : "email@hyecompany.com"
-                    : "Loading..."}
+                    ? authData?.method == "oidc"
+                      ? authData?.identifier
+                      : ""
+                    : ""}
                 </span>
               </div>
               {authData?.method == "oidc" ? (
@@ -344,7 +366,10 @@ function NavUser() {
                     <IconCertificate className="m-auto" />
                   ) : (
                     <>
-                      <AvatarImage src={"user.avatar"} alt={"user.name"} />
+                      <AvatarImage
+                        src={userData?.picture || ""}
+                        alt={userData?.name || "user"}
+                      />
                       <AvatarFallback className="rounded-lg">JM</AvatarFallback>
                     </>
                   )}
@@ -369,9 +394,11 @@ function NavUser() {
                     </>
                   ) : (
                     <>
-                      <span className="truncate font-medium">First Last</span>
+                      <span className="truncate font-medium">
+                        {userData?.name || "User"}
+                      </span>
                       <span className="text-muted-foreground truncate text-xs">
-                        {"user.email"}
+                        {userData?.email || ""}
                       </span>
                     </>
                   )}
@@ -381,7 +408,7 @@ function NavUser() {
             {authData?.method == "oidc" ? (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
                   <IconLogout />
                   Log out
                 </DropdownMenuItem>
