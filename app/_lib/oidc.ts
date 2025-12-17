@@ -59,30 +59,28 @@ function getCookie(name: string): string | null {
 }
 
 /**
+ * Read and decode the OIDC ID token cookie.
+ * Returns claims without applying expiry logic so callers can decide.
+ */
+export function getOidcClaimsFromCookie(): OidcIdTokenClaims | null {
+  const token = getCookie("oidc_id");
+  if (!token) return null;
+  return decodeJwt(token);
+}
+
+/**
  * Get OIDC user data from the oidc_id cookie
- * Returns null if cookie doesn't exist or cannot be decoded
+ * Returns null if cookie doesn't exist, cannot be decoded, or is expired
  */
 export function getOidcUserFromCookie(): OidcUserData | null {
-  const token = getCookie("oidc_id");
+  const claims = getOidcClaimsFromCookie();
+  if (!claims) return null;
 
-  if (!token) {
-    return null;
-  }
-
-  const claims = decodeJwt(token);
-
-  if (!claims) {
-    return null;
-  }
-
-  // Check if token is expired
   const now = Math.floor(Date.now() / 1000);
   if (claims.exp && claims.exp < now) {
-    console.warn("OIDC ID token is expired");
     return null;
   }
 
-  // Extract relevant user data from claims
   return {
     id: claims.sub,
     name: claims.name || claims.preferred_username || claims.email,
@@ -90,4 +88,14 @@ export function getOidcUserFromCookie(): OidcUserData | null {
     picture: claims.picture,
     preferred_username: claims.preferred_username,
   };
+}
+
+/**
+ * Attempt to refresh the OIDC session/token via server endpoint.
+ */
+export async function refreshOidcSession(): Promise<void> {
+  await fetch("/oidc/refresh", {
+    method: "GET",
+    credentials: "same-origin",
+  });
 }
