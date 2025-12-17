@@ -9,7 +9,6 @@ import {
   IconSettings,
   type Icon,
 } from "@tabler/icons-react";
-import { getAvatarInitials } from "@/app/_lib/avatarUtils";
 
 import {
   Sidebar as RawSidebar,
@@ -64,6 +63,23 @@ type NavMainItem = {
     url: string;
   }[];
 };
+
+function getAvatarInitials(source: string | undefined | null): string {
+  if (!source || !source.trim()) {
+    return "U";
+  }
+
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "U";
+
+  const initials = parts
+    .map((part) => (part && part[0]) || "")
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return initials || "U";
+}
 
 const data = {
   navMain: [
