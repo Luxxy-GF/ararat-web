@@ -60,6 +60,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from 'ui-web/components/avatar';
 import UserContext from './_context/user';
 import { Skeleton } from 'ui-web/components/skeleton';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from 'ui-web/components/tooltip';
 
 type NavMainItem = {
   title: string;
@@ -70,6 +75,23 @@ type NavMainItem = {
     url: string;
   }[];
 };
+
+function getAvatarInitials(source: string | undefined | null): string {
+  if (!source || !source.trim()) {
+    return "U";
+  }
+
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "U";
+
+  const initials = parts
+    .map((part) => (part && part[0]) || "")
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return initials || "U";
+}
 
 const data = {
   navMain: [
@@ -153,6 +175,15 @@ const data = {
 export default function Sidebar({
   ...props
 }: React.ComponentProps<typeof RawSidebar>) {
+  const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  React.useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  }, [pathname, isMobile, setOpenMobile]);
+
   return (
     <RawSidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -193,6 +224,8 @@ function NavMain({
   }[];
 }) {
   const pathname = usePathname();
+  const { state, isMobile } = useSidebar();
+
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
@@ -200,28 +233,67 @@ function NavMain({
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               {item.subItems ? (
-                <Collapsible className="group/collapsible">
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title}>
-                      {item.icon && <item.icon />}
-                      <span>{item.title}</span>
-                      <div className="[&>svg]:size-4 ml-auto">
-                        <ChevronDownIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180 " />
-                      </div>
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    {item.subItems.map((subItem) => (
-                      <SidebarMenuSub key={subItem.title}>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton>
+                state === 'collapsed' && !isMobile ? (
+                  <DropdownMenu>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                          <SidebarMenuButton>
+                            {item.icon && <item.icon />}
+                            <span>{item.title}</span>
+                            {/* ChevronDownIcon removed for collapsed state, as dropdown menu provides indicator */}
+                          </SidebarMenuButton>
+                        </DropdownMenuTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" align="center">
+                        {item.title}
+                      </TooltipContent>
+                    </Tooltip>
+                    <DropdownMenuContent
+                      side="right"
+                      align="start"
+                      sideOffset={20}
+                    >
+                      <DropdownMenuLabel>{item.title}</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {item.subItems.map((subItem) => (
+                        <DropdownMenuItem key={subItem.title} asChild>
+                          <Link href={subItem.url} aria-label={subItem.title}>
                             <span>{subItem.title}</span>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      </SidebarMenuSub>
-                    ))}
-                  </CollapsibleContent>
-                </Collapsible>
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Collapsible className="group/collapsible">
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton tooltip={item.title}>
+                        {item.icon && <item.icon />}
+                        <span>{item.title}</span>
+                        <div className="[&>svg]:size-4 ml-auto">
+                          <ChevronDownIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180 " />
+                        </div>
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      {item.subItems.map((subItem) => (
+                        <SidebarMenuSub key={subItem.title}>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild>
+                              <Link
+                                href={subItem.url}
+                                aria-label={subItem.title}
+                              >
+                                <span>{subItem.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                )
               ) : (
                 <Link href={item.url}>
                   <SidebarMenuButton
@@ -284,13 +356,38 @@ function NavUser() {
     isLoading: userIsLoading,
   } = React.use(UserContext);
   const { setTheme } = useTheme();
+
+  const handleLogout = React.useCallback(async () => {
+    if (authData?.method === "oidc") {
+      try {
+        // Call server-side logout to clear session without navigating away
+        await fetch("/oidc/logout", {
+          method: "GET",
+          credentials: "same-origin",
+        });
+      } catch (err) {
+        console.warn("OIDC logout request failed", err);
+      }
+
+      // Clear client-side OIDC cookies regardless of server response
+      document.cookie = "oidc_id=; path=/; max-age=0; Secure; SameSite=Lax";
+      document.cookie =
+        "oidc_refresh_token=; path=/; max-age=0; Secure; SameSite=Lax";
+
+      window.location.href = "/ui/authentication/login";
+      return;
+    }
+
+    // For TLS, just return to login
+    window.location.href = "/ui/authentication/login";
+  }, [authData]);
   return (
     <SidebarMenu className={authIsValidating ? 'animate-pulse' : ''}>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger
             asChild
-            disabled={authIsLoading}
+            disabled={authIsLoading || authData?.method === "tls"}
           >
             <SidebarMenuButton
               size="lg"
@@ -298,10 +395,17 @@ function NavUser() {
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
                 {!authIsLoading ? (
-                  authData?.method == 'oidc' ? (
+                  authData?.method === "oidc" ? (
                     <>
-                      <AvatarImage src={'user.avatar'} alt={'user.name'} />
-                      <AvatarFallback className="rounded-lg">JM</AvatarFallback>
+                      <AvatarImage
+                        src={userData?.picture || ""}
+                        alt={userData?.name || "user"}
+                      />
+                      <AvatarFallback className="rounded-lg">
+                        {getAvatarInitials(
+                          userData?.name || authData?.identifier
+                        )}
+                      </AvatarFallback>
                     </>
                   ) : (
                     <>
@@ -318,21 +422,17 @@ function NavUser() {
                 <span
                   className={`truncate font-medium ${userIsValidating ? 'animate-pulse' : ''}`}
                 >
-                  {!userIsLoading
-                    ? authData?.method == 'tls'
-                      ? userData?.name
-                      : 'First Last'
-                    : 'ppp'}
+                  {!userIsLoading && userData?.name ? userData.name : ""}
                 </span>
                 <span className="text-muted-foreground truncate text-xs">
                   {!authIsLoading
-                    ? authData?.method == 'tls'
-                      ? authData?.identifier?.slice(0, 12)
-                      : 'email@hyecompany.com'
-                    : 'Loading...'}
+                    ? authData?.method === "oidc"
+                      ? userData?.email || authData?.identifier || ""
+                      : authData?.identifier || ""
+                    : ""}
                 </span>
               </div>
-              {authData?.method == 'oidc' ? (
+              {authData?.method === "oidc" ? (
                 <IconDotsVertical className="ml-auto size-4" />
               ) : null}
             </SidebarMenuButton>
@@ -346,12 +446,19 @@ function NavUser() {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  {authData?.method == 'tls' ? (
+                  {authData?.method === "tls" ? (
                     <IconCertificate className="m-auto" />
                   ) : (
                     <>
-                      <AvatarImage src={'user.avatar'} alt={'user.name'} />
-                      <AvatarFallback className="rounded-lg">JM</AvatarFallback>
+                      <AvatarImage
+                        src={userData?.picture || ""}
+                        alt={userData?.name || "user"}
+                      />
+                      <AvatarFallback className="rounded-lg">
+                        {getAvatarInitials(
+                          userData?.name || userData?.email
+                        )}
+                      </AvatarFallback>
                     </>
                   )}
                 </Avatar>
@@ -359,7 +466,7 @@ function NavUser() {
                   className={`grid flex-1 text-left text-sm leading-tight ${authIsValidating ? 'animate-pulse' : ''
                     }`}
                 >
-                  {authData?.method == 'tls' ? (
+                  {authData?.method === "tls" ? (
                     <>
                       <span
                         className={`truncate font-medium ${userIsValidating ? 'animate-pulse' : ''
@@ -373,9 +480,11 @@ function NavUser() {
                     </>
                   ) : (
                     <>
-                      <span className="truncate font-medium">First Last</span>
+                      <span className="truncate font-medium">
+                        {userData?.name || "User"}
+                      </span>
                       <span className="text-muted-foreground truncate text-xs">
-                        {'user.email'}
+                        {userData?.email || ""}
                       </span>
                     </>
                   )}
@@ -406,7 +515,7 @@ function NavUser() {
             {authData?.method == 'oidc' ? (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
                   <IconLogout />
                   Log out
                 </DropdownMenuItem>

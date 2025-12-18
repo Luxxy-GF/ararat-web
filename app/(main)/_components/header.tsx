@@ -15,7 +15,7 @@ import {
 import { use } from 'react';
 import ProjectsContext from '@/app/(main)/_context/projects';
 
-export function SiteHeader() {
+export function SiteHeader({ children }: { children?: React.ReactNode }) {
   const { projects, currentProject, setProject, isLoading } =
     use(ProjectsContext);
   return (
@@ -27,7 +27,7 @@ export function SiteHeader() {
           className="mx-2 data-[orientation=vertical]:h-4"
         />
 
-        <h1 className="text-base font-medium">Instances</h1>
+        {children}
         <Select
           value={currentProject}
           onValueChange={setProject}
@@ -48,10 +48,10 @@ export function SiteHeader() {
               <SelectLabel>Projects</SelectLabel>
               {!isLoading
                 ? projects.map((project) => (
-                    <SelectItem key={project.name} value={project.name}>
-                      {project.name}
-                    </SelectItem>
-                  ))
+                  <SelectItem key={project.name} value={project.name}>
+                    {project.name}
+                  </SelectItem>
+                ))
                 : null}
             </SelectGroup>
           </SelectContent>
