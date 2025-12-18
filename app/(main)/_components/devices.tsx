@@ -54,7 +54,6 @@ import type { Device } from '@/app/(main)/instances/_lib/instances.d';
 import type { ConfigOption } from '@/app/_lib/server.d';
 import { useResources } from '@/app/(main)/_hooks/resources';
 import { VerticalTabsLayout } from '@/app/_components/layout/vertical-tabs-layout';
-import { useMobile } from 'ui-web/hooks/use-mobile';
 
 // Utility function to validate port specifications (Issue 3)
 function validatePort(portSpec: string): boolean {
