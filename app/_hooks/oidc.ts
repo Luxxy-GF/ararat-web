@@ -12,6 +12,10 @@ import {
 const OIDC_REFRESH_SKEW_MS = 120_000; // 2 minutes early
 // Fallback periodic check when we don't have exp (milliseconds)
 const OIDC_FALLBACK_POLL_MS = 60_000; // 1 minute
+// Minimum delay between refresh attempts (milliseconds)
+const OIDC_MIN_REFRESH_INTERVAL_MS = 10_000; // avoid zero-delay thrash
+// Backoff when refresh fails (milliseconds)
+const OIDC_REFRESH_FAILURE_BACKOFF_MS = 60_000; // 1 minute cooldown after errors
 // Small random jitter to avoid cross-tab stampedes (milliseconds)
 const OIDC_JITTER_MS = 15_000; // up to 15s scatter
 // Cross-tab refresh lock
@@ -31,6 +35,8 @@ export function useOidcUser(enabled: boolean = true) {
   const isMountedRef = useRef(true);
   const isRefreshingRef = useRef(false);
   const inFlightRefreshRef = useRef<Promise<void> | null>(null);
+  const refreshBackoffMsRef = useRef<number>(0);
+  const refreshDisabledRef = useRef<boolean>(false);
   const timerIdRef = useRef<number | null>(null);
   const prevUserJSONRef = useRef<string | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
@@ -173,12 +179,18 @@ export function useOidcUser(enabled: boolean = true) {
       const promise = (async () => {
         try {
           await refreshOidcSession();
+          refreshBackoffMsRef.current = 0;
           // Notify other tabs
           try {
             channelRef.current?.postMessage("refreshed");
           } catch {}
         } catch (err) {
           console.warn("OIDC refresh failed", err);
+          refreshBackoffMsRef.current = OIDC_REFRESH_FAILURE_BACKOFF_MS;
+          const status = (err as { status?: number })?.status;
+          if (status === 404) {
+            refreshDisabledRef.current = true;
+          }
         } finally {
           releaseCrossTabLock();
           isRefreshingRef.current = false;
@@ -197,45 +209,54 @@ export function useOidcUser(enabled: boolean = true) {
       const nowMs = Date.now();
       const expMs = claims?.exp ? claims.exp * 1000 : undefined;
 
-      if (!expMs) {
-        // Unknown expiry; do a fallback periodic check
-        timerIdRef.current = window.setTimeout(async () => {
-          await maybeRefresh();
-          scheduleNext();
-        }, OIDC_FALLBACK_POLL_MS);
-        return;
-      }
+      const delayMs = (() => {
+        if (refreshDisabledRef.current) {
+          return OIDC_FALLBACK_POLL_MS;
+        }
+        if (refreshBackoffMsRef.current) {
+          return refreshBackoffMsRef.current;
+        }
+        if (!expMs) {
+          // Unknown expiry; do a fallback periodic check
+          return OIDC_FALLBACK_POLL_MS;
+        }
 
-      // Refresh slightly before expiry, add jitter to spread load
-      const jitter = Math.floor(Math.random() * OIDC_JITTER_MS);
-      const targetMs = Math.max(
-        0,
-        expMs - nowMs - OIDC_REFRESH_SKEW_MS + jitter
-      );
+        // Refresh slightly before expiry, add jitter to spread load
+        const jitter = Math.floor(Math.random() * OIDC_JITTER_MS);
+        const targetMs = expMs - nowMs - OIDC_REFRESH_SKEW_MS + jitter;
+        return Math.max(OIDC_MIN_REFRESH_INTERVAL_MS, targetMs);
+      })();
 
       timerIdRef.current = window.setTimeout(async () => {
         await maybeRefresh();
         scheduleNext();
-      }, targetMs);
+      }, delayMs);
+
+      // Reset backoff after scheduling so the next cycle uses the calculated delay
+      refreshBackoffMsRef.current = 0;
     }
 
     async function maybeRefresh() {
       const claims = getOidcClaimsFromCookie();
       const nowSec = Math.floor(Date.now() / 1000);
       const expiresIn = claims?.exp ? claims.exp - nowSec : undefined;
-
-      // Refresh if missing token, expired, or inside skew window
-      if (
+      const shouldRefresh =
         !claims ||
         expiresIn === undefined ||
-        expiresIn <= Math.ceil(OIDC_REFRESH_SKEW_MS / 1000)
-      ) {
+        expiresIn <= Math.ceil(OIDC_REFRESH_SKEW_MS / 1000);
+
+      // Refresh if missing token, expired, or inside skew window
+      if (shouldRefresh && !refreshDisabledRef.current) {
         await refreshDeduped();
         // After refresh, re-read user data
         readAndUpdateUser();
-      } else {
-        // Still valid; ensure user state is current without forcing validation
-        readAndUpdateUser();
+        return;
+      }
+
+      // Either still valid or refresh is disabled; ensure we reflect latest cookie state
+      readAndUpdateUser();
+      if (isMountedRef.current) {
+        setIsValidating(false);
       }
     }
 
