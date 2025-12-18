@@ -141,9 +141,30 @@ async function getOidcDiscoveryMetadata(
  * 3. Attempts to exchange the refresh token for a new ID token
  * 4. Updates the oidc_id cookie with the new token
  *
- * Note: Client credentials (client_id, client_secret) cannot be safely stored on the client.
- * This implementation assumes a public OIDC client configuration or that the OIDC provider
- * allows refresh token exchange without client credentials.
+ * Security and compatibility notes:
+ * - This code runs in the browser ("use client") and therefore does not send any client
+ *   credentials (client_id/client_secret) to the token endpoint.
+ * - It assumes a public OIDC client configuration and that the OIDC provider explicitly
+ *   allows refresh token exchange from such a client without client authentication.
+ * - Many OIDC providers require confidential clients and will reject refresh requests that
+ *   do not include client credentials or an approved client authentication method. In those
+ *   cases, calls to this function will typically fail with HTTP 400/401/403 responses from
+ *   the token endpoint (for example: "unauthorized_client", "invalid_client",
+ *   "invalid_grant", or similar errors).
+ *
+ * Guidance:
+ * - Only use this helper if your OIDC provider supports browser-based/public clients with
+ *   refresh tokens that can be exchanged without client secrets (often together with PKCE
+ *   and/or DPoP).
+ * - If your provider requires client authentication at the token endpoint, implement the
+ *   refresh flow on a trusted backend that holds the client credentials instead, and expose
+ *   a secure endpoint that the client can call to refresh its session.
+ * - If you see repeated refresh failures from this function, review your OIDC client
+ *   configuration and provider documentation; it may be necessary to disable client-side
+ *   refresh and rely solely on server-side session management.
+ *
+ * Note: Client credentials (client_id, client_secret) cannot be safely stored on the client,
+ * so this helper intentionally does not use them.
  */
 export async function refreshOidcSession(): Promise<void> {
   const claims = getOidcClaimsFromCookie();
