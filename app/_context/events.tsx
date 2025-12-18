@@ -84,7 +84,7 @@ export function EventEmitterProvider({
         setIsConnected(false);
         wsRef.current = null;
 
-        // Reconnect after 3 seconds with exponential backoff
+        // Reconnect with exponential backoff starting from the initial delay
         const reconnectDelay = Math.min(
           INITIAL_RECONNECT_DELAY_MS * Math.pow(2, reconnectAttempts),
           MAX_RECONNECT_DELAY_MS,

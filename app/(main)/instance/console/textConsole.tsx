@@ -59,7 +59,7 @@ const LIGHT_THEME = {
 };
 
 export default function InstanceTextConsole() {
-  const { instanceClass: instance, isLoading } = use(InstanceContext);
+  const { instanceClass, isLoading } = use(InstanceContext);
   const terminalRef = useRef<HTMLDivElement | null>(null);
 
   // Stable refs that persist across strict mode double renders
@@ -188,12 +188,12 @@ export default function InstanceTextConsole() {
 
   // Open sockets once when instance is ready
   useEffect(() => {
-    if (isLoading || !instance) return;
+    if (isLoading || !instanceClass) return;
 
     const token = ++instanceTokenRef.current;
 
     // If instance name changed, reset
-    if (connectedNameRef.current !== instance.name) {
+    if (connectedNameRef.current !== instanceClass.name) {
       initializedRef.current = false;
       try {
         dataSocketRef.current?.close();
@@ -205,7 +205,7 @@ export default function InstanceTextConsole() {
       } catch (err) {
         logError(err, 'close control socket on name change');
       }
-      connectedNameRef.current = instance.name;
+      connectedNameRef.current = instanceClass.name;
     }
 
     if (initializedRef.current) return;
@@ -214,22 +214,23 @@ export default function InstanceTextConsole() {
     (async () => {
       // Preload previous log before attaching
       try {
-        const prelog = await instance.getConsoleOutput();
+        const previousOutput = await instanceClass.getConsoleOutput();
         if (token !== instanceTokenRef.current) return;
-        if (prelog && termRef.current) {
-          termRef.current.write(prelog);
+        if (previousOutput && termRef.current) {
+          termRef.current.write(previousOutput);
         }
       } catch (err) {
-        // Surface error inline in terminal area
+        // Surface error inline in terminal area with basic guidance
         if (termRef.current) {
           termRef.current.write(
-            `\r\n[console] Failed to load previous log.\r\n`,
+            `\r\n[console] Unable to load previous console output for this instance.\r\n` +
+              `[console] Live logs may still appear below. If the problem persists, try reconnecting to the instance or refreshing the page.\r\n`,
           );
         }
         logError(err, 'getConsoleOutput');
       }
 
-      const { data, control } = await instance.openConsoleSocket('console', {
+      const { data, control } = await instanceClass.openConsoleSocket('console', {
         width: termRef.current?.cols,
         height: termRef.current?.rows,
       });
@@ -291,7 +292,9 @@ export default function InstanceTextConsole() {
     };
     // Initial fit and next-tick retry
     fitIfReady();
-    setTimeout(fitIfReady, 0);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(fitIfReady);
+    });
 
     // Window resize handler only (avoids ResizeObserver feedback loop)
     const handleResize = () => {
