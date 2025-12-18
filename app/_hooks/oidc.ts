@@ -227,7 +227,13 @@ export function useOidcUser(enabled: boolean = true) {
       })();
 
       timerIdRef.current = window.setTimeout(async () => {
+        if (!isMountedRef.current) {
+          return;
+        }
         await maybeRefresh();
+        if (!isMountedRef.current) {
+          return;
+        }
         scheduleNext();
       }, delayMs);
 
