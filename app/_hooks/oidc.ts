@@ -41,8 +41,8 @@ export function useOidcUser(enabled: boolean = true) {
   const prevUserJSONRef = useRef<string | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
   const tabIdRef = useRef<string>(
-    (typeof crypto !== "undefined" && (crypto as any).randomUUID)
-      ? (crypto as any).randomUUID()
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
       : `${Math.random().toString(36).slice(2)}-${Date.now()}`
   );
 
@@ -152,7 +152,6 @@ export function useOidcUser(enabled: boolean = true) {
           done();
         }, timeoutMs);
         // Safety: clear timer on resolve to avoid leaks
-        const originalDone = done;
       });
     }
 
