@@ -69,6 +69,23 @@ type NavMainItem = {
   }[];
 };
 
+function getAvatarInitials(source: string | undefined | null): string {
+  if (!source || !source.trim()) {
+    return "U";
+  }
+
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "U";
+
+  const initials = parts
+    .map((part) => (part && part[0]) || "")
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return initials || "U";
+}
+
 const data = {
   navMain: [
     {
@@ -331,13 +348,38 @@ function NavUser() {
     isValidating: userIsValidating,
     isLoading: userIsLoading,
   } = React.use(UserContext);
+
+  const handleLogout = React.useCallback(async () => {
+    if (authData?.method === "oidc") {
+      try {
+        // Call server-side logout to clear session without navigating away
+        await fetch("/oidc/logout", {
+          method: "GET",
+          credentials: "same-origin",
+        });
+      } catch (err) {
+        console.warn("OIDC logout request failed", err);
+      }
+
+      // Clear client-side OIDC cookies regardless of server response
+      document.cookie = "oidc_id=; path=/; max-age=0; Secure; SameSite=Lax";
+      document.cookie =
+        "oidc_refresh_token=; path=/; max-age=0; Secure; SameSite=Lax";
+
+      window.location.href = "/ui/authentication/login";
+      return;
+    }
+
+    // For TLS, just return to login
+    window.location.href = "/ui/authentication/login";
+  }, [authData]);
   return (
     <SidebarMenu className={authIsValidating ? 'animate-pulse' : ''}>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger
             asChild
-            disabled={authIsLoading ? true : authData?.method == 'tls'}
+            disabled={authIsLoading || authData?.method === "tls"}
           >
             <SidebarMenuButton
               size="lg"
@@ -345,10 +387,17 @@ function NavUser() {
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
                 {!authIsLoading ? (
-                  authData?.method == 'oidc' ? (
+                  authData?.method === "oidc" ? (
                     <>
-                      <AvatarImage src={'user.avatar'} alt={'user.name'} />
-                      <AvatarFallback className="rounded-lg">JM</AvatarFallback>
+                      <AvatarImage
+                        src={userData?.picture || ""}
+                        alt={userData?.name || "user"}
+                      />
+                      <AvatarFallback className="rounded-lg">
+                        {getAvatarInitials(
+                          userData?.name || authData?.identifier
+                        )}
+                      </AvatarFallback>
                     </>
                   ) : (
                     <>
@@ -365,21 +414,17 @@ function NavUser() {
                 <span
                   className={`truncate font-medium ${userIsValidating ? 'animate-pulse' : ''}`}
                 >
-                  {!userIsLoading
-                    ? authData?.method == 'tls'
-                      ? userData?.name
-                      : 'First Last'
-                    : 'ppp'}
+                  {!userIsLoading && userData?.name ? userData.name : ""}
                 </span>
                 <span className="text-muted-foreground truncate text-xs">
                   {!authIsLoading
-                    ? authData?.method == 'tls'
-                      ? authData?.identifier?.slice(0, 12)
-                      : 'email@hyecompany.com'
-                    : 'Loading...'}
+                    ? authData?.method === "oidc"
+                      ? userData?.email || authData?.identifier || ""
+                      : authData?.identifier || ""
+                    : ""}
                 </span>
               </div>
-              {authData?.method == 'oidc' ? (
+              {authData?.method === "oidc" ? (
                 <IconDotsVertical className="ml-auto size-4" />
               ) : null}
             </SidebarMenuButton>
@@ -393,12 +438,19 @@ function NavUser() {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  {authData?.method == 'tls' ? (
+                  {authData?.method === "tls" ? (
                     <IconCertificate className="m-auto" />
                   ) : (
                     <>
-                      <AvatarImage src={'user.avatar'} alt={'user.name'} />
-                      <AvatarFallback className="rounded-lg">JM</AvatarFallback>
+                      <AvatarImage
+                        src={userData?.picture || ""}
+                        alt={userData?.name || "user"}
+                      />
+                      <AvatarFallback className="rounded-lg">
+                        {getAvatarInitials(
+                          userData?.name || userData?.email
+                        )}
+                      </AvatarFallback>
                     </>
                   )}
                 </Avatar>
@@ -407,7 +459,7 @@ function NavUser() {
                     authIsValidating ? 'animate-pulse' : ''
                   }`}
                 >
-                  {authData?.method == 'tls' ? (
+                  {authData?.method === "tls" ? (
                     <>
                       <span
                         className={`truncate font-medium ${
@@ -422,19 +474,21 @@ function NavUser() {
                     </>
                   ) : (
                     <>
-                      <span className="truncate font-medium">First Last</span>
+                      <span className="truncate font-medium">
+                        {userData?.name || "User"}
+                      </span>
                       <span className="text-muted-foreground truncate text-xs">
-                        {'user.email'}
+                        {userData?.email || ""}
                       </span>
                     </>
                   )}
                 </div>
               </div>
             </DropdownMenuLabel>
-            {authData?.method == 'oidc' ? (
+            {authData?.method === "oidc" ? (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
                   <IconLogout />
                   Log out
                 </DropdownMenuItem>
