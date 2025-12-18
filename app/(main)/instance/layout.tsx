@@ -21,7 +21,6 @@ import {
   Settings,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from 'ui-web/components/tabs';
-import { ScrollArea } from 'ui-web/components/scroll-area';
 import { OSLogo } from '@/app/_components/OSLogo';
 import { getBaseImage } from './_lib/utils';
 import { performInstanceAction, type InstanceAction } from './_lib/instance';
@@ -235,8 +234,8 @@ function InstanceTabs() {
 
   return (
     <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-      <ScrollArea className="flex">
-        <TabsList className="w-auto grow">
+      <div className="w-full overflow-x-auto">
+        <TabsList className="min-w-full inline-flex">
           {TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               <tab.icon className="mr-2 h-4 w-4" />
@@ -244,7 +243,7 @@ function InstanceTabs() {
             </TabsTrigger>
           ))}
         </TabsList>
-      </ScrollArea>
+      </div>
     </Tabs>
   );
 }
