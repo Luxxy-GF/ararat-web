@@ -141,7 +141,7 @@ export function useOidcUser(enabled: boolean = true) {
         try {
           channelRef.current?.addEventListener("message", onMessage as any);
         } catch {}
-        const to = window.setTimeout(() => {
+        window.setTimeout(() => {
           try { channelRef.current?.removeEventListener("message", onMessage as any); } catch {}
           done();
         }, timeoutMs);
