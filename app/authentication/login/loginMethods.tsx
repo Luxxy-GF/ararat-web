@@ -22,6 +22,22 @@ export default function LoginMethodsComponent() {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Refs for checking timeouts to prevent memory leaks if component unmounts
+  const autoRedirectTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const clickTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (autoRedirectTimerRef.current) {
+        clearTimeout(autoRedirectTimerRef.current);
+      }
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+      }
+    };
+  }, []);
+
   // Reset authenticating state if the user navigates back
   useEffect(() => {
     if (authenticating) {
@@ -43,18 +59,28 @@ export default function LoginMethodsComponent() {
         if (data.auth_methods[0] === "tls") {
           console.log("Redirecting to TLS auth");
           // Defer navigation to next tick to ensure loading state is visible
-          setTimeout(() => {
+          // Clear any existing timer first
+          if (autoRedirectTimerRef.current) clearTimeout(autoRedirectTimerRef.current);
+          autoRedirectTimerRef.current = setTimeout(() => {
             router.replace("/authentication/login/tls");
           }, 1);
         } else if (data.auth_methods[0] === "oidc") {
           console.log("Redirecting to OIDC auth");
           // Defer navigation to next tick to ensure loading state is visible
-          setTimeout(() => {
+          // Clear any existing timer first
+          if (autoRedirectTimerRef.current) clearTimeout(autoRedirectTimerRef.current);
+          autoRedirectTimerRef.current = setTimeout(() => {
             router.replace("/authentication/login/oidc");
           }, 1);
         }
       }
     }
+    // Cleanup timer on effect re-run
+    return () => {
+      if (autoRedirectTimerRef.current) {
+        clearTimeout(autoRedirectTimerRef.current);
+      }
+    };
   }, [data, isValidating, router]);
 
   // Reset loading state if user navigates back to this page (e.g., after a failed navigation)
@@ -70,7 +96,8 @@ export default function LoginMethodsComponent() {
             onClick: () => {
               setAuthenticating(true);
               // Defer navigation to next tick to ensure loading state is visible
-              setTimeout(() => {
+              if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
+              clickTimerRef.current = setTimeout(() => {
                 if (method === "tls") {
                   router.push("/authentication/login/tls");
                 } else if (method === "oidc") {
