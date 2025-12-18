@@ -146,7 +146,6 @@ export function useOidcUser(enabled: boolean = true) {
           done();
         }, timeoutMs);
         // Safety: clear timer on resolve to avoid leaks
-        const originalDone = done;
       });
     }
 
