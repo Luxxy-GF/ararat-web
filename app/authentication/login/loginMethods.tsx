@@ -2,7 +2,7 @@
 import { Button } from "@/app/_components/ui/button";
 import { Skeleton } from "@/app/_components/ui/skeleton";
 import { useServerConfiguration } from "@/app/_hooks/server";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import React, { startTransition, useEffect } from "react";
 
 // Timeout duration for resetting authenticating state (in milliseconds)
@@ -20,6 +20,7 @@ export default function LoginMethodsComponent() {
   const { isLoading, data, isValidating } = useServerConfiguration();
   const [authenticating, setAuthenticating] = React.useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   // Reset authenticating state if the user navigates back
   useEffect(() => {
@@ -55,6 +56,11 @@ export default function LoginMethodsComponent() {
       }
     }
   }, [data, isValidating, router]);
+
+  // Reset loading state if user navigates back to this page (e.g., after a failed navigation)
+  useEffect(() => {
+    setAuthenticating(false);
+  }, [pathname]);
   return (
     <div className="flex flex-wrap gap-2">
       {!isLoading ? (
