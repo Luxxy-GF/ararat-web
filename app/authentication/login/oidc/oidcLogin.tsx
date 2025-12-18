@@ -33,7 +33,7 @@ export default function OidcLogin() {
     setIsRedirecting(true);
     // Redirect to the Incus OIDC login endpoint
     // The server will handle the OIDC flow and redirect back
-    // This shoule NOT use the absolute URL.
+    // This should NOT use the absolute URL.
     window.location.href = OIDC_LOGIN_ENDPOINT;
   }
 
