@@ -26,10 +26,8 @@ export default function DashboardLayout({
           <>
             <div className="w-full h-full">
               <div className="flex flex-1 flex-col">
-                <SiteHeader />
-
                 <div className="@container/main flex flex-1 flex-col gap-2">
-                  <div className="p-4  lg:px-6">{children}</div>
+                  {children}
                 </div>
               </div>
             </div>
@@ -37,8 +35,7 @@ export default function DashboardLayout({
         ) : (
           <SidebarInset>
             <ProjectsProvider>
-              <SiteHeader />
-              <div className="p-4  lg:px-6">{children}</div>
+              {children}
             </ProjectsProvider>
           </SidebarInset>
         )}
