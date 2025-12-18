@@ -238,7 +238,7 @@ function InstanceTabs() {
         <TabsList className="min-w-full inline-flex">
           {TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
-              <tab.icon className="mr-2 h-4 w-4" />
+              <tab.icon aria-hidden="true" className="mr-2 h-4 w-4" />
               {tab.label}
             </TabsTrigger>
           ))}
