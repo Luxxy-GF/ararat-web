@@ -651,22 +651,25 @@ function AddDeviceForm({
     return selectedPool?.driver === 'ceph';
   }, [properties.pool, storagePools]);
 
+  // Memoize the selected network lookup to minimize recalculations
+  const selectedNetwork = React.useMemo(() => {
+    if (properties.network && networks) {
+      return networks.find((n) => n.name === properties.network) || null;
+    }
+    return null;
+  }, [properties.network, networks]);
+
   // Get the actual device config key for networks and GPUs
   const deviceConfigKey = React.useMemo(() => {
     if (isNetworkDevice) {
       // If network is set, infer type from the network
-      if (properties.network && networks) {
-        const selectedNetwork = networks.find(
-          (n) => n.name === properties.network,
-        );
-        if (selectedNetwork) {
-          // Map network type to nictype (bridge -> bridged, others stay the same)
-          const nictype =
-            selectedNetwork.type === 'bridge'
-              ? 'bridged'
-              : selectedNetwork.type;
-          return `nic_${nictype}`;
-        }
+      if (selectedNetwork) {
+        // Map network type to nictype (bridge -> bridged, others stay the same)
+        const nictype =
+          selectedNetwork.type === 'bridge'
+            ? 'bridged'
+            : selectedNetwork.type;
+        return `nic_${nictype}`;
       }
 
       // If nictype is set, use that
@@ -689,10 +692,9 @@ function AddDeviceForm({
     deviceType,
     isNetworkDevice,
     isGPUDevice,
-    properties.network,
+    selectedNetwork,
     properties.nictype,
     properties.gputype,
-    networks,
   ]);
 
   // Get configurable options for dynamic network/GPU device config
@@ -845,6 +847,26 @@ function AddDeviceForm({
     fields: Array<{ key: string; config: ConfigOption }>;
   };
 
+  // Memoize the sortCategories function to avoid recreating it on every render.
+  const sortCategories = React.useCallback((
+    map: Map<string, Array<{ key: string; config: ConfigOption }>>,
+  ) => {
+    return Array.from(map.entries())
+      .sort(([a], [b]) =>
+        a === 'General' ? -1 : b === 'General' ? 1 : a.localeCompare(b),
+      )
+      .map(([name, fields]) => ({
+        name,
+        // Store fields with their data; visibility will be checked by shouldShowField
+        fields: fields.sort((a, b) => {
+          // For source category, ensure pool appears first if present
+          if (a.config.fullKey === 'pool') return -1;
+          if (b.config.fullKey === 'pool') return 1;
+          return a.key.localeCompare(b.key);
+        }),
+      }));
+  }, []);
+
   const { requiredCategories, optionalCategories } = React.useMemo(() => {
     if (!effectiveDeviceConfig?.keys)
       return { requiredCategories: [], optionalCategories: [] };
@@ -898,30 +920,13 @@ function AddDeviceForm({
       });
     });
 
-    const sortCategories = (
-      map: Map<string, Array<{ key: string; config: ConfigOption }>>,
-    ) => {
-      return Array.from(map.entries())
-        .sort(([a], [b]) =>
-          a === 'General' ? -1 : b === 'General' ? 1 : a.localeCompare(b),
-        )
-        .map(([name, fields]) => ({
-          name,
-          // Store fields with their data; visibility will be checked by shouldShowField
-          fields: fields.sort((a, b) => {
-            // For source category, ensure pool appears first if present
-            if (a.config.fullKey === 'pool') return -1;
-            if (b.config.fullKey === 'pool') return 1;
-            return a.key.localeCompare(b.key);
-          }),
-        }));
-    };
+    // Moved sortCategories to useCallback above, to improve performance.
 
     return {
       requiredCategories: sortCategories(requiredMap),
       optionalCategories: sortCategories(optionalMap),
     };
-  }, [effectiveDeviceConfig, isRoot, deviceType, isCephPool]);
+  }, [effectiveDeviceConfig, isRoot, deviceType, isCephPool, sortCategories]);
 
   const formatLabel = (key: string) => {
     return key

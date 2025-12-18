@@ -151,7 +151,7 @@ function InstanceHeader({
   onMutate,
 }: {
   instance: Instance;
-  onMutate: () => Promise<any>;
+  onMutate: () => Promise<void>;
 }) {
   const [actionInFlight, setActionInFlight] =
     React.useState<InstanceAction | null>(null);
@@ -165,7 +165,7 @@ function InstanceHeader({
       await onMutate();
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Unable to update instance.';
+        err instanceof Error ? err.message : `Unable to ${action} instance.`;
       setActionError(message);
     } finally {
       setActionInFlight(null);
@@ -186,6 +186,7 @@ function InstanceHeader({
     availableActions.push('start');
   }
 
+  const isUnknownStatus = !isRunning && !isStopped && !isFrozen;
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
@@ -199,7 +200,7 @@ function InstanceHeader({
               <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500"></span>
             </span>
           )}
-          {!isRunning && !isStopped && !isFrozen && (
+          {isUnknownStatus && (
             <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
               <span className="relative inline-flex rounded-full h-4 w-4 bg-gray-400"></span>
             </span>
@@ -270,10 +271,16 @@ function InstanceTabs() {
   // /instance -> dashboard
   // /instance/backups -> backups
   // etc.
-  const currentTab =
-    pathname === '/instance'
-      ? 'dashboard'
-      : pathname.split('/').pop() || 'dashboard';
+  // More robust logic: extract tab from pathname, supporting only known tabs.
+  let currentTab = 'dashboard';
+  if (pathname.startsWith('/instance/')) {
+    // Take the segment after /instance/
+    const segment = pathname.replace(/^\/instance\/?/, '').split('/')[0];
+    // Match only known TABS by value
+    if (TABS.some((tab) => tab.value === segment)) {
+      currentTab = segment;
+    }
+  }
 
   const handleTabChange = (value: string) => {
     if (!instanceName) return;
