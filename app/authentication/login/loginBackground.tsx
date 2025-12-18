@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 
 export default function LoginBackground({
   children,
@@ -8,7 +8,7 @@ export default function LoginBackground({
   children: React.ReactNode;
 }) {
   const [imageIndex] = useState<number>(
-    () => Math.floor(Math.random() * 10) + 1
+    () => Math.floor(Math.random() * 10) + 1,
   );
   return (
     <div

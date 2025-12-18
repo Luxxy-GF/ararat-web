@@ -1,16 +1,18 @@
-import { jsonFetcher } from "./fetcher";
-import type { ConfigurableOptions, Server, ConfigOption } from "./server.d";
+import { jsonFetcher } from './fetcher';
+import type { ConfigurableOptions, Server, ConfigOption } from './server.d';
 
 export async function getServerConfiguration() {
-  return jsonFetcher("/1.0").then((data) => data.metadata as Server);
+  return jsonFetcher<Server>('/1.0').then((data) => data.metadata);
 }
 
 export async function getConfigurableOptions() {
-  return jsonFetcher("/1.0/metadata/configuration").then((data) => {
-    const config = data.metadata as ConfigurableOptions;
-    processConfigurableOptions(config);
-    return config;
-  });
+  return jsonFetcher<ConfigurableOptions>('/1.0/metadata/configuration').then(
+    (data) => {
+      const config = data.metadata;
+      processConfigurableOptions(config);
+      return config;
+    },
+  );
 }
 
 function processConfigurableOptions(config: ConfigurableOptions) {
@@ -26,43 +28,43 @@ function processConfigurableOptions(config: ConfigurableOptions) {
   // This is a heuristic approach that may break if description formatting changes.
   // If the API ever provides explicit metadata for supported types, use that instead.
   const TYPE_PATTERNS = {
-    container: ["(only for containers)", "(container only)", "containers only"],
+    container: ['(only for containers)', '(container only)', 'containers only'],
     vm: [
-      "(only for virtual machines)",
-      "(vm only)",
-      "virtual machines only",
-      "vms only",
-      "for vms",
+      '(only for virtual machines)',
+      '(vm only)',
+      'virtual machines only',
+      'vms only',
+      'for vms',
     ],
   };
 
   const REQUIRED_PATTERNS = {
-    universal: ["yes", "true"],
-    container: ["container"],
-    vm: ["virtual machine", "vm"],
+    universal: ['yes', 'true'],
+    container: ['container'],
+    vm: ['virtual machine', 'vm'],
   };
 
   // Helper to process a single option
   const processOption = (option: ConfigOption) => {
     const textToCheck = [option.condition, option.shortdesc, option.longdesc]
       .filter(Boolean)
-      .join(" ")
+      .join(' ')
       .toLowerCase();
 
     // Default to supporting both types
-    option.supported_types = ["container", "virtual-machine"];
+    option.supported_types = ['container', 'virtual-machine'];
 
     // Check for container-only patterns
     if (
       TYPE_PATTERNS.container.some((pattern) => textToCheck.includes(pattern))
     ) {
-      option.supported_types = ["container"];
+      option.supported_types = ['container'];
     }
     // Check for VM-only patterns
     else if (
       TYPE_PATTERNS.vm.some((pattern) => textToCheck.includes(pattern))
     ) {
-      option.supported_types = ["virtual-machine"];
+      option.supported_types = ['virtual-machine'];
     }
 
     // Determine required types
@@ -71,15 +73,15 @@ function processConfigurableOptions(config: ConfigurableOptions) {
       const req = option.required.toLowerCase();
 
       if (REQUIRED_PATTERNS.universal.some((pattern) => req === pattern)) {
-        option.required_for = ["container", "virtual-machine"];
+        option.required_for = ['container', 'virtual-machine'];
       } else if (
         REQUIRED_PATTERNS.container.some((pattern) => req.includes(pattern))
       ) {
-        option.required_for = ["container"];
+        option.required_for = ['container'];
       } else if (
         REQUIRED_PATTERNS.vm.some((pattern) => req.includes(pattern))
       ) {
-        option.required_for = ["virtual-machine"];
+        option.required_for = ['virtual-machine'];
       }
     }
   };

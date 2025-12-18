@@ -1,4 +1,4 @@
-import type { StandardResponse } from "./response.d";
+import type { StandardResponse } from './response.d';
 
 export interface AddCertificateBody {
   certificate?: string;

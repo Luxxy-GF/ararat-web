@@ -4,11 +4,11 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/app/_components/ui/card";
-import TlsOptions from "./tlsOptions";
+} from 'ui-web/components/card';
+import TlsOptions from './tlsOptions';
 export const metadata = {
-  title: "TLS Login | Hye Ararat",
-  description: "Login to Hye Ararat via TLS",
+  title: 'TLS Login | Hye Ararat',
+  description: 'Login to Hye Ararat via TLS',
 };
 export default function TLSAuth() {
   return (

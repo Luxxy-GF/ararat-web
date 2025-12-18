@@ -1,50 +1,73 @@
-"use client";
+'use client';
 
-import React, { use } from "react";
-import { ColumnDef, Row } from "@tanstack/react-table";
+import React, { use } from 'react';
+import { ColumnDef, Row } from '@tanstack/react-table';
 import {
   PlayIcon,
   RotateCcwIcon,
   SnowflakeIcon,
   SquareIcon,
-} from "lucide-react";
+  Trash2Icon,
+} from 'lucide-react';
 
-import CreateInstance from "./_components/create";
-import DataTable from "@/app/_components/ui/data-table";
-import { Input } from "@/app/_components/ui/input";
-import { Skeleton } from "@/app/_components/ui/skeleton";
-import { useInstances } from "@/app/(main)/instances/_hooks/instances";
-import type { Instance, InstanceState } from "./_lib/instances.d";
-import { Badge } from "@/app/_components/ui/badge";
-import { Button } from "@/app/_components/ui/button";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/app/_components/ui/alert";
+import CreateInstance from './_components/create';
+import DataTable from 'ui-web/components/data-table';
+import { Input } from 'ui-web/components/input';
+import { Skeleton } from 'ui-web/components/skeleton';
+import { useInstances } from '@/app/(main)/instances/_hooks/instances';
+import type { Instance, InstanceState } from './_lib/instances.d';
+import { deleteInstance } from './_lib/instances';
+import { Badge } from 'ui-web/components/badge';
+import { Button } from 'ui-web/components/button';
+import { Alert, AlertDescription, AlertTitle } from 'ui-web/components/alert';
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/app/_components/ui/sheet";
-import { Spinner } from "@/app/_components/ui/spinner";
-import ProjectsContext from "@/app/(main)/_context/projects";
-import { Progress } from "@/app/_components/ui/progress";
-import IsClientContext from "@/app/_context/isClient";
+} from 'ui-web/components/sheet';
+import { Spinner } from 'ui-web/components/spinner';
+import ProjectsContext from '@/app/(main)/_context/projects';
+import { Progress } from 'ui-web/components/progress';
+import IsClientContext from '@/app/_context/isClient';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './_components/alert-dialog';
+import { useRouter } from 'next/navigation';
 
-type InstanceAction = "start" | "stop" | "restart" | "freeze";
+type InstanceAction = 'start' | 'stop' | 'restart' | 'freeze';
 
 const instanceActionDetails: Record<
   InstanceAction,
   { label: string; Icon: React.ComponentType<{ className?: string }> }
 > = {
-  start: { label: "Start", Icon: PlayIcon },
-  stop: { label: "Stop", Icon: SquareIcon },
-  restart: { label: "Restart", Icon: RotateCcwIcon },
-  freeze: { label: "Freeze", Icon: SnowflakeIcon },
+  start: { label: 'Start', Icon: PlayIcon },
+  stop: { label: 'Stop', Icon: SquareIcon },
+  restart: { label: 'Restart', Icon: RotateCcwIcon },
+  freeze: { label: 'Freeze', Icon: SnowflakeIcon },
 };
+
+function isDeleteProtected(instance: Instance): boolean {
+  const config = instance.expanded_config ?? instance.config ?? {};
+  return config['security.protection.delete'] === 'true';
+}
+
+function isRunning(instance: Instance): boolean {
+  const status = instance.status?.toLowerCase();
+  return status === 'running' || status === 'started';
+}
+
+function canDelete(instance: Instance): boolean {
+  return !isDeleteProtected(instance) && !isRunning(instance);
+}
 
 async function performInstanceAction({
   action,
@@ -58,13 +81,13 @@ async function performInstanceAction({
   const instanceProject = project ?? instance.project ?? null;
   const projectSuffix = instanceProject
     ? `?project=${encodeURIComponent(instanceProject)}`
-    : "";
+    : '';
   const res = await fetch(
     `/1.0/instances/${encodeURIComponent(instance.name)}/state${projectSuffix}`,
     {
-      method: "PUT",
+      method: 'PUT',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         action,
@@ -72,12 +95,12 @@ async function performInstanceAction({
         force: false,
         stateful: false,
       }),
-    }
+    },
   );
   if (!res.ok) {
     const payload = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(
-      payload?.error || `Unable to ${action} instance ${instance.name}`
+      payload?.error || `Unable to ${action} instance ${instance.name}`,
     );
   }
 }
@@ -86,9 +109,9 @@ export default function Instances() {
   const { currentProject } = use(ProjectsContext);
   const { data, error, isLoading, isValidating, mutate } =
     useInstances(currentProject);
-  const [search, setSearch] = React.useState("");
+  const [search, setSearch] = React.useState('');
   const [selectedInstances, setSelectedInstances] = React.useState<Instance[]>(
-    []
+    [],
   );
   const [actionError, setActionError] = React.useState<string | null>(null);
   const [actionInFlight, setActionInFlight] =
@@ -97,19 +120,26 @@ export default function Instances() {
     React.useState<Instance | null>(null);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const isClient = use(IsClientContext);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [deleteInFlight, setDeleteInFlight] = React.useState(false);
+  const [singleDeleteInstance, setSingleDeleteInstance] =
+    React.useState<Instance | null>(null);
 
   const columns = React.useMemo(() => {
     const baseColumns = [
       {
-        header: "Name",
-        accessorKey: "name",
+        header: 'Name',
+        accessorKey: 'name',
         cell: ({ row }: { row: Row<object> }) => {
           const instance = row.original as Instance;
           return (
             <button
               type="button"
-              className="text-left font-medium text-primary underline focus:outline-none"
-              onClick={(event) => event.stopPropagation()}
+              className="text-left font-medium text-primary underline focus:outline-none cursor-pointer"
+              onClick={(event) => {
+                event.stopPropagation();
+                router.push(`/instance?name=${instance.name}`);
+              }}
             >
               {instance.name}
             </button>
@@ -117,56 +147,56 @@ export default function Instances() {
         },
       },
       {
-        header: "Description",
-        accessorKey: "description",
+        header: 'Description',
+        accessorKey: 'description',
         cell: ({ row }: { row: Row<object> }) => {
           const instance = row.original as Instance;
           return (
             <span className="text-muted-foreground">
-              {instance.description || "—"}
+              {instance.description || '—'}
             </span>
           );
         },
       },
       {
-        header: "Status",
-        accessorKey: "status",
+        header: 'Status',
+        accessorKey: 'status',
         cell: ({ row }: { row: Row<object> }) => {
           const instance = row.original as Instance;
           const isRunning =
-            instance.status?.toLowerCase() === "running" ||
-            instance.status?.toLowerCase() === "started";
+            instance.status?.toLowerCase() === 'running' ||
+            instance.status?.toLowerCase() === 'started';
           return (
-            <Badge variant={isRunning ? "default" : "secondary"}>
+            <Badge variant={isRunning ? 'default' : 'secondary'}>
               {instance.status}
             </Badge>
           );
         },
       },
       {
-        header: "Type",
-        accessorKey: "type",
+        header: 'Type',
+        accessorKey: 'type',
         cell: ({ row }: { row: Row<object> }) => {
           const instance = row.original as Instance;
-          return instance.type === "virtual-machine"
-            ? "Virtual Machine"
-            : "Container";
+          return instance.type === 'virtual-machine'
+            ? 'Virtual Machine'
+            : 'Container';
         },
       },
       {
-        header: "Usage",
-        id: "usage",
+        header: 'Usage',
+        id: 'usage',
         cell: ({ row }: { row: Row<object> }) => {
           const instance = row.original as Instance;
           const memoryUsage = instance.state?.memory?.usage ?? 0;
           const diskUsage = getRootDiskUsage(instance.state) ?? 0;
-          const memoryPercent = calcUsagePercent(
+          const memoryPercent = calcResourcePercent(
             memoryUsage,
-            instance.state?.memory?.total ?? instance.state?.memory?.usage_peak
+            instance.state?.memory?.total ?? instance.state?.memory?.usage_peak,
           );
-          const diskPercent = calcUsagePercent(
+          const diskPercent = calcResourcePercent(
             diskUsage,
-            instance.state?.disk?.root?.total
+            instance.state?.disk?.root?.total,
           );
           return (
             <div className="flex flex-col gap-1.5">
@@ -176,7 +206,7 @@ export default function Instances() {
                   {formatBytes(memoryUsage)}
                   {instance.state?.memory?.total
                     ? ` / ${formatBytes(instance.state.memory.total)}`
-                    : ""}
+                    : ''}
                 </span>
               </div>
               <Progress value={memoryPercent} className="h-1.5" />
@@ -186,7 +216,7 @@ export default function Instances() {
                   {formatBytes(diskUsage)}
                   {instance.state?.disk?.root?.total
                     ? ` / ${formatBytes(instance.state.disk.root.total)}`
-                    : ""}
+                    : ''}
                 </span>
               </div>
               <Progress value={diskPercent} className="h-1.5 bg-muted" />
@@ -196,13 +226,13 @@ export default function Instances() {
       },
     ] as ColumnDef<object, unknown>[];
 
-    if (currentProject === "all") {
+    if (currentProject === 'all') {
       baseColumns.splice(1, 0, {
-        header: "Project",
-        accessorKey: "project",
+        header: 'Project',
+        accessorKey: 'project',
         cell: ({ row }: { row: Row<object> }) => {
           const instance = row.original as Instance;
-          return instance.project ?? "default";
+          return instance.project ?? 'default';
         },
       });
     }
@@ -224,32 +254,112 @@ export default function Instances() {
               action,
               instance,
               project:
-                currentProject === "all"
-                  ? instance.project ?? null
-                  : currentProject ?? instance.project ?? null,
-            })
-          )
+                currentProject === 'all'
+                  ? (instance.project ?? null)
+                  : (currentProject ?? instance.project ?? null),
+            }),
+          ),
         );
         await mutate();
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : "Unable to update instances.";
+          err instanceof Error ? err.message : 'Unable to update instances.';
         setActionError(message);
       } finally {
         setActionInFlight(null);
       }
     },
-    [currentProject, mutate, selectedInstances]
+    [currentProject, mutate, selectedInstances],
   );
 
   const handleSelectionChange = React.useCallback((rows: Row<object>[]) => {
     setSelectedInstances(rows.map((row) => row.original as Instance));
   }, []);
 
+  const router = useRouter();
+
   const handleRowClick = React.useCallback((row: Row<object>) => {
-    setInspectorInstance(row.original as Instance);
+    const instance = row.original as Instance;
+    setInspectorInstance(instance);
     setIsSheetOpen(true);
   }, []);
+
+  // Compute deletable, protected, and running instances for mass deletion
+  const deletableInstances = React.useMemo(
+    () => selectedInstances.filter((instance) => canDelete(instance)),
+    [selectedInstances],
+  );
+  const protectedInstances = React.useMemo(
+    () => selectedInstances.filter((instance) => isDeleteProtected(instance)),
+    [selectedInstances],
+  );
+  const runningInstances = React.useMemo(
+    () =>
+      selectedInstances.filter(
+        (instance) => isRunning(instance) && !isDeleteProtected(instance),
+      ),
+    [selectedInstances],
+  );
+
+  // Open the mass delete confirmation dialog
+  const openMassDeleteDialog = React.useCallback(() => {
+    setSingleDeleteInstance(null);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  // Open the single instance delete confirmation dialog
+  const openSingleDeleteDialog = React.useCallback((instance: Instance) => {
+    setSingleDeleteInstance(instance);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  // Perform the delete action
+  const handleDelete = React.useCallback(async () => {
+    const instancesToDelete = singleDeleteInstance
+      ? [singleDeleteInstance]
+      : deletableInstances;
+    if (instancesToDelete.length === 0) return;
+
+    try {
+      setActionError(null);
+      setDeleteInFlight(true);
+      const results = await Promise.all(
+        instancesToDelete.map((instance) =>
+          deleteInstance(
+            instance.name,
+            currentProject === 'all'
+              ? (instance.project ?? null)
+              : (currentProject ?? instance.project ?? null),
+          ),
+        ),
+      );
+      const errors = results.filter((r) => r.error).map((r) => r.error);
+      if (errors.length > 0) {
+        setActionError(errors.join('; '));
+        return; // Keep dialog open when there are errors
+      }
+      await mutate();
+      setSelectedInstances([]); // Clear selection after successful deletion
+      setDeleteDialogOpen(false);
+      setSingleDeleteInstance(null);
+      if (singleDeleteInstance && isSheetOpen) {
+        setIsSheetOpen(false);
+        setInspectorInstance(null);
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to delete instances.';
+      setActionError(message);
+    } finally {
+      setDeleteInFlight(false);
+    }
+  }, [
+    currentProject,
+    deletableInstances,
+    mutate,
+    singleDeleteInstance,
+    isSheetOpen,
+  ]);
 
   const isBusy = (isLoading && !data) || !isClient;
 
@@ -283,14 +393,14 @@ export default function Instances() {
                     {
                       label: string;
                       Icon: React.ComponentType<{ className?: string }>;
-                    }
+                    },
                   ][]
                 ).map(([action, { label, Icon }]) => (
                   <Button
                     key={action}
                     variant="outline"
                     size="sm"
-                    disabled={actionInFlight !== null}
+                    disabled={actionInFlight !== null || deleteInFlight}
                     onClick={() => handleMassAction(action)}
                   >
                     {actionInFlight === action ? (
@@ -301,6 +411,17 @@ export default function Instances() {
                     {label}
                   </Button>
                 ))}
+                {deletableInstances.length > 0 && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={actionInFlight !== null || deleteInFlight}
+                    onClick={openMassDeleteDialog}
+                  >
+                    <Trash2Icon className="mr-2 size-3" />
+                    Delete
+                  </Button>
+                )}
               </div>
             ) : (
               <CreateInstance className="w-full sm:w-auto" />
@@ -318,7 +439,7 @@ export default function Instances() {
             <AlertTitle>Unable to load instances</AlertTitle>
             <AlertDescription>
               {error.message ||
-                "Check your Incus API connection and try again."}
+                'Check your Incus API connection and try again.'}
             </AlertDescription>
           </Alert>
         ) : null}
@@ -330,7 +451,7 @@ export default function Instances() {
           enableSelection
           data={(data as Instance[]) ?? []}
           cols={columns}
-          className={isValidating ? "animate-pulse" : ""}
+          className={isValidating ? 'animate-pulse' : ''}
           stringFilter={search}
           onSelectionChange={handleSelectionChange}
           onRowClick={(row) => handleRowClick(row)}
@@ -352,7 +473,14 @@ export default function Instances() {
       >
         <SheetContent side="right" className="sm:max-w-md">
           {inspectorInstance ? (
-            <InstanceDetails instance={inspectorInstance} />
+            <InstanceDetails
+              instance={inspectorInstance}
+              onDelete={
+                canDelete(inspectorInstance)
+                  ? () => openSingleDeleteDialog(inspectorInstance)
+                  : undefined
+              }
+            />
           ) : (
             <div className="p-4 text-sm text-muted-foreground">
               Select an instance to view its details.
@@ -360,16 +488,94 @@ export default function Instances() {
           )}
         </SheetContent>
       </Sheet>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {singleDeleteInstance
+                ? `Delete ${singleDeleteInstance.name}?`
+                : `Delete ${deletableInstances.length} instance${deletableInstances.length === 1 ? '' : 's'}?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {singleDeleteInstance ? (
+                <>
+                  This action cannot be undone. This will permanently delete the
+                  instance <strong>{singleDeleteInstance.name}</strong> and all
+                  its data.
+                </>
+              ) : (
+                <>
+                  This action cannot be undone. This will permanently delete the
+                  following instances and all their data:
+                  <ul className="list-disc list-inside mt-2">
+                    {deletableInstances.map((instance) => (
+                      <li key={instance.name}>{instance.name}</li>
+                    ))}
+                  </ul>
+                  {runningInstances.length > 0 && (
+                    <div className="mt-3 p-3 rounded-md bg-muted text-muted-foreground">
+                      <strong>Note:</strong> The following instances are
+                      currently running and must be stopped before deletion:
+                      <ul className="list-disc list-inside mt-1">
+                        {runningInstances.map((instance) => (
+                          <li key={instance.name}>{instance.name}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {protectedInstances.length > 0 && (
+                    <div className="mt-3 p-3 rounded-md bg-muted text-muted-foreground">
+                      <strong>Note:</strong> The following instances have delete
+                      protection enabled and will not be deleted:
+                      <ul className="list-disc list-inside mt-1">
+                        {protectedInstances.map((instance) => (
+                          <li key={instance.name}>{instance.name}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteInFlight}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteInFlight}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              {deleteInFlight ? (
+                <>
+                  <Spinner className="mr-2 size-4" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
 
-function InstanceDetails({ instance }: { instance: Instance }) {
+function InstanceDetails({
+  instance,
+  onDelete,
+}: {
+  instance: Instance;
+  onDelete?: () => void;
+}) {
   const memoryUsage = instance.state?.memory?.usage;
   const diskUsage = getRootDiskUsage(instance.state);
   const networkDetails = React.useMemo(
     () => getNetworkDetails(instance),
-    [instance]
+    [instance],
   );
   const baseImage = getBaseImage(instance);
   const rootDiskPool = getRootDiskPool(instance);
@@ -384,7 +590,7 @@ function InstanceDetails({ instance }: { instance: Instance }) {
       <SheetHeader className="px-4 pt-4">
         <SheetTitle>{instance.name}</SheetTitle>
         <SheetDescription>
-          {instance.description || "No description available."}
+          {instance.description || 'No description available.'}
         </SheetDescription>
         <div className="flex flex-wrap gap-2 pt-2">
           <Badge>{instance.status}</Badge>
@@ -399,48 +605,46 @@ function InstanceDetails({ instance }: { instance: Instance }) {
             label="Instance Memory"
             value={
               instance.state?.memory?.total
-                ? `${formatBytes(memoryUsage)} / ${formatBytes(
-                    instance.state.memory.total
-                  )}`
+                ? `${formatBytes(memoryUsage)} / ${formatBytes(instance.state.memory.total)}`
                 : formatBytes(memoryUsage)
             }
-            hidden={!hasStateData || typeof memoryUsage !== "number"}
+            hidden={!hasStateData || typeof memoryUsage !== 'number'}
           />
           <DetailRow
             label="Instance Root Disk Usage"
             value={formatBytes(diskUsage)}
-            hidden={!hasStateData || typeof diskUsage !== "number"}
+            hidden={!hasStateData || typeof diskUsage !== 'number'}
           />
         </Section>
         <Section title="Metadata">
           <DetailRow
             label="Project"
-            value={instance.project ?? "default"}
+            value={instance.project ?? 'default'}
             hidden={false}
           />
           <DetailRow
             label="Base Image"
-            value={baseImage ?? "—"}
+            value={baseImage ?? '—'}
             hidden={false}
           />
           <DetailRow
             label="Architecture"
-            value={instance.architecture ?? "—"}
+            value={instance.architecture ?? '—'}
             hidden={false}
           />
           <DetailRow
             label="Cluster Member"
-            value={instance.location ?? "—"}
+            value={instance.location ?? '—'}
             hidden={false}
           />
           <DetailRow
             label="Root Disk Storage Pool"
-            value={rootDiskPool ?? "—"}
+            value={rootDiskPool ?? '—'}
             hidden={false}
           />
           <DetailRow
             label="Process ID"
-            value={instance.state?.pid?.toString() ?? "—"}
+            value={instance.state?.pid?.toString() ?? '—'}
             hidden={!instance.state?.pid}
           />
           <DetailRow
@@ -512,7 +716,7 @@ function InstanceDetails({ instance }: { instance: Instance }) {
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium">{snapshot.name}</span>
                     <Badge variant="outline">
-                      {snapshot.stateful ? "Stateful" : "Stateless"}
+                      {snapshot.stateful ? 'Stateful' : 'Stateless'}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -527,6 +731,19 @@ function InstanceDetails({ instance }: { instance: Instance }) {
             </p>
           )}
         </Section>
+        {onDelete && (
+          <Section title="Danger Zone">
+            <Button
+              variant="destructive"
+              size="sm"
+              className="w-full"
+              onClick={onDelete}
+            >
+              <Trash2Icon className="mr-2 size-4" />
+              Delete Instance
+            </Button>
+          </Section>
+        )}
       </div>
     </>
   );
@@ -599,36 +816,36 @@ function TagList({
 }
 
 function formatBytes(value?: number) {
-  if (typeof value !== "number" || Number.isNaN(value)) {
-    return "—";
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return '—';
   }
-  const units = ["B", "KiB", "MiB", "GiB", "TiB", "PiB"];
-  if (value === 0) return "0 B";
+  const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
+  if (value === 0) return '0 B';
   const exponent = Math.min(
     Math.max(Math.floor(Math.log(value) / Math.log(1024)), 0),
-    units.length - 1
+    units.length - 1,
   );
   const num = value / Math.pow(1024, exponent);
   return `${num.toFixed(num >= 10 ? 0 : 1)} ${units[exponent]}`;
 }
 
 function formatDate(value?: string) {
-  if (!value) return "—";
+  if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return value;
   }
   return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
+    dateStyle: 'medium',
+    timeStyle: 'short',
   }).format(date);
 }
 
 function getRootDiskUsage(state?: InstanceState) {
   if (!state?.disk) return undefined;
   const rootDisk =
-    state.disk["root"] ||
-    state.disk["/"] ||
+    state.disk['root'] ||
+    state.disk['/'] ||
     Object.values(state.disk)[0] ||
     null;
   return rootDisk?.usage;
@@ -642,9 +859,9 @@ function getNetworkDetails(instance: Instance) {
   Object.values(network).forEach((iface) => {
     iface.addresses?.forEach((address) => {
       if (!address.address) return;
-      if (address.family === "inet") {
+      if (address.family === 'inet') {
         ipv4.add(address.address);
-      } else if (address.family === "inet6" && address.scope !== "link") {
+      } else if (address.family === 'inet6' && address.scope !== 'link') {
         ipv6.add(address.address);
       }
     });
@@ -661,11 +878,11 @@ function getNetworkDetails(instance: Instance) {
 
 function getBaseImage(instance: Instance) {
   return (
-    instance.config?.["image.description"] ||
-    instance.config?.["image.alias"] ||
-    instance.config?.["image.os"] ||
-    instance.expanded_config?.["volatile.base_image"] ||
-    instance.config?.["volatile.base_image"] ||
+    instance.config?.['image.description'] ||
+    instance.config?.['image.alias'] ||
+    instance.config?.['image.os'] ||
+    instance.expanded_config?.['volatile.base_image'] ||
+    instance.config?.['volatile.base_image'] ||
     null
   );
 }
@@ -675,7 +892,7 @@ function getRootDiskPool(instance: Instance) {
   return rootDisk?.pool ?? null;
 }
 
-function calcUsagePercent(current?: number, peak?: number) {
+function calcResourcePercent(current?: number, peak?: number) {
   if (!peak || peak <= 0) {
     return 0;
   }

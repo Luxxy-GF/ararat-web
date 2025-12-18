@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import * as React from 'react';
 import {
   IconAlertTriangle,
   IconCertificate,
@@ -8,7 +8,7 @@ import {
   IconLogout,
   IconSettings,
   type Icon,
-} from "@tabler/icons-react";
+} from '@tabler/icons-react';
 
 import {
   Sidebar as RawSidebar,
@@ -24,7 +24,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   useSidebar,
-} from "@/app/_components/ui/sidebar";
+} from 'ui-web/components/sidebar';
 import {
   BoxesIcon,
   ChevronDownIcon,
@@ -33,15 +33,15 @@ import {
   HardDriveIcon,
   PackageIcon,
   SquaresIntersectIcon,
-} from "lucide-react";
-import { usePathname } from "next/navigation";
+} from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "../_components/ui/collapsible";
-import Link from "next/link";
-import AuthenticationContext from "../_context/authentication";
+} from 'ui-web/components/collapsible';
+import Link from 'next/link';
+import AuthenticationContext from '../_context/authentication';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,10 +49,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../_components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "../_components/ui/avatar";
-import UserContext from "./_context/user";
-import { Skeleton } from "../_components/ui/skeleton";
+} from 'ui-web/components/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from 'ui-web/components/avatar';
+import UserContext from './_context/user';
+import { Skeleton } from 'ui-web/components/skeleton';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from 'ui-web/components/tooltip';
 
 type NavMainItem = {
   title: string;
@@ -84,77 +89,77 @@ function getAvatarInitials(source: string | undefined | null): string {
 const data = {
   navMain: [
     {
-      title: "Instances",
-      url: "/instances",
+      title: 'Instances',
+      url: '/instances',
       icon: BoxesIcon,
     },
     {
-      title: "Networking",
-      url: "#",
+      title: 'Networking',
+      url: '#',
       subItems: [
         {
-          title: "Networks",
-          url: "/networks",
+          title: 'Networks',
+          url: '/networks',
         },
         {
-          title: "IPAM",
-          url: "/networks/ipam",
+          title: 'IPAM',
+          url: '/networks/ipam',
         },
         {
-          title: "ACLs",
-          url: "/networks/acls",
+          title: 'ACLs',
+          url: '/networks/acls',
         },
       ],
       icon: ChevronsLeftRightEllipsisIcon,
     },
     {
-      title: "Storage",
-      url: "#",
+      title: 'Storage',
+      url: '#',
       subItems: [
         {
-          title: "Pools",
-          url: "/storage/pools",
+          title: 'Pools',
+          url: '/storage/pools',
         },
         {
-          title: "Volumes",
-          url: "/storage/volumes",
+          title: 'Volumes',
+          url: '/storage/volumes',
         },
         {
-          title: "ISOs",
-          url: "/storage/isos",
+          title: 'ISOs',
+          url: '/storage/isos',
         },
         {
-          title: "Buckets",
-          url: "/storage/buckets",
+          title: 'Buckets',
+          url: '/storage/buckets',
         },
       ],
       icon: HardDriveIcon,
     },
     {
-      title: "Images",
-      url: "/images",
+      title: 'Images',
+      url: '/images',
       icon: PackageIcon,
     },
     {
-      title: "Profiles",
-      url: "/profiles",
+      title: 'Profiles',
+      url: '/profiles',
       icon: SquaresIntersectIcon,
     },
     {
-      title: "Operations",
-      url: "/operations",
+      title: 'Operations',
+      url: '/operations',
       icon: CircleDotDashedIcon,
     },
   ],
   navSecondary: [
     {
-      title: "Configuration",
-      url: "#",
+      title: 'Configuration',
+      url: '#',
       icon: IconSettings,
     },
     {
-      title: "Warnings",
-      url: "#",
+      title: 'Warnings',
+      url: '#',
       icon: IconAlertTriangle,
     },
   ],
@@ -163,6 +168,15 @@ const data = {
 export default function Sidebar({
   ...props
 }: React.ComponentProps<typeof RawSidebar>) {
+  const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  React.useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  }, [pathname, isMobile, setOpenMobile]);
+
   return (
     <RawSidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -203,6 +217,8 @@ function NavMain({
   }[];
 }) {
   const pathname = usePathname();
+  const { state, isMobile } = useSidebar();
+
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
@@ -210,28 +226,67 @@ function NavMain({
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               {item.subItems ? (
-                <Collapsible className="group/collapsible">
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title}>
-                      {item.icon && <item.icon />}
-                      <span>{item.title}</span>
-                      <div className="[&>svg]:size-4 ml-auto">
-                        <ChevronDownIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180 " />
-                      </div>
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    {item.subItems.map((subItem) => (
-                      <SidebarMenuSub key={subItem.title}>
-                        <SidebarMenuSubItem>
-                          <SidebarMenuSubButton>
+                state === 'collapsed' && !isMobile ? (
+                  <DropdownMenu>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                          <SidebarMenuButton>
+                            {item.icon && <item.icon />}
+                            <span>{item.title}</span>
+                            {/* ChevronDownIcon removed for collapsed state, as dropdown menu provides indicator */}
+                          </SidebarMenuButton>
+                        </DropdownMenuTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" align="center">
+                        {item.title}
+                      </TooltipContent>
+                    </Tooltip>
+                    <DropdownMenuContent
+                      side="right"
+                      align="start"
+                      sideOffset={20}
+                    >
+                      <DropdownMenuLabel>{item.title}</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {item.subItems.map((subItem) => (
+                        <DropdownMenuItem key={subItem.title} asChild>
+                          <Link href={subItem.url} aria-label={subItem.title}>
                             <span>{subItem.title}</span>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      </SidebarMenuSub>
-                    ))}
-                  </CollapsibleContent>
-                </Collapsible>
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Collapsible className="group/collapsible">
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton tooltip={item.title}>
+                        {item.icon && <item.icon />}
+                        <span>{item.title}</span>
+                        <div className="[&>svg]:size-4 ml-auto">
+                          <ChevronDownIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180 " />
+                        </div>
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      {item.subItems.map((subItem) => (
+                        <SidebarMenuSub key={subItem.title}>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton asChild>
+                              <Link
+                                href={subItem.url}
+                                aria-label={subItem.title}
+                              >
+                                <span>{subItem.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                )
               ) : (
                 <Link href={item.url}>
                   <SidebarMenuButton
@@ -319,7 +374,7 @@ function NavUser() {
     window.location.href = "/ui/authentication/login";
   }, [authData]);
   return (
-    <SidebarMenu className={authIsValidating ? "animate-pulse" : ""}>
+    <SidebarMenu className={authIsValidating ? 'animate-pulse' : ''}>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -357,9 +412,7 @@ function NavUser() {
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span
-                  className={`truncate font-medium ${
-                    userIsValidating ? "animate-pulse" : ""
-                  }`}
+                  className={`truncate font-medium ${userIsValidating ? 'animate-pulse' : ''}`}
                 >
                   {!userIsLoading && userData?.name ? userData.name : ""}
                 </span>
@@ -378,7 +431,7 @@ function NavUser() {
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-            side={isMobile ? "bottom" : "right"}
+            side={isMobile ? 'bottom' : 'right'}
             align="end"
             sideOffset={4}
           >
@@ -403,14 +456,14 @@ function NavUser() {
                 </Avatar>
                 <div
                   className={`grid flex-1 text-left text-sm leading-tight ${
-                    authIsValidating ? "animate-pulse" : ""
+                    authIsValidating ? 'animate-pulse' : ''
                   }`}
                 >
                   {authData?.method === "tls" ? (
                     <>
                       <span
                         className={`truncate font-medium ${
-                          userIsValidating ? "animate-pulse" : ""
+                          userIsValidating ? 'animate-pulse' : ''
                         }`}
                       >
                         {userData?.name}

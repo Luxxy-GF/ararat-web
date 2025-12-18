@@ -1,9 +1,10 @@
-"use client";
-import { Button } from "@/app/_components/ui/button";
-import { Skeleton } from "@/app/_components/ui/skeleton";
-import { useServerConfiguration } from "@/app/_hooks/server";
-import { usePathname, useRouter } from "next/navigation";
-import React, { startTransition, useEffect } from "react";
+
+'use client';
+import { Button } from 'ui-web/components/button';
+import { Skeleton } from 'ui-web/components/skeleton';
+import { useServerConfiguration } from '@/app/_hooks/server';
+import { useRouter, usePathname } from 'next/navigation';
+import React, { startTransition, useEffect } from 'react';
 
 // Timeout duration for resetting authenticating state (in milliseconds)
 const AUTHENTICATING_RESET_TIMEOUT = 5000; // 5 seconds
@@ -110,7 +111,7 @@ export default function LoginMethodsComponent() {
           if (method === "tls")
             return (
               <TLSButton
-                className={isValidating ? "animate-pulse" : ""}
+                className={isValidating ? 'animate-pulse' : ''}
                 key={method}
                 {...props}
               />
@@ -125,7 +126,7 @@ export default function LoginMethodsComponent() {
             );
           return (
             <Button
-              className={isValidating ? "animate-pulse" : ""}
+              className={isValidating ? 'animate-pulse' : ''}
               key={method}
               {...props}
             >

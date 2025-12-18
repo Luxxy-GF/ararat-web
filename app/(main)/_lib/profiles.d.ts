@@ -1,4 +1,4 @@
-import type { Device } from "../instances/_lib/instances.d";
+import type { Device } from '../instances/_lib/instances.d';
 
 export interface Profile {
   name: string;
