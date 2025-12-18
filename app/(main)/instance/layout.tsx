@@ -47,7 +47,7 @@ function InstanceLayoutContent({ children }: { children: React.ReactNode }) {
     return { rawTab, label };
   };
 
-  const { rawTab: currentTab, label: formattedTab } = getTabFromPathname(pathname);
+  const { label: formattedTab } = getTabFromPathname(pathname);
 
   const renderContent = () => {
     if (!name) {
