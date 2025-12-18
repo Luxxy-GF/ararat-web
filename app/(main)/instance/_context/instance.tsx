@@ -4,13 +4,11 @@ import React, {
   createContext,
   useContext,
   ReactNode,
-  useState,
-  useEffect,
+  useMemo,
 } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useInstance } from '../_hooks/instance';
 import { Instance } from '../../instances/_lib/instances.d';
-import { InstanceProvider as MainInstanceProvider } from 'ararat-ui-web/context/instance/instance';
 import InstanceClass from '../../_lib/instance';
 
 interface InstanceContextValue {
@@ -20,6 +18,7 @@ interface InstanceContextValue {
   isError: any;
   isValidating: boolean;
   mutate: () => Promise<any>;
+  instanceClass: InstanceClass | null;
 }
 
 const InstanceContext = createContext<InstanceContextValue>({
@@ -29,6 +28,7 @@ const InstanceContext = createContext<InstanceContextValue>({
   isError: null,
   isValidating: true,
   mutate: async () => {},
+  instanceClass: null,
 });
 
 function InstanceProviderInner({ children }: { children: ReactNode }) {
@@ -36,35 +36,29 @@ function InstanceProviderInner({ children }: { children: ReactNode }) {
   const name = searchParams.get('name');
   const { instance, isLoading, isError, mutate, isValidating } =
     useInstance(name);
+  const instanceClass = useMemo(
+    () => (instance ? new InstanceClass(instance.name) : null),
+    [instance]
+  );
 
-  const value: InstanceContextValue = {
-    name,
-    instance,
-    isLoading,
-    isError,
-    isValidating,
-    mutate,
-  };
-  const [inst, setInst] = useState<InstanceClass | null>(null);
+  const value: InstanceContextValue = useMemo(
+    () => ({
+      name,
+      instance,
+      isLoading,
+      isError,
+      isValidating,
+      mutate,
+      instanceClass,
+    }),
+    [instance, instanceClass, isError, isLoading, isValidating, mutate, name],
+  );
 
-  useEffect(() => {
-    if (instance) {
-      setInst(new InstanceClass(instance.name));
-    }
-  }, [instance]);
+
 
   return (
     <InstanceContext.Provider value={value}>
-      <MainInstanceProvider
-        value={{
-          instance: inst,
-          isLoading,
-          isValidating,
-          isError: isError,
-        }}
-      >
-        {children}
-      </MainInstanceProvider>
+      {children}
     </InstanceContext.Provider>
   );
 }
@@ -84,3 +78,5 @@ export function useInstanceContext() {
   }
   return context;
 }
+
+export { InstanceContext };

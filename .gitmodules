@@ -2,7 +2,3 @@
 	path = deps/ui-web
 	url = https://github.com/hyecompany/ui-web
 	branch = meg
-[submodule "deps/ararat-ui-web"]
-	path = deps/ararat-ui-web
-	url = https://github.com/hyecompany/ararat-ui-web
-	branch = yerek

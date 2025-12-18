@@ -1,6 +1,4 @@
-import { Instance as IInstance } from 'ararat-ui-web/types/instance';
-
-export default class Instance implements IInstance {
+export default class Instance {
   name: string;
   constructor(name: string) {
     this.name = name;
