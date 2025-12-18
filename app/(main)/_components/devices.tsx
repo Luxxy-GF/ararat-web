@@ -1272,40 +1272,32 @@ function AddDeviceForm({
     );
   };
 
-  // Centralized validation using DeviceValidator (optimization: break into smaller memoized dependencies)
-  const basicDeviceInfo = React.useMemo(() => ({
+  // Centralized validation using DeviceValidator
+  const validationResult = React.useMemo(() => {
+    return DeviceValidator.validateDevice(
+      name,
+      deviceType,
+      properties,
+      effectiveDeviceConfig,
+      existingDevices,
+      inheritedDevices,
+      editingDevice?.name,
+      isRoot,
+      isNetworkDevice,
+      isGPUDevice,
+    );
+  }, [
     name,
     deviceType,
+    properties,
+    effectiveDeviceConfig,
+    existingDevices,
+    inheritedDevices,
+    editingDevice?.name,
     isRoot,
     isNetworkDevice,
     isGPUDevice,
-  }), [name, deviceType, isRoot, isNetworkDevice, isGPUDevice]);
-
-  const deviceConfigMemo = React.useMemo(() => ({
-    properties,
-    effectiveDeviceConfig,
-  }), [properties, effectiveDeviceConfig]);
-
-  const devicesMemo = React.useMemo(() => ({
-    existingDevices,
-    inheritedDevices,
-    editingDeviceName: editingDevice?.name,
-  }), [existingDevices, inheritedDevices, editingDevice?.name]);
-
-  const validationResult = React.useMemo(() => {
-    return DeviceValidator.validateDevice(
-      basicDeviceInfo.name,
-      basicDeviceInfo.deviceType,
-      deviceConfigMemo.properties,
-      deviceConfigMemo.effectiveDeviceConfig,
-      devicesMemo.existingDevices,
-      devicesMemo.inheritedDevices,
-      devicesMemo.editingDeviceName,
-      basicDeviceInfo.isRoot,
-      basicDeviceInfo.isNetworkDevice,
-      basicDeviceInfo.isGPUDevice,
-    );
-  }, [basicDeviceInfo, deviceConfigMemo, devicesMemo]);
+  ]);
 
   // Ensure path stays at "/" for root disk - but only if we're actually creating/editing a root disk
   React.useEffect(() => {

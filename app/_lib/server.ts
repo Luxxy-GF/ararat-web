@@ -69,7 +69,7 @@ function processConfigurableOptions(config: ConfigurableOptions) {
       matchedType = 'virtual-machine';
     }
     // Warn if no pattern matched and falling back to both
-    if (matchedType === 'both') {
+    if (matchedType === 'both' && process.env.NODE_ENV === 'development') {
       console.warn(
         `[processOption] Option ${option.name || option.key || '[unknown key]'} uses the default 'both' instance types due to unmatched pattern:`,
         textToCheck

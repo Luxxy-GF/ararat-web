@@ -218,11 +218,9 @@ function InstanceTabs() {
     // Take the segment after /instance/
     const segment = pathname.replace(/^\/instance\/?/, '').split('/')[0];
     // Match only known TABS by value
-    if (TABS.some(tab => tab.value === segment)) {
+    if (TABS.some((tab) => tab.value === segment)) {
       currentTab = segment;
     }
-  } else if (pathname !== '/instance') {
-    // fallback: possibly future-proof, maintain 'dashboard' as default
   }
 
   const handleTabChange = (value: string) => {

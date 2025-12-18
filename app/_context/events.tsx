@@ -40,6 +40,11 @@ const EventEmitterContext = createContext<EventEmitterContextValue>({
 
 export default EventEmitterContext;
 
+// Initial reconnect delay in milliseconds
+const INITIAL_RECONNECT_DELAY_MS = 3000;
+// Maximum reconnect delay in milliseconds
+const MAX_RECONNECT_DELAY_MS = 30000;
+
 export function EventEmitterProvider({
   children,
 }: {
@@ -49,11 +54,6 @@ export function EventEmitterProvider({
   const wsRef = useRef<WebSocket | null>(null);
   // Track operations we are already showing toasts for to avoid duplicates/spam
   const activeOperations = useRef<Set<string>>(new Set());
-
-  // Initial reconnect delay in milliseconds
-  const INITIAL_RECONNECT_DELAY_MS = 3000;
-  // Maximum reconnect delay in milliseconds
-  const MAX_RECONNECT_DELAY_MS = 30000;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
