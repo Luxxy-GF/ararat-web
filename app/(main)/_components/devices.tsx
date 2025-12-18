@@ -611,10 +611,6 @@ function AddDeviceForm({
   );
   // Counter used to force a rerender/reset of certain controlled inputs (e.g. pool combobox)
   const [resetCounter, setResetCounter] = React.useState(0);
-  // Track field-level validation errors (centralized)
-  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>(
-    {},
-  );
   // Check if a root disk already exists
   const hasRootDiskAlready = React.useMemo(() => {
     const allDevices = { ...inheritedDevices, ...existingDevices };
