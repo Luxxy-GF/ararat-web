@@ -185,8 +185,8 @@ type ValidationResult = {
   errors: ValidationError[];
 };
 
-class DeviceValidator {
-  static validateDeviceName(
+const DeviceValidator = {
+  validateDeviceName(
     name: string,
     existingDevices: Record<string, Device>,
     inheritedDevices: Record<string, Device>,
@@ -214,9 +214,9 @@ class DeviceValidator {
     }
 
     return null;
-  }
+  },
 
-  static validateDiskPath(
+  validateDiskPath(
     path: string,
     deviceType: string,
     existingDevices: Record<string, Device>,
@@ -242,9 +242,9 @@ class DeviceValidator {
     }
 
     return null;
-  }
+  },
 
-  static validatePort(
+  validatePort(
     portSpec: string,
     fieldName: string,
   ): ValidationError | null {
@@ -260,9 +260,9 @@ class DeviceValidator {
     }
 
     return null;
-  }
+  },
 
-  static validateRequiredFields(
+  validateRequiredFields(
     deviceType: string,
     properties: Record<string, string>,
     deviceConfig: any,
@@ -334,9 +334,9 @@ class DeviceValidator {
     }
 
     return errors;
-  }
+  },
 
-  static validateDevice(
+  validateDevice(
     name: string,
     deviceType: string,
     properties: Record<string, string>,
@@ -403,8 +403,8 @@ class DeviceValidator {
       isValid: errors.length === 0,
       errors,
     };
-  }
-}
+  },
+};
 
 const DEVICE_TYPES = [
   {
@@ -1480,9 +1480,6 @@ function AddDeviceForm({
     const isBool = config.type === 'bool';
     const hasCondition =
       config.condition && typeof config.condition === 'string';
-    // errorId removed (unused variable)
-    
-    const errorId = `${fieldId}-error`;
 
     // Check if field should be shown using centralized logic
     if (!shouldShowField(fieldKey, config)) {
@@ -2052,14 +2049,14 @@ export default function Devices({
   const [isCreatingRootDisk, setIsCreatingRootDisk] = React.useState(false);
 
   const { data: configurableOptions } = useConfigurableOptions();
-  const isInternalUpdate = React.useRef(false);
+  const skipSyncFromProps = React.useRef(false);
 
   React.useEffect(() => {
     // Only sync from props if the change came from outside (not from our own updates)
-    if (!isInternalUpdate.current) {
+    if (!skipSyncFromProps.current) {
       setLocalDevices(devices);
     }
-    isInternalUpdate.current = false;
+    skipSyncFromProps.current = false;
   }, [devices]);
 
   // Clear selected device when changing tabs or when device is removed
@@ -2124,7 +2121,7 @@ export default function Devices({
 
   const handleAdd = (name: string, device: Device) => {
     const updated = { ...localDevices, [name]: device };
-    isInternalUpdate.current = true;
+    skipSyncFromProps.current = true;
     setLocalDevices(updated);
     onDevicesChange?.(updated);
     setSelectedDevice(null);
@@ -2140,7 +2137,7 @@ export default function Devices({
     }
 
     updated[newName] = device;
-    isInternalUpdate.current = true;
+    skipSyncFromProps.current = true;
     setLocalDevices(updated);
     onDevicesChange?.(updated);
     setSelectedDevice(null);
@@ -2155,7 +2152,7 @@ export default function Devices({
       return;
     }
     const { [name]: _, ...rest } = localDevices;
-    isInternalUpdate.current = true;
+    skipSyncFromProps.current = true;
     setLocalDevices(rest);
     onDevicesChange?.(rest);
 
@@ -2168,7 +2165,7 @@ export default function Devices({
     // Remove override to revert to inherited version
     if (name in inheritedDevices && name in localDevices) {
       const { [name]: _, ...rest } = localDevices;
-      isInternalUpdate.current = true;
+      skipSyncFromProps.current = true;
       setLocalDevices(rest);
       onDevicesChange?.(rest);
 
