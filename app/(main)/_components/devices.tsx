@@ -1480,9 +1480,6 @@ function AddDeviceForm({
     const isBool = config.type === 'bool';
     const hasCondition =
       config.condition && typeof config.condition === 'string';
-    // errorId removed (unused variable)
-    
-    const errorId = `${fieldId}-error`;
 
     // Check if field should be shown using centralized logic
     if (!shouldShowField(fieldKey, config)) {
