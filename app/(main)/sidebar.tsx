@@ -306,8 +306,10 @@ function NavUser() {
         console.warn("OIDC logout request failed", err);
       }
 
-      // Clear the client-side OIDC cookie regardless of server response
+      // Clear client-side OIDC cookies regardless of server response
       document.cookie = "oidc_id=; path=/; max-age=0; Secure; SameSite=Lax";
+      document.cookie =
+        "oidc_refresh_token=; path=/; max-age=0; Secure; SameSite=Lax";
 
       window.location.href = "/ui/authentication/login";
       return;
