@@ -208,10 +208,10 @@ export async function refreshOidcSession(): Promise<void> {
   // Update the ID token cookie
   // Note: We can only set non-httpOnly cookies from JavaScript
   // Ensure the OIDC login flow sets cookies appropriately
-  document.cookie = `oidc_id=${encodeURIComponent(newIdToken)}; path=/; SameSite=Lax`;
+  document.cookie = `oidc_id=${encodeURIComponent(newIdToken)}; path=/; SameSite=Lax; Secure`;
 
   // Update the refresh token cookie if we got a new one
   if (newRefreshToken) {
-    document.cookie = `oidc_refresh_token=${encodeURIComponent(newRefreshToken)}; path=/; SameSite=Lax`;
+    document.cookie = `oidc_refresh_token=${encodeURIComponent(newRefreshToken)}; path=/; SameSite=Lax; Secure`;
   }
 }
