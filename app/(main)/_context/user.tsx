@@ -3,7 +3,6 @@
 
 import { useUser } from "@/app/_hooks/user";
 import { createContext, use } from 'react';
-import { useClientCertificate } from '@/app/_hooks/certificate';
 import IsClientContext from '@/app/_context/isClient';
 
 export interface UserContextData {
