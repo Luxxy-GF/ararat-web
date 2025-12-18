@@ -12,7 +12,7 @@ export const metadata = {
   description: "Login to Hye Ararat via OpenID Connect",
 };
 
-export default function OIDCAuth() {
+export default function OidcAuth() {
   return (
     <Card>
       <CardHeader>
