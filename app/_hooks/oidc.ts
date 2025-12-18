@@ -140,15 +140,15 @@ export function useOidcUser(enabled: boolean = true) {
         };
         const onMessage = (event: MessageEvent) => {
           if (event?.data === "refreshed") {
-            try { channelRef.current?.removeEventListener("message", onMessage as any); } catch {}
+            try { channelRef.current?.removeEventListener("message", onMessage as any); } catch { }
             done();
           }
         };
         try {
           channelRef.current?.addEventListener("message", onMessage as any);
-        } catch {}
+        } catch { }
         window.setTimeout(() => {
-          try { channelRef.current?.removeEventListener("message", onMessage as any); } catch {}
+          try { channelRef.current?.removeEventListener("message", onMessage as any); } catch { }
           done();
         }, timeoutMs);
         // Safety: clear timer on resolve to avoid leaks
@@ -182,7 +182,7 @@ export function useOidcUser(enabled: boolean = true) {
           // Notify other tabs
           try {
             channelRef.current?.postMessage("refreshed");
-          } catch {}
+          } catch { }
         } catch (err) {
           console.warn("OIDC refresh failed", err);
           refreshBackoffMsRef.current = OIDC_REFRESH_FAILURE_BACKOFF_MS;
@@ -268,15 +268,20 @@ export function useOidcUser(enabled: boolean = true) {
     // Initial load: read current user and schedule next refresh
     (async () => {
       await maybeRefresh();
-      scheduleNext();
+      if (isMountedRef.current) {
+        scheduleNext();
+      }
     })();
 
     // Wake up early when tab becomes visible
     const onVisibility = () => {
+      if (!isMountedRef.current) return;
       if (document.visibilityState === "visible") {
         (async () => {
           await maybeRefresh();
-          scheduleNext();
+          if (isMountedRef.current) {
+            scheduleNext();
+          }
         })();
       }
     };
@@ -288,7 +293,7 @@ export function useOidcUser(enabled: boolean = true) {
       clearTimer();
       try {
         channelRef.current?.close();
-      } catch {}
+      } catch { }
       channelRef.current = null;
     };
   }, [enabled]);
