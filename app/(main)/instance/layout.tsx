@@ -269,7 +269,6 @@ const TABS = [
 ];
 
 function InstanceTabs() {
-  const router = useRouter();
   const pathname = usePathname();
   const { name: instanceName } = useInstanceContext();
 
@@ -288,25 +287,28 @@ function InstanceTabs() {
     }
   }
 
-  const handleTabChange = (value: string) => {
-    if (!instanceName) return;
-
-    const targetPath =
-      value === 'dashboard' ? '/instance' : `/instance/${value}`;
-
-    router.push(`${targetPath}?name=${instanceName}`);
-  };
-
   return (
-    <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
+    <Tabs value={currentTab} className="w-full">
       <div className="w-full overflow-x-auto">
         <TabsList className="min-w-full inline-flex">
-          {TABS.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
-              <tab.icon aria-hidden="true" className="mr-2 h-4 w-4" />
-              {tab.label}
-            </TabsTrigger>
-          ))}
+          {TABS.map((tab) => {
+            const targetPath =
+              tab.value === 'dashboard' ? '/instance' : `/instance/${tab.value}`;
+            
+            return (
+              <TabsTrigger key={tab.value} value={tab.value} asChild>
+                <Link
+                  href={{
+                    pathname: targetPath,
+                    query: instanceName ? { name: instanceName } : undefined,
+                  }}
+                >
+                  <tab.icon aria-hidden="true" className="mr-2 h-4 w-4" />
+                  {tab.label}
+                </Link>
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
       </div>
     </Tabs>
