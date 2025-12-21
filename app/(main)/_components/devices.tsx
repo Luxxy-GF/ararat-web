@@ -1328,7 +1328,6 @@ function AddDeviceForm({
     }
     setName('');
     setProperties(isRoot ? { path: '/' } : {});
-    setFieldErrors({});
     setResetCounter((c) => c + 1);
   };
 
@@ -1987,7 +1986,6 @@ function AddDeviceForm({
               // Clear local state before delegating cancel
               setName('');
               setProperties(isCreatingRootDisk ? { path: '/' } : {});
-              setFieldErrors({});
               setResetCounter((c) => c + 1);
               onCancelEdit?.();
             }}

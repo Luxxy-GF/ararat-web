@@ -23,6 +23,8 @@ export interface ConfigOption {
   shortdesc?: string;
   longdesc?: string;
   condition?: string;
+  name?: string;
+  key?: string;
   fullKey?: string;
   supported_types?: ('container' | 'virtual-machine')[];
   required_for?: ('container' | 'virtual-machine')[];

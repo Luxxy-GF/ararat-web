@@ -256,7 +256,7 @@ export default function InstanceTextConsole() {
       logError(err, 'attach console sockets');
       initializedRef.current = false;
     });
-  }, [isLoading, instance, attachToSocket, logError, retryTrigger]);
+  }, [isLoading, instanceClass, attachToSocket, logError, retryTrigger]);
 
   // Create and initialize the terminal instance, and attach add-ons
   useEffect(() => {

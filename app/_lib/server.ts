@@ -55,7 +55,7 @@ function processConfigurableOptions(config: ConfigurableOptions) {
 
     // Default to supporting both types
     option.supported_types = ['container', 'virtual-machine'];
-    let typeMatchCategory = MATCHED_TYPE_BOTH;
+    let typeMatchCategory: 'both' | 'container' | 'virtual-machine' = MATCHED_TYPE_BOTH;
     // Check for container-only patterns
     if (
       TYPE_PATTERNS.container.some((pattern) => textToCheck.includes(pattern))
