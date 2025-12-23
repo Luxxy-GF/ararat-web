@@ -37,7 +37,7 @@ export async function performInstanceAction({
 
 export async function updateInstance(
   name: string,
-  config: Record<string, string>,
+  config: Record<string, string | null>,
   project: string | null = null,
 ) {
   const projectSuffix = project

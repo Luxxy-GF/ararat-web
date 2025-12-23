@@ -1,47 +1,99 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { useInstance } from '../_hooks/instance';
+import { SaveIcon } from 'lucide-react';
 import GeneralConfiguration from '@/app/(main)/instances/_components/general-configuration';
 import { Button } from 'ui-web/components/button';
 import { Spinner } from 'ui-web/components/spinner';
 import { toast } from 'sonner';
 import { updateInstance } from '../_lib/instance';
-import { mutate } from 'swr';
-import { SaveIcon } from 'lucide-react';
+import { useInstanceContext } from '../_context/instance';
+
+function hasConfigChanged(
+  current: Record<string, string>,
+  initial: Record<string, string>,
+) {
+  const keys = new Set([...Object.keys(current), ...Object.keys(initial)]);
+
+  for (const key of keys) {
+    const hasCurrent = Object.prototype.hasOwnProperty.call(current, key);
+    const hasInitial = Object.prototype.hasOwnProperty.call(initial, key);
+
+    if (hasCurrent !== hasInitial) {
+      return true;
+    }
+
+    if (hasCurrent && hasInitial && current[key] !== initial[key]) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function buildConfigChanges(
+  current: Record<string, string>,
+  initial: Record<string, string>,
+) {
+  const changes: Record<string, string | null> = {};
+  const keys = new Set([...Object.keys(current), ...Object.keys(initial)]);
+
+  for (const key of keys) {
+    const hasCurrent = Object.prototype.hasOwnProperty.call(current, key);
+    const hasInitial = Object.prototype.hasOwnProperty.call(initial, key);
+
+    if (hasCurrent && (!hasInitial || current[key] !== initial[key])) {
+      changes[key] = current[key];
+      continue;
+    }
+
+    if (!hasCurrent && hasInitial) {
+      changes[key] = null;
+    }
+  }
+
+  return changes;
+}
 
 export default function ConfigurationPage() {
-  const searchParams = useSearchParams();
-  const instanceName = searchParams.get('name');
-  const { instance, isLoading, isError } = useInstance(instanceName);
+  const { instance, isLoading, isError, mutate } = useInstanceContext();
   const [config, setConfig] = useState<Record<string, string>>({});
+  const [initialConfig, setInitialConfig] = useState<Record<string, string>>(
+    {},
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
   // Initialize config from instance data
   useEffect(() => {
-    if (instance?.config) {
-      // Filter out volatile keys if necessary, but GeneralConfiguration handles display filtering
-      setConfig(instance.config);
-    }
+    const nextConfig = { ...(instance?.config ?? {}) };
+    setConfig(nextConfig);
+    setInitialConfig({ ...nextConfig });
+    setIsDirty(false);
   }, [instance]);
 
   const handleConfigChange = (newConfig: Record<string, string>) => {
     setConfig(newConfig);
-    setIsDirty(true);
+    setIsDirty(hasConfigChanged(newConfig, initialConfig));
   };
 
   const handleSave = async () => {
-    if (!instanceName) return;
+    if (!instance) return;
+
+    const changes = buildConfigChanges(config, initialConfig);
+    if (Object.keys(changes).length === 0) {
+      setIsDirty(false);
+      return;
+    }
 
     setIsSaving(true);
     try {
-      await updateInstance(instanceName, config, instance?.project);
+      await updateInstance(instance.name, changes, instance.project ?? null);
       toast.success('Instance configuration updated');
+      setInitialConfig({ ...config });
       setIsDirty(false);
       // Revalidate instance data
-      mutate(`/1.0/instances/${instanceName}?recursion=1`);
+      mutate();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : 'Failed to update configuration',
