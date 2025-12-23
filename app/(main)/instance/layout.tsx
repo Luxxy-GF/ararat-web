@@ -28,6 +28,9 @@ import {
 import { Input } from 'ui-web/components/input';
 import { toast } from 'sonner';
 
+const INPUT_WIDTH_BUFFER_CH = 4;
+const MIN_VISIBLE_CHARACTERS = 1;
+
 function InstanceLayoutContent({ children }: { children: React.ReactNode }) {
   const { name, instance, isLoading, isError, mutate } = useInstanceContext();
 
@@ -241,7 +244,12 @@ function InstanceHeader({
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 className="h-8 w-auto font-bold min-w-[4ch]"
-                style={{ width: `${Math.max(newName.length, 1) + 4}ch` }}
+                style={{
+                  width: `${Math.max(
+                    newName.length,
+                    MIN_VISIBLE_CHARACTERS,
+                  ) + INPUT_WIDTH_BUFFER_CH}ch`,
+                }}
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSaveName();
@@ -289,7 +297,12 @@ function InstanceHeader({
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
                 className="h-8 w-auto min-w-[10ch]"
-                style={{ width: `${Math.max(newDescription.length, 1) + 4}ch` }}
+                style={{
+                  width: `${Math.max(
+                    newDescription.length,
+                    MIN_VISIBLE_CHARACTERS,
+                  ) + INPUT_WIDTH_BUFFER_CH}ch`,
+                }}
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSaveDescription();

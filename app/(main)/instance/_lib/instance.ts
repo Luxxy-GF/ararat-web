@@ -1,5 +1,8 @@
 import { Instance } from '../../instances/_lib/instances.d';
 
+const OPERATION_POLL_MAX_ATTEMPTS = 20;
+const OPERATION_POLL_DELAY_MS = 500;
+
 export type InstanceAction = 'start' | 'stop' | 'restart' | 'freeze';
 
 export async function performInstanceAction({
@@ -102,10 +105,7 @@ export async function renameInstance({
 
 async function waitForOperation(operationUrl: string) {
   // Poll the operation URL until it's done
-  const maxAttempts = 20;
-  const delay = 500; // ms
-
-  for (let i = 0; i < maxAttempts; i++) {
+  for (let i = 0; i < OPERATION_POLL_MAX_ATTEMPTS; i++) {
     const res = await fetch(operationUrl);
     if (!res.ok) {
       // If we can't check the operation, assume it failed or network issue
@@ -124,7 +124,7 @@ async function waitForOperation(operationUrl: string) {
     }
 
     // Wait before next poll
-    await new Promise((resolve) => setTimeout(resolve, delay));
+    await new Promise((resolve) => setTimeout(resolve, OPERATION_POLL_DELAY_MS));
   }
   throw new Error('Operation timed out');
 }
