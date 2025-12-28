@@ -1,15 +1,7 @@
 import { Instance } from '../../instances/_lib/instances.d';
 
-const OPERATION_EVENT_TIMEOUT_MS = 30000;
-
-type OperationEvent = {
-  type: 'operation';
-  metadata?: {
-    id?: string;
-    status?: string;
-    err?: string;
-  };
-};
+const OPERATION_POLL_MAX_ATTEMPTS = 20;
+const OPERATION_POLL_DELAY_MS = 500;
 
 export type InstanceAction = 'start' | 'stop' | 'restart' | 'freeze';
 
@@ -112,8 +104,27 @@ export async function renameInstance({
 }
 
 async function waitForOperation(operationUrl: string) {
-  if (typeof window === 'undefined') {
-    throw new Error('Operation status requires a browser context');
+  // Poll the operation URL until it's done
+  for (let i = 0; i < OPERATION_POLL_MAX_ATTEMPTS; i++) {
+    const res = await fetch(operationUrl);
+    if (!res.ok) {
+      // If we can't check the operation, assume it failed or network issue
+      throw new Error('Failed to check operation status');
+    }
+    const data = await res.json();
+    // Operation status: Running, Pending, Success, Failure, Cancelled
+    if (data.metadata?.status === 'Success') {
+      return;
+    }
+    if (data.metadata?.status === 'Failure') {
+      throw new Error(data.metadata.err || 'Operation failed');
+    }
+    if (data.metadata?.status === 'Cancelled') {
+      throw new Error('Operation cancelled');
+    }
+
+    // Wait before next poll
+    await new Promise((resolve) => setTimeout(resolve, OPERATION_POLL_DELAY_MS));
   }
 
   const operationId = operationUrl.split('/').pop() ?? operationUrl;
