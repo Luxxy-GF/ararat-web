@@ -26,6 +26,7 @@ function Files({ instance }: { instance: any }) {
   const router = useRouter();
   const pathname = usePathname();
   const [currentPath, setCurrentPath] = React.useState('/');
+  const hasInitializedPath = React.useRef(false);
 
   // Read path from URL on mount using manual JS
   React.useEffect(() => {
