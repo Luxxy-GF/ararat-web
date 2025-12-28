@@ -1,5 +1,16 @@
 import { Instance } from '../../instances/_lib/instances.d';
 
+const OPERATION_EVENT_TIMEOUT_MS = 30000;
+
+type OperationEvent = {
+  type: 'operation';
+  metadata?: {
+    id?: string;
+    status?: string;
+    err?: string;
+  };
+};
+
 export type InstanceAction = 'start' | 'stop' | 'restart' | 'freeze';
 
 export async function performInstanceAction({
@@ -101,30 +112,98 @@ export async function renameInstance({
 }
 
 async function waitForOperation(operationUrl: string) {
-  // Poll the operation URL until it's done
-  const maxAttempts = 20;
-  const delay = 500; // ms
-
-  for (let i = 0; i < maxAttempts; i++) {
-    const res = await fetch(operationUrl);
-    if (!res.ok) {
-      // If we can't check the operation, assume it failed or network issue
-      throw new Error('Failed to check operation status');
-    }
-    const data = await res.json();
-    // Operation status: Running, Pending, Success, Failure, Cancelled
-    if (data.metadata?.status === 'Success') {
-      return;
-    }
-    if (data.metadata?.status === 'Failure') {
-      throw new Error(data.metadata.err || 'Operation failed');
-    }
-    if (data.metadata?.status === 'Cancelled') {
-      throw new Error('Operation cancelled');
-    }
-
-    // Wait before next poll
-    await new Promise((resolve) => setTimeout(resolve, delay));
+  if (typeof window === 'undefined') {
+    throw new Error('Operation status requires a browser context');
   }
-  throw new Error('Operation timed out');
+
+  const operationId = operationUrl.split('/').pop() ?? operationUrl;
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  const socketUrl = `${protocol}://${window.location.host}/1.0/events?type=operation&operation=${encodeURIComponent(
+    operationId,
+  )}`;
+
+  await new Promise<void>((resolve, reject) => {
+    let settled = false;
+    const socket = new WebSocket(socketUrl);
+    const timeoutId = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      socket.close();
+      reject(new Error('Operation timed out'));
+    }, OPERATION_EVENT_TIMEOUT_MS);
+
+    const cleanup = () => {
+      window.clearTimeout(timeoutId);
+      socket.onopen = null;
+      socket.onmessage = null;
+      socket.onerror = null;
+      socket.onclose = null;
+    };
+
+    socket.onerror = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error('Failed to check operation status'));
+    };
+
+    socket.onclose = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error('Operation socket closed before completion'));
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as OperationEvent;
+        if (data.type !== 'operation') {
+          return;
+        }
+
+        const metadata = data.metadata;
+        if (!metadata?.status) {
+          return;
+        }
+
+        if (metadata.id && metadata.id !== operationId) {
+          return;
+        }
+
+        if (metadata.status === 'Success') {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          socket.close();
+          resolve();
+        }
+
+        if (metadata.status === 'Failure') {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          socket.close();
+          reject(new Error(metadata.err || 'Operation failed'));
+        }
+
+        if (metadata.status === 'Cancelled') {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          socket.close();
+          reject(new Error('Operation cancelled'));
+        }
+      } catch (error) {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        socket.close();
+        reject(
+          error instanceof Error
+            ? error
+            : new Error('Failed to parse operation status'),
+        );
+      }
+    };
+  });
 }
