@@ -160,7 +160,6 @@ function InstanceHeader({
         newName,
         project: instance.project,
       });
-      toast.success('Instance renamed successfully');
       setIsEditingName(false);
       // Redirect to new URL
       router.push(`/instance?name=${encodeURIComponent(newName)}`);
