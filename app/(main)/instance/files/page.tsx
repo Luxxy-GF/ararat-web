@@ -25,24 +25,26 @@ function Files({ instance }: { instance: any }) {
   const router = useRouter();
   const pathname = usePathname();
   const [currentPath, setCurrentPath] = React.useState('/');
+  const hasInitializedPath = React.useRef(false);
 
   // Read path from URL on mount using manual JS
   React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const pathParam = params.get('path');
+    if (hasInitializedPath.current || typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const pathParam = params.get('path');
 
-      if (pathParam) {
-        setCurrentPath(pathParam);
-      } else if (instance.expanded_config?.['oci.cwd']) {
-        setCurrentPath(instance.expanded_config['oci.cwd']);
-        // Update URL to reflect the default path
-        const newParams = new URLSearchParams(window.location.search);
-        newParams.set('path', instance.expanded_config['oci.cwd']);
-        router.replace(`${pathname}?${newParams.toString()}`);
-      }
+    if (pathParam) {
+      setCurrentPath(pathParam);
+    } else if (instance?.expanded_config?.['oci.cwd']) {
+      setCurrentPath(instance.expanded_config['oci.cwd']);
+      // Update URL to reflect the default path
+      const newParams = new URLSearchParams(window.location.search);
+      newParams.set('path', instance.expanded_config['oci.cwd']);
+      router.replace(`${pathname}?${newParams.toString()}`);
     }
-  }, []);
+
+    hasInitializedPath.current = true;
+  }, [instance?.expanded_config, pathname, router]);
 
   // Listen for back/forward navigation
   React.useEffect(() => {

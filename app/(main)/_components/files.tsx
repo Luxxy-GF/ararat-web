@@ -106,60 +106,59 @@ function getFileExtension(filename: string) {
   return filename.split('.').pop()?.toLowerCase();
 }
 
-function getFileIcon(filename: string) {
-  const ext = getFileExtension(filename);
-  const className = "h-4 w-4 text-gray-500";
+const FILE_ICON_CLASS = 'h-4 w-4 text-gray-500';
+const FILE_TYPE_CONFIG: Record<
+  string,
+  { icon: React.ComponentType<{ className?: string }>; language?: string }
+> = {
+  js: { icon: FileCode, language: 'javascript' },
+  jsx: { icon: FileCode, language: 'javascript' },
+  ts: { icon: FileCode, language: 'typescript' },
+  tsx: { icon: FileCode, language: 'typescript' },
+  json: { icon: FileJson, language: 'json' },
+  html: { icon: FileCode, language: 'html' },
+  xml: { icon: FileCode, language: 'html' },
+  css: { icon: FileType, language: 'css' },
+  scss: { icon: FileType, language: 'css' },
+  less: { icon: FileType, language: 'css' },
+  png: { icon: FileImage },
+  jpg: { icon: FileImage },
+  jpeg: { icon: FileImage },
+  gif: { icon: FileImage },
+  svg: { icon: FileImage },
+  webp: { icon: FileImage },
+  txt: { icon: FileText },
+  md: { icon: FileText, language: 'markdown' },
+  zip: { icon: FileArchive },
+  tar: { icon: FileArchive },
+  gz: { icon: FileArchive },
+  '7z': { icon: FileArchive },
+  rar: { icon: FileArchive },
+  mp4: { icon: FileVideo },
+  mov: { icon: FileVideo },
+  avi: { icon: FileVideo },
+  mkv: { icon: FileVideo },
+  mp3: { icon: FileAudio },
+  wav: { icon: FileAudio },
+  ogg: { icon: FileAudio },
+  csv: { icon: FileSpreadsheet },
+  xls: { icon: FileSpreadsheet },
+  xlsx: { icon: FileSpreadsheet },
+  iso: { icon: FileBox },
+  img: { icon: FileBox },
+  py: { icon: FileCode, language: 'python' },
+  go: { icon: FileCode, language: 'go' },
+  sh: { icon: FileCode, language: 'shell' },
+  bash: { icon: FileCode, language: 'shell' },
+  yaml: { icon: FileCode, language: 'yaml' },
+  yml: { icon: FileCode, language: 'yaml' },
+};
 
-  switch (ext) {
-    case 'js':
-    case 'jsx':
-    case 'ts':
-    case 'tsx':
-      return <FileCode className={className} />;
-    case 'json':
-      return <FileJson className={className} />;
-    case 'html':
-    case 'xml':
-      return <FileCode className={className} />;
-    case 'css':
-    case 'scss':
-    case 'less':
-      return <FileType className={className} />;
-    case 'png':
-    case 'jpg':
-    case 'jpeg':
-    case 'gif':
-    case 'svg':
-    case 'webp':
-      return <FileImage className={className} />;
-    case 'txt':
-    case 'md':
-      return <FileText className={className} />;
-    case 'zip':
-    case 'tar':
-    case 'gz':
-    case '7z':
-    case 'rar':
-      return <FileArchive className={className} />;
-    case 'mp4':
-    case 'mov':
-    case 'avi':
-    case 'mkv':
-      return <FileVideo className={className} />;
-    case 'mp3':
-    case 'wav':
-    case 'ogg':
-      return <FileAudio className={className} />;
-    case 'csv':
-    case 'xls':
-    case 'xlsx':
-      return <FileSpreadsheet className={className} />;
-    case 'iso':
-    case 'img':
-      return <FileBox className={className} />;
-    default:
-      return <FileIcon className={className} />;
-  }
+function getFileIcon(filename: string) {
+  const ext = getFileExtension(filename) || '';
+  const config = FILE_TYPE_CONFIG[ext];
+  const Icon = config?.icon || FileIcon;
+  return <Icon className={FILE_ICON_CLASS} />;
 }
 
 export function FileBrowser({
@@ -420,6 +419,7 @@ export function FileBrowser({
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+    setActionError(null);
     const files = Array.from(e.dataTransfer.files);
     if (files.length === 0) return;
 
@@ -435,20 +435,17 @@ export function FileBrowser({
     // And "File uploads should display progress".
     // I'll reuse the onUpload prop which now supports progress.
 
-    for (const file of files) {
-      // We can't easily show a progress dialog for drag & drop without more state.
-      // Let's just do it in background for now, or maybe open the dialog?
-      // Opening the dialog with the file is a good UX.
-      // But what if multiple files?
-      // Let's stick to single file for now as the dialog supports one.
-      // Or just upload directly.
-      try {
-        await onUpload(file);
-        return { file, status: 'fulfilled' };
-      } catch (err: any) {
-        setActionError(err.message);
-      }
-    }
+    const errors: string[] = [];
+
+    await Promise.all(
+      files.map(async (file) => {
+        try {
+          await onUpload(file);
+        } catch (err: any) {
+          errors.push(err?.message || 'Upload failed');
+        }
+      }),
+    );
 
     if (errors.length > 0) {
       setActionError(errors.join('\n'));
@@ -456,35 +453,8 @@ export function FileBrowser({
   };
 
   const getLanguageFromFilename = (filename: string) => {
-    const ext = getFileExtension(filename);
-    switch (ext) {
-      case 'js':
-      case 'jsx':
-        return 'javascript';
-      case 'ts':
-      case 'tsx':
-        return 'typescript';
-      case 'json':
-        return 'json';
-      case 'html':
-        return 'html';
-      case 'css':
-        return 'css';
-      case 'md':
-        return 'markdown';
-      case 'py':
-        return 'python';
-      case 'go':
-        return 'go';
-      case 'sh':
-      case 'bash':
-        return 'shell';
-      case 'yaml':
-      case 'yml':
-        return 'yaml';
-      default:
-        return 'plaintext';
-    }
+    const ext = getFileExtension(filename) || '';
+    return FILE_TYPE_CONFIG[ext]?.language || 'plaintext';
   };
 
   return (
@@ -697,7 +667,25 @@ export function FileBrowser({
                   </button>
                   <button
                     className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-                    onClick={() => onNavigate(fullPath)}
+                    onClick={() => {
+                      if (isDirectory) {
+                        onNavigate(fullPath);
+                      } else {
+                        handleEdit(name);
+                      }
+                      setContextMenu(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (isDirectory) {
+                          onNavigate(fullPath);
+                        } else {
+                          handleEdit(name);
+                        }
+                        setContextMenu(null);
+                      }
+                    }}
                   >
                     <FolderIcon className="mr-2 h-4 w-4" />
                     Open
