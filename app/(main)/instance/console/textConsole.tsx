@@ -224,7 +224,7 @@ export default function InstanceTextConsole() {
         if (termRef.current) {
           termRef.current.write(
             `\r\n[console] Unable to load previous console output for this instance.\r\n` +
-              `[console] Live logs may still appear below. If the problem persists, try reconnecting to the instance or refreshing the page.\r\n`,
+            `[console] Live logs may still appear below. If the problem persists, try reconnecting to the instance or refreshing the page.\r\n`,
           );
         }
         logError(err, 'getConsoleOutput');
@@ -256,7 +256,7 @@ export default function InstanceTextConsole() {
       logError(err, 'attach console sockets');
       initializedRef.current = false;
     });
-  }, [isLoading, instance, attachToSocket, logError, retryTrigger]);
+  }, [isLoading, instanceClass, attachToSocket, logError, retryTrigger]);
 
   // Create and initialize the terminal instance, and attach add-ons
   useEffect(() => {

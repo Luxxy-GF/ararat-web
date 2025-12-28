@@ -467,11 +467,10 @@ function DeviceListItem({
   return (
     <div
       onClick={onClick}
-      className={`w-full text-left ${
-        readonly && inherited && !overridden
+      className={`w-full text-left ${readonly && inherited && !overridden
           ? 'cursor-not-allowed'
           : 'cursor-pointer'
-      }`}
+        }`}
       role="button"
       tabIndex={readonly && inherited && !overridden ? -1 : 0}
       onKeyDown={(e) => {
@@ -480,16 +479,13 @@ function DeviceListItem({
           onClick();
         }
       }}
-      aria-label={`${name} device - ${device.type}${
-        inherited ? ' (inherited)' : ''
-      }${overridden ? ' (overridden)' : ''}`}
+      aria-label={`${name} device - ${device.type}${inherited ? ' (inherited)' : ''
+        }${overridden ? ' (overridden)' : ''}`}
     >
       <Card
-        className={`${inherited ? 'border-dashed' : ''} ${
-          overridden ? 'border-orange-500/50' : ''
-        } ${hasIssues ? 'border-destructive' : ''} ${
-          selected ? 'ring-2 ring-primary' : 'hover:bg-muted/50'
-        } ${readonly && inherited && !overridden ? 'opacity-50' : ''} transition-all`}
+        className={`${inherited ? 'border-dashed' : ''} ${overridden ? 'border-orange-500/50' : ''
+          } ${hasIssues ? 'border-destructive' : ''} ${selected ? 'ring-2 ring-primary' : 'hover:bg-muted/50'
+          } ${readonly && inherited && !overridden ? 'opacity-50' : ''} transition-all`}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
@@ -704,7 +700,7 @@ function AddDeviceForm({
     ) {
       const config =
         configurableOptions.configs.devices[
-          deviceConfigKey as keyof typeof configurableOptions.configs.devices
+        deviceConfigKey as keyof typeof configurableOptions.configs.devices
         ];
       return config || null;
     }
@@ -1085,8 +1081,8 @@ function AddDeviceForm({
             {(!flags?.type ||
               flags.type === 'virtual-machine' ||
               flags.type === 'container') && (
-              <SelectItem value="physical">Physical</SelectItem>
-            )}
+                <SelectItem value="physical">Physical</SelectItem>
+              )}
             {(!flags?.type || flags.type === 'virtual-machine') && (
               <SelectItem value="mdev">MDEV</SelectItem>
             )}
@@ -1328,7 +1324,7 @@ function AddDeviceForm({
     }
     setName('');
     setProperties(isRoot ? { path: '/' } : {});
-    setFieldErrors({});
+
     setResetCounter((c) => c + 1);
   };
 
@@ -1987,7 +1983,7 @@ function AddDeviceForm({
               // Clear local state before delegating cancel
               setName('');
               setProperties(isCreatingRootDisk ? { path: '/' } : {});
-              setFieldErrors({});
+
               setResetCounter((c) => c + 1);
               onCancelEdit?.();
             }}
@@ -2006,21 +2002,21 @@ function AddDeviceForm({
           {editingDevice
             ? `Save ${editingDevice.name}`
             : `Add ${(() => {
-                const deviceType_ = DEVICE_TYPES.find(
-                  (t) => t.value === deviceType,
-                );
-                if (!deviceType_) return 'Device';
-                const label = deviceType_.label;
-                // Handle "Proxies" -> "Proxy"
-                if (label.endsWith('ies')) {
-                  return label.slice(0, -3) + 'y';
-                }
-                // Handle "Networks", "Disks", "GPUs" -> singular
-                if (label.endsWith('s') && !label.endsWith('ss')) {
-                  return label.slice(0, -1);
-                }
-                return label;
-              })()}`}
+              const deviceType_ = DEVICE_TYPES.find(
+                (t) => t.value === deviceType,
+              );
+              if (!deviceType_) return 'Device';
+              const label = deviceType_.label;
+              // Handle "Proxies" -> "Proxy"
+              if (label.endsWith('ies')) {
+                return label.slice(0, -3) + 'y';
+              }
+              // Handle "Networks", "Disks", "GPUs" -> singular
+              if (label.endsWith('s') && !label.endsWith('ss')) {
+                return label.slice(0, -1);
+              }
+              return label;
+            })()}`}
         </Button>
       </div>
     </div>
@@ -2232,19 +2228,19 @@ export default function Devices({
             : isCreatingRootDisk && !hasRootDisk && selectedType === 'disk'
               ? 'Add Root Disk'
               : `Add ${(() => {
-                  const deviceType = DEVICE_TYPES.find(
-                    (t) => t.value === selectedType,
-                  );
-                  if (!deviceType) return 'Device';
-                  const label = deviceType.label;
-                  if (label.endsWith('ies')) {
-                    return label.slice(0, -3) + 'y';
-                  }
-                  if (label.endsWith('s') && !label.endsWith('ss')) {
-                    return label.slice(0, -1);
-                  }
-                  return label;
-                })()}`}
+                const deviceType = DEVICE_TYPES.find(
+                  (t) => t.value === selectedType,
+                );
+                if (!deviceType) return 'Device';
+                const label = deviceType.label;
+                if (label.endsWith('ies')) {
+                  return label.slice(0, -3) + 'y';
+                }
+                if (label.endsWith('s') && !label.endsWith('ss')) {
+                  return label.slice(0, -1);
+                }
+                return label;
+              })()}`}
         </h3>
         <div className="ml-auto md:hidden">
           {/* Mobile close button if needed, or just rely on back */}
@@ -2265,7 +2261,7 @@ export default function Devices({
           deviceType={selectedType}
           deviceConfig={
             configurableOptions?.configs?.devices?.[
-              selectedType.startsWith('nic_') ? 'nic_bridged' : selectedType
+            selectedType.startsWith('nic_') ? 'nic_bridged' : selectedType
             ]
           }
           onAdd={(name, device) => {
@@ -2276,7 +2272,7 @@ export default function Devices({
           isInherited={
             selectedDevice
               ? isInherited(selectedDevice.name) ||
-                isOverridden(selectedDevice.name)
+              isOverridden(selectedDevice.name)
               : false
           }
           onUpdate={(oldName, newName, device) => {
