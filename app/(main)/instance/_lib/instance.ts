@@ -126,5 +126,95 @@ async function waitForOperation(operationUrl: string) {
     // Wait before next poll
     await new Promise((resolve) => setTimeout(resolve, OPERATION_POLL_DELAY_MS));
   }
-  throw new Error('Operation timed out');
+
+  const operationId = operationUrl.split('/').pop() ?? operationUrl;
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  const socketUrl = `${protocol}://${window.location.host}/1.0/events?type=operation&operation=${encodeURIComponent(
+    operationId,
+  )}`;
+
+  await new Promise<void>((resolve, reject) => {
+    let settled = false;
+    const socket = new WebSocket(socketUrl);
+    const timeoutId = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      socket.close();
+      reject(new Error('Operation timed out'));
+    }, OPERATION_EVENT_TIMEOUT_MS);
+
+    const cleanup = () => {
+      window.clearTimeout(timeoutId);
+      socket.onopen = null;
+      socket.onmessage = null;
+      socket.onerror = null;
+      socket.onclose = null;
+    };
+
+    socket.onerror = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error('Failed to check operation status'));
+    };
+
+    socket.onclose = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error('Operation socket closed before completion'));
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as OperationEvent;
+        if (data.type !== 'operation') {
+          return;
+        }
+
+        const metadata = data.metadata;
+        if (!metadata?.status) {
+          return;
+        }
+
+        if (metadata.id && metadata.id !== operationId) {
+          return;
+        }
+
+        if (metadata.status === 'Success') {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          socket.close();
+          resolve();
+        }
+
+        if (metadata.status === 'Failure') {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          socket.close();
+          reject(new Error(metadata.err || 'Operation failed'));
+        }
+
+        if (metadata.status === 'Cancelled') {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          socket.close();
+          reject(new Error('Operation cancelled'));
+        }
+      } catch (error) {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        socket.close();
+        reject(
+          error instanceof Error
+            ? error
+            : new Error('Failed to parse operation status'),
+        );
+      }
+    };
+  });
 }
