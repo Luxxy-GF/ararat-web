@@ -36,15 +36,24 @@ export function useBackups(instanceName: string) {
   };
 
   const deleteBackup = async (backupName: string) => {
-    const removeBackup = (current?: StandardResponse<Backup[]>) =>
-      current
-        ? {
-            ...current,
-            metadata: current.metadata.filter(
-              (backup) => backup.name !== backupName,
-            ),
-          }
-        : current;
+    const removeBackup = (
+      current?: StandardResponse<Backup[]>,
+    ): StandardResponse<Backup[]> => {
+      if (!current) {
+        return {
+          type: 'sync',
+          status: 'Success',
+          status_code: 200,
+          metadata: [],
+        };
+      }
+      return {
+        ...current,
+        metadata: current.metadata.filter(
+          (backup) => backup.name !== backupName,
+        ),
+      };
+    };
 
     await mutate(
       async (current?: StandardResponse<Backup[]>) => {
