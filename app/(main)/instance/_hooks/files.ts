@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import useSWR, { mutate } from 'swr';
+import EventEmitterContext from '../../../_context/events';
 import {
   uploadFile as apiUploadFile,
   createDirectory as apiCreateDirectory,
@@ -89,46 +90,103 @@ export function useFiles(instanceName: string, path: string) {
     fetchMetadata();
   }, [data, instanceName, normalizedPath]);
 
+  const { socket } = useContext(EventEmitterContext);
+
+  // Listen for lifecycle events directly from the WebSocket and revalidate when files change
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data) as {
+          type?: string;
+          metadata?: {
+            action?: string;
+            source?: string;
+            context?: Record<string, any>;
+          };
+        };
+
+        if (data.type !== 'lifecycle' || !data.metadata) return;
+
+        const { action, source, context } = data.metadata;
+
+        const fileActions = [
+          'instance-file-pushed',
+          'instance-file-deleted',
+          'instance-file-retrieved',
+        ];
+        if (!action || !fileActions.includes(action)) return;
+
+        const sourceMatch = source?.match(/\/1\.0\/instances\/([^\/]+)\/files/);
+        if (!sourceMatch || sourceMatch[1] !== instanceName) return;
+
+        mutate(getSWRKey(normalizedPath));
+      } catch (e) {
+        console.error('Failed to handle lifecycle message', e);
+      }
+    };
+
+    socket.addEventListener('message', handleMessage);
+    return () => {
+      socket.removeEventListener('message', handleMessage);
+    };
+  }, [socket, instanceName, normalizedPath]);
+
   const uploadFile = async (
     currentPath: string,
     file: File,
     onProgress?: (progress: number) => void,
   ) => {
     await apiUploadFile(instanceName, currentPath, file, onProgress);
-    await mutate(getSWRKey(currentPath));
   };
 
   const createFile = async (currentPath: string, fileName: string) => {
     await apiCreateFile(instanceName, currentPath, fileName);
-    await mutate(getSWRKey(currentPath));
   };
 
   const createDirectory = async (currentPath: string, dirName: string) => {
     await apiCreateDirectory(instanceName, currentPath, dirName);
-    await mutate(getSWRKey(currentPath));
   };
 
   const deleteFile = async (filePath: string) => {
     await apiDeleteFile(instanceName, filePath);
-    // Mutate the parent directory
-    const parentPath = filePath.substring(0, filePath.lastIndexOf('/')) || '/';
-    await mutate(getSWRKey(parentPath));
   };
 
-  const renameFile = async (oldName: string, newName: string) => {
+  const renameFile = async (
+    oldName: string,
+    newName: string,
+    onProgress?: (progress: number) => void,
+  ) => {
     const parentPath = normalizedPath === '/' ? '' : normalizedPath;
     const oldPath = `${parentPath}/${oldName}`;
     const newPath = `${parentPath}/${newName}`;
 
     try {
+      // Signal start
+      onProgress?.(0);
+
       // 1. Read old content
-      const { content, mode } = await apiFetchFileContent(instanceName, oldPath);
-      // 2. Write new content
-      await apiSaveFileContent(instanceName, newPath, content, mode);
+      const { content, mode } = await apiFetchFileContent(
+        instanceName,
+        oldPath,
+      );
+      onProgress?.(50);
+
+      // 2. Upload new file with progress tracking
+      const blob = new Blob([content], { type: 'application/octet-stream' });
+      const file = new File([blob], newName, {
+        type: 'application/octet-stream',
+      });
+      await apiUploadFile(instanceName, parentPath, file, (p) => {
+        if (p === undefined || p === null) return;
+        // Map 0-100 upload to 50-100 overall
+        const scaled = 50 + p / 2;
+        onProgress?.(scaled);
+      });
       // 3. Delete old file
       await apiDeleteFile(instanceName, oldPath);
-      // 4. Revalidate
-      await mutate(getSWRKey(normalizedPath));
+      onProgress?.(100);
     } catch (e) {
       console.error('Failed to rename file:', e);
       throw e;

@@ -3,12 +3,27 @@
 import React, { createContext, useEffect, useState, useRef } from 'react';
 import { toast } from 'sonner';
 
+// Shared client-side event target for broadcasting Incus operation events
+// to consumers (e.g., file manager revalidation). Guarded for SSR safety.
+export const incusEventTarget =
+  typeof window !== 'undefined' ? new EventTarget() : null;
+
 type EventType = 'operation' | 'logging' | 'lifecycle';
 
 interface IncusEvent {
   type: EventType;
   timestamp: string;
   metadata: unknown;
+}
+
+interface LifecycleMetadata {
+  action: string;
+  source: string;
+  context?: Record<string, any>;
+  requestor?: {
+    protocol: string;
+    username: string;
+  };
 }
 
 interface OperationMetadata {
@@ -32,10 +47,12 @@ interface OperationMetadata {
 
 type EventEmitterContextValue = {
   isConnected: boolean;
+  socket: WebSocket | null;
 };
 
 const EventEmitterContext = createContext<EventEmitterContextValue>({
   isConnected: false,
+  socket: null,
 });
 
 export default EventEmitterContext;
@@ -46,6 +63,7 @@ export function EventEmitterProvider({
   children: React.ReactNode;
 }) {
   const [isConnected, setIsConnected] = useState(false);
+  const [socket, setSocket] = useState<WebSocket | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   // Track operations we are already showing toasts for to avoid duplicates/spam
   const activeOperations = useRef<Set<string>>(new Set());
@@ -65,6 +83,7 @@ export function EventEmitterProvider({
       console.log('Connecting to events:', url);
       const ws = new WebSocket(url);
       wsRef.current = ws;
+      setSocket(ws);
 
       ws.onopen = () => {
         console.log('Events WebSocket connected');
@@ -78,6 +97,7 @@ export function EventEmitterProvider({
         console.log('Events WebSocket disconnected');
         setIsConnected(false);
         wsRef.current = null;
+        setSocket(null);
 
         // Reconnect after 3 seconds with exponential backoff
         const reconnectDelay = Math.min(
@@ -169,7 +189,7 @@ export function EventEmitterProvider({
   }, []);
 
   return (
-    <EventEmitterContext.Provider value={{ isConnected }}>
+    <EventEmitterContext.Provider value={{ isConnected, socket }}>
       {children}
     </EventEmitterContext.Provider>
   );

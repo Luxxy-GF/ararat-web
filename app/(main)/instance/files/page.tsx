@@ -25,7 +25,14 @@ export default function FilesPage() {
 function Files({ instance }: { instance: any }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [currentPath, setCurrentPath] = React.useState('/');
+  const homePath = instance?.expanded_config?.['oci.cwd'] || '/';
+  const initialPath = React.useMemo(() => {
+    if (typeof window === 'undefined') return homePath;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('path') || homePath;
+  }, [homePath]);
+
+  const [currentPath, setCurrentPath] = React.useState(initialPath);
   const hasInitializedPath = React.useRef(false);
 
   // Read path from URL on mount using manual JS
@@ -36,16 +43,20 @@ function Files({ instance }: { instance: any }) {
 
     if (pathParam) {
       setCurrentPath(pathParam);
-    } else if (instance?.expanded_config?.['oci.cwd']) {
-      setCurrentPath(instance.expanded_config['oci.cwd']);
+    } else {
+      setCurrentPath(homePath);
       // Update URL to reflect the default path
       const newParams = new URLSearchParams(window.location.search);
-      newParams.set('path', instance.expanded_config['oci.cwd']);
-      router.replace(`${pathname}?${newParams.toString()}`);
+      if (homePath !== '/') {
+        newParams.set('path', homePath);
+      }
+      const target = newParams.toString();
+      const url = target ? `${pathname}?${target}` : pathname;
+      router.replace(url);
     }
 
     hasInitializedPath.current = true;
-  }, [instance?.expanded_config, pathname, router]);
+  }, [homePath, pathname, router]);
 
   // Listen for back/forward navigation
   React.useEffect(() => {
@@ -53,7 +64,7 @@ function Files({ instance }: { instance: any }) {
 
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
-      const pathParam = params.get('path') || '/';
+      const pathParam = params.get('path') || homePath;
       setCurrentPath(pathParam);
     };
 
@@ -65,12 +76,14 @@ function Files({ instance }: { instance: any }) {
     setCurrentPath(path);
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      if (path === '/') {
+      if (path === '/' && homePath === '/') {
         params.delete('path');
       } else {
         params.set('path', path);
       }
-      router.push(`${pathname}?${params.toString()}`);
+      const target = params.toString();
+      const url = target ? `${pathname}?${target}` : pathname;
+      router.push(url);
     }
   };
 
@@ -94,6 +107,8 @@ function Files({ instance }: { instance: any }) {
       isLoading={isLoading}
       isError={isError}
       currentPath={currentPath}
+      instanceName={instance.name}
+      homePath={homePath}
       onNavigate={handleNavigate}
       onUpload={(file, onProgress) => uploadFile(currentPath, file, onProgress)}
       onCreateDirectory={(name) => createDirectory(currentPath, name)}

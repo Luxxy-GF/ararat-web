@@ -28,6 +28,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from 'ui-web/components/dialog';
+import EventEmitterContext from '../../_context/events';
 import { Input } from 'ui-web/components/input';
 import { Label } from 'ui-web/components/label';
 import {
@@ -73,8 +74,13 @@ interface FileBrowserProps {
   isLoading: boolean;
   isError: any;
   currentPath: string;
+  instanceName: string;
+  homePath?: string;
   onNavigate: (path: string) => void;
-  onUpload: (file: File, onProgress?: (progress: number) => void) => Promise<void>;
+  onUpload: (
+    file: File,
+    onProgress?: (progress: number) => void,
+  ) => Promise<void>;
   onCreateDirectory: (name: string) => Promise<void>;
   onCreateFile: (name: string) => Promise<void>;
   onDelete: (path: string) => Promise<void>;
@@ -170,11 +176,27 @@ function getFileIcon(filename: string) {
   return <Icon className={FILE_ICON_CLASS} />;
 }
 
+function isEditableFile(filename: string): boolean {
+  const ext = getFileExtension(filename);
+  // Files with language mapping are editable
+  if (ext && FILE_TYPE_CONFIG[ext]?.language) {
+    return true;
+  }
+  // Files without extension are treated as text (editable)
+  if (!ext || !filename.includes('.')) {
+    return true;
+  }
+  // All other files (binary) are not editable
+  return false;
+}
+
 export function FileBrowser({
   files,
   isLoading,
   isError,
   currentPath,
+  instanceName,
+  homePath = '/',
   onNavigate,
   onUpload,
   onCreateDirectory,
@@ -192,15 +214,26 @@ export function FileBrowser({
   const [isRenameOpen, setIsRenameOpen] = React.useState(false);
   const [renameTarget, setRenameTarget] = React.useState<string | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
+  const [deletedFile, setDeletedFile] = React.useState<string | null>(null);
+  const [isInitialLoad, setIsInitialLoad] = React.useState(true);
+  const [dropProgress, setDropProgress] = React.useState<number | null>(null);
+  const [dropFileName, setDropFileName] = React.useState<string | null>(null);
+  const { socket } = React.useContext(EventEmitterContext);
 
   // Reset editing state when path changes
   React.useEffect(() => {
     setEditingFile(null);
     setFileContent('');
     setFileMode(undefined);
+    setDeletedFile(null);
   }, [currentPath]);
 
-
+  // Track when data loads for the first time (to distinguish initial load from refetches)
+  React.useEffect(() => {
+    if (!isLoading && isInitialLoad) {
+      setIsInitialLoad(false);
+    }
+  }, [isLoading, isInitialLoad]);
 
   // Editor State
   const [editingFile, setEditingFile] = React.useState<string | null>(null);
@@ -208,6 +241,46 @@ export function FileBrowser({
   const [fileMode, setFileMode] = React.useState<string | undefined>(undefined);
   const [isFetchingContent, setIsFetchingContent] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+
+  // Listen for file deletion lifecycle events directly from the WebSocket
+  React.useEffect(() => {
+    if (!socket) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data) as {
+          type?: string;
+          metadata?: {
+            action?: string;
+            source?: string;
+            context?: Record<string, any>;
+          };
+        };
+
+        if (data.type !== 'lifecycle' || !data.metadata) return;
+
+        const { action, source, context } = data.metadata;
+        if (action !== 'instance-file-deleted') return;
+
+        const instanceMatch = source?.match(
+          /\/1\.0\/instances\/([^\/]+)\/files/,
+        );
+        if (!instanceMatch || instanceMatch[1] !== instanceName) return;
+
+        const filePath = context?.path;
+        if (filePath && editingFile === filePath) {
+          setDeletedFile(filePath);
+        }
+      } catch (e) {
+        console.error('Failed to handle lifecycle message in FileBrowser', e);
+      }
+    };
+
+    socket.addEventListener('message', handleMessage);
+    return () => {
+      socket.removeEventListener('message', handleMessage);
+    };
+  }, [socket, editingFile, instanceName]);
 
   // Prepare data for DataTable
   // If files already have metadata, use them. If they are just strings (legacy), map them.
@@ -231,6 +304,13 @@ export function FileBrowser({
 
   const handleEdit = async (fileName: string) => {
     const filePath = `${currentPath === '/' ? '' : currentPath}/${fileName}`;
+
+    // Download binary files instead of opening in editor
+    if (!isEditableFile(fileName)) {
+      onDownload(filePath);
+      return;
+    }
+
     setEditingFile(filePath);
     setIsFetchingContent(true);
     setActionError(null);
@@ -259,6 +339,8 @@ export function FileBrowser({
     setActionError(null);
     try {
       await onSaveContent(editingFile, fileContent, fileMode);
+      // Clear deleted file warning if it was set (file is being recreated)
+      setDeletedFile(null);
       // Don't close editor on save
     } catch (err: any) {
       setActionError(err.message);
@@ -484,28 +566,19 @@ export function FileBrowser({
     const files = Array.from(e.dataTransfer.files);
     if (files.length === 0) return;
 
-    // Upload files sequentially or parallel
-    // For simplicity, upload the first one using the dialog logic (or direct upload)
-    // To show progress, we should probably use the dialog or a toast.
-    // Let's just trigger the upload function directly for each file.
-    // But we need to show progress.
-    // Let's just open the upload dialog with the first file pre-selected?
-    // Or better, implement a direct upload with toast progress.
-    // For now, let's just upload them one by one and show a toast.
-    // Actually, the requirement says "dropzone should appear".
-    // And "File uploads should display progress".
-    // I'll reuse the onUpload prop which now supports progress.
-
     const errors: string[] = [];
 
     await Promise.all(
       files.map(async (file) => {
         try {
-          // Sequential upload or parallel? 
-          // We can just trigger them all.
-          await onUpload(file);
+          setDropFileName(file.name);
+          setDropProgress(0);
+          await onUpload(file, (p) => setDropProgress(p));
         } catch (err: any) {
           errors.push(err?.message || 'Upload failed');
+        } finally {
+          setDropProgress(null);
+          setDropFileName(null);
         }
       }),
     );
@@ -535,13 +608,24 @@ export function FileBrowser({
           </div>
         </div>
       )}
+      {dropProgress !== null && dropFileName && (
+        <div className="absolute right-4 top-4 z-40 min-w-[220px] rounded-md border bg-card p-3 shadow">
+          <div className="text-sm font-medium truncate">
+            Uploading {dropFileName}
+          </div>
+          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+            <Progress value={dropProgress} className="h-2 flex-1" />
+            <span>{Math.round(dropProgress)}%</span>
+          </div>
+        </div>
+      )}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="icon"
             onClick={handleUp}
-            disabled={currentPath === '/'}
+            disabled={currentPath === homePath}
           >
             <ArrowUpIcon className="h-4 w-4" />
           </Button>
@@ -549,7 +633,7 @@ export function FileBrowser({
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink
-                  onClick={() => onNavigate('/')}
+                  onClick={() => onNavigate(homePath)}
                   className="cursor-pointer"
                 >
                   <HomeIcon className="h-4 w-4" />
@@ -614,7 +698,9 @@ export function FileBrowser({
               open={isUploadOpen}
               onOpenChange={setIsUploadOpen}
               onUpload={(file, onProgress) =>
-                onUpload(file, onProgress).catch((e) => setActionError(e.message))
+                onUpload(file, onProgress).catch((e) =>
+                  setActionError(e.message),
+                )
               }
             />
             {renameTarget && (
@@ -627,9 +713,11 @@ export function FileBrowser({
                 }}
                 onRename={(newName) => {
                   if (onRename) {
-                    return onRename(renameTarget, newName).catch((e) => setActionError(e.message));
+                    return onRename(renameTarget, newName).catch((e) =>
+                      setActionError(e.message),
+                    );
                   }
-                  return Promise.reject(new Error("Rename not implemented"));
+                  return Promise.reject(new Error('Rename not implemented'));
                 }}
               />
             )}
@@ -642,6 +730,17 @@ export function FileBrowser({
           <AlertTitle>Action Failed</AlertTitle>
           <AlertDescription className="whitespace-pre-wrap">
             {actionError}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {deletedFile && editingFile && (
+        <Alert variant="destructive">
+          <AlertTitle>File Deleted</AlertTitle>
+          <AlertDescription>
+            The file <code className="text-sm">{deletedFile}</code> has been
+            deleted. You can save the current content to recreate it, or close
+            the editor to return to the file listing.
           </AlertDescription>
         </Alert>
       )}
@@ -669,7 +768,15 @@ export function FileBrowser({
           </div>
         ) : (
           <>
-            {isLoading ? (
+            {isLoading && !isInitialLoad ? (
+              <div className="animate-pulse">
+                <DataTable
+                  data={fileData}
+                  cols={columns as any}
+                  disablePagination
+                />
+              </div>
+            ) : isLoading && isInitialLoad ? (
               <div className="flex justify-center p-8">
                 <Spinner />
               </div>
@@ -688,13 +795,7 @@ export function FileBrowser({
           </>
         )}
       </div>
-
-
-      <div className="flex flex-col">
-
-      </div>
     </div>
-
   );
 }
 
@@ -771,10 +872,14 @@ function RenameFileDialog({
   oldName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onRename: (newName: string) => Promise<void>;
+  onRename: (
+    newName: string,
+    onProgress?: (progress: number) => void,
+  ) => Promise<void>;
 }) {
   const [name, setName] = React.useState(oldName);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [progress, setProgress] = React.useState(0);
 
   // Reset name when dialog opens with a new file
   React.useEffect(() => {
@@ -788,11 +893,13 @@ function RenameFileDialog({
       return;
     }
     setIsLoading(true);
+    setProgress(0);
     try {
-      await onRename(name);
+      await onRename(name, (p) => setProgress(p));
       onOpenChange(false);
     } finally {
       setIsLoading(false);
+      setProgress(0);
     }
   };
 
@@ -801,9 +908,7 @@ function RenameFileDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Rename File</DialogTitle>
-          <DialogDescription>
-            Enter a new name for {oldName}.
-          </DialogDescription>
+          <DialogDescription>Enter a new name for {oldName}.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -816,10 +921,24 @@ function RenameFileDialog({
               required
             />
           </div>
+          {isLoading && (
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Renaming...</span>
+                <span>{Math.round(progress)}%</span>
+              </div>
+              <Progress value={progress} className="h-2" />
+            </div>
+          )}
           <DialogFooter>
             <Button type="submit" disabled={isLoading}>
-              {isLoading && <Spinner className="mr-2 h-4 w-4" />}
-              Rename
+              {isLoading ? (
+                <>
+                  <Spinner className="mr-2 h-4 w-4" /> Renaming...
+                </>
+              ) : (
+                'Rename'
+              )}
             </Button>
           </DialogFooter>
         </form>
