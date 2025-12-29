@@ -43,3 +43,7 @@ next-env.d.ts
 
 # bun uses bun.lockb, not package-lock.json
 package-lock.json
+
+# pnpm
+pnpm-lock.yaml
+pnpm-workspace.yaml
