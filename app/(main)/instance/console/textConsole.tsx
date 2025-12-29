@@ -381,13 +381,13 @@ export default function InstanceTextConsole() {
   }, [logError]);
 
   return (
-    <div className="w-full" style={{ height: '60vh', minHeight: '300px' }}>
+    <div className="w-full flex flex-col" style={{ height: '60vh', minHeight: '300px' }}>
       {/* Outer visual container controls padding/border without affecting terminal fit */}
-      <div className="flex flex-col h-full w-full rounded-lg border bg-card shadow-sm font-mono p-3 box-border overflow-hidden">
+      <div className="flex-1 min-h-0 rounded-lg border bg-card shadow-sm font-mono p-3 box-border overflow-hidden">
         {/* Host element must be padding-free to let FitAddon calculate width correctly */}
         <div
           ref={terminalRef}
-          className="flex-1 min-h-0 w-full"
+          className="h-full w-full"
           tabIndex={0}
           role="application"
           aria-label="Instance Console"
@@ -399,35 +399,35 @@ export default function InstanceTextConsole() {
             }
           }}
         />
-        {/* Simple retry control */}
-        <div className="mt-2 text-xs text-muted-foreground">
-          <button
-            type="button"
-            aria-label="Retry console connection"
-            className="underline"
-            onClick={() => {
-              try {
-                inputDisposableRef.current?.dispose();
-              } catch (err) {
-                logError(err, 'dispose input on retry');
+      </div>
+      {/* Simple retry control - outside overflow container */}
+      <div className="mt-2 text-xs text-muted-foreground">
+        <button
+          type="button"
+          aria-label="Retry console connection"
+          className="underline"
+          onClick={() => {
+            try {
+              inputDisposableRef.current?.dispose();
+            } catch (err) {
+              logError(err, 'dispose input on retry');
+            }
+            try {
+              initializedRef.current = false;
+              socketAttachedRef.current = false;
+              socketAttachingRef.current = false;
+              const sock = dataSocketRef.current;
+              if (sock) {
+                sock.close();
               }
-              try {
-                initializedRef.current = false;
-                socketAttachedRef.current = false;
-                socketAttachingRef.current = false;
-                const sock = dataSocketRef.current;
-                if (sock) {
-                  sock.close();
-                }
-                setRetryTrigger((n) => n + 1);
-              } catch (err) {
-                logError(err, 'retry attach');
-              }
-            }}
-          >
-            Retry attach
-          </button>
-        </div>
+              setRetryTrigger((n) => n + 1);
+            } catch (err) {
+              logError(err, 'retry attach');
+            }
+          }}
+        >
+          Retry attach
+        </button>
       </div>
     </div>
   );
