@@ -19,7 +19,24 @@ export function uploadFile(
     xhr.open('POST', url);
     xhr.setRequestHeader('X-Incus-uid', '0');
     xhr.setRequestHeader('X-Incus-gid', '0');
-    xhr.setRequestHeader('X-Incus-mode', '0644');
+    const scriptExtensions = [
+      '.sh',
+      '.bash',
+      '.py',
+      '.pl',
+      '.rb',
+      '.js',
+      '.mjs',
+      '.cjs',
+      '.bat',
+      '.cgi',
+      '.php',
+    ];
+    const extIndex = file.name.lastIndexOf('.');
+    const ext =
+      extIndex > 0 ? file.name.slice(extIndex).toLowerCase() : undefined;
+    const isExecutable = ext ? scriptExtensions.includes(ext) : false;
+    xhr.setRequestHeader('X-Incus-mode', isExecutable ? '0755' : '0644');
     xhr.setRequestHeader('X-Incus-type', 'file');
     xhr.setRequestHeader('X-Incus-write', 'overwrite');
 

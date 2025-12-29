@@ -116,6 +116,13 @@ export function EventEmitterProvider({
         try {
           const data = JSON.parse(event.data) as IncusEvent;
 
+          // Broadcast to shared event target so consumers can react to all events
+          if (incusEventTarget) {
+            incusEventTarget.dispatchEvent(
+              new CustomEvent('incus-event', { detail: data }),
+            );
+          }
+
           if (data.type === 'operation') {
             handleOperationEvent(data.metadata as OperationMetadata);
           }

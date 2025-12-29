@@ -118,7 +118,12 @@ function formatBytes(value?: number) {
 }
 
 function getFileExtension(filename: string) {
-  return filename.split('.').pop()?.toLowerCase();
+  const parts = filename.split('.');
+  // No extension or dotfile without a real extension
+  if (parts.length <= 1 || (parts.length === 2 && filename.startsWith('.'))) {
+    return undefined;
+  }
+  return parts.pop()?.toLowerCase();
 }
 
 const FILE_ICON_CLASS = 'h-4 w-4 text-gray-500';
@@ -218,6 +223,7 @@ export function FileBrowser({
   const [isInitialLoad, setIsInitialLoad] = React.useState(true);
   const [dropProgress, setDropProgress] = React.useState<number | null>(null);
   const [dropFileName, setDropFileName] = React.useState<string | null>(null);
+  const dragCounter = React.useRef(0);
   const { socket } = React.useContext(EventEmitterContext);
 
   // Reset editing state when path changes
@@ -546,21 +552,27 @@ export function FileBrowser({
     },
   ];
 
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounter.current += 1;
+    setIsDragging(true);
+  };
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    if (e.currentTarget.contains(e.relatedTarget as Node)) {
-      return;
+    dragCounter.current = Math.max(0, dragCounter.current - 1);
+    if (dragCounter.current === 0) {
+      setIsDragging(false);
     }
-    setIsDragging(false);
   };
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
+    dragCounter.current = 0;
     setIsDragging(false);
     setActionError(null);
     const files = Array.from(e.dataTransfer.files);
@@ -596,12 +608,19 @@ export function FileBrowser({
   return (
     <div
       className="space-y-4 relative"
+      onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       {isDragging && (
-        <div className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center border-2 border-dashed border-primary rounded-lg">
+        <div
+          className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center border-2 border-dashed border-primary rounded-lg"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          aria-label="Drop files to upload"
+        >
           <div className="text-center">
             <UploadIcon className="mx-auto h-12 w-12 text-primary" />
             <h3 className="mt-2 text-lg font-semibold">Drop files to upload</h3>

@@ -5,11 +5,12 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useInstanceContext } from '../_context/instance';
 import { useFiles } from '../_hooks/files';
 import { Spinner } from 'ui-web/components/spinner';
+import { Alert, AlertDescription, AlertTitle } from 'ui-web/components/alert';
 import { FileBrowser } from '../../_components/files';
+import { getFileMetadata } from '../_lib/files';
 
 export default function FilesPage() {
   const { instance, isLoading } = useInstanceContext();
-  const hasInitializedPath = React.useRef(false);
 
   if (isLoading) {
     return <Spinner />;
@@ -25,38 +26,69 @@ export default function FilesPage() {
 function Files({ instance }: { instance: any }) {
   const router = useRouter();
   const pathname = usePathname();
-  const homePath = instance?.expanded_config?.['oci.cwd'] || '/';
+  const normalizePath = (value: string) =>
+    value?.startsWith('/') ? value : `/${value || ''}`;
+  const homePath = normalizePath(instance?.expanded_config?.['oci.cwd'] || '/');
   const initialPath = React.useMemo(() => {
     if (typeof window === 'undefined') return homePath;
     const params = new URLSearchParams(window.location.search);
-    return params.get('path') || homePath;
+    return normalizePath(params.get('path') || homePath);
   }, [homePath]);
 
   const [currentPath, setCurrentPath] = React.useState(initialPath);
-  const hasInitializedPath = React.useRef(false);
+  const validatedPathRef = React.useRef<string | null>(null);
+  const [pathError, setPathError] = React.useState<string | null>(null);
 
   // Read path from URL on mount using manual JS
   React.useEffect(() => {
-    if (hasInitializedPath.current || typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
     const pathParam = params.get('path');
+    const targetPath = normalizePath(pathParam || homePath);
 
-    if (pathParam) {
-      setCurrentPath(pathParam);
-    } else {
-      setCurrentPath(homePath);
-      // Update URL to reflect the default path
-      const newParams = new URLSearchParams(window.location.search);
-      if (homePath !== '/') {
-        newParams.set('path', homePath);
+    if (validatedPathRef.current === targetPath) return;
+    let cancelled = false;
+
+    const updateUrl = (nextPath: string) => {
+      const nextParams = new URLSearchParams(window.location.search);
+      if (nextPath === '/' && homePath === '/') {
+        nextParams.delete('path');
+      } else {
+        nextParams.set('path', nextPath);
       }
-      const target = newParams.toString();
-      const url = target ? `${pathname}?${target}` : pathname;
-      router.replace(url);
-    }
+      const nextQuery = nextParams.toString();
+      const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+      const currentUrl = `${window.location.pathname}${window.location.search}`;
+      if (nextUrl !== currentUrl) {
+        router.replace(nextUrl);
+      }
+    };
 
-    hasInitializedPath.current = true;
-  }, [homePath, pathname, router]);
+    (async () => {
+      try {
+        await getFileMetadata(instance.name, targetPath);
+        if (cancelled) return;
+        validatedPathRef.current = targetPath;
+        setCurrentPath(targetPath);
+        setPathError(null);
+        if (!pathParam && homePath !== '/') {
+          updateUrl(targetPath);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        validatedPathRef.current = '/';
+        setCurrentPath('/');
+        setPathError(
+          `Default path "${targetPath}" is not accessible. Showing root instead.`,
+        );
+        updateUrl('/');
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [homePath, pathname, router, instance.name]);
 
   // Listen for back/forward navigation
   React.useEffect(() => {
@@ -65,21 +97,23 @@ function Files({ instance }: { instance: any }) {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
       const pathParam = params.get('path') || homePath;
-      setCurrentPath(pathParam);
+      setCurrentPath(normalizePath(pathParam));
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [homePath]);
 
   const handleNavigate = (path: string) => {
-    setCurrentPath(path);
+    setPathError(null);
+    const nextPath = normalizePath(path);
+    setCurrentPath(nextPath);
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      if (path === '/' && homePath === '/') {
+      if (nextPath === '/' && homePath === '/') {
         params.delete('path');
       } else {
-        params.set('path', path);
+        params.set('path', nextPath);
       }
       const target = params.toString();
       const url = target ? `${pathname}?${target}` : pathname;
@@ -102,22 +136,32 @@ function Files({ instance }: { instance: any }) {
   } = useFiles(instance.name, currentPath);
 
   return (
-    <FileBrowser
-      files={files}
-      isLoading={isLoading}
-      isError={isError}
-      currentPath={currentPath}
-      instanceName={instance.name}
-      homePath={homePath}
-      onNavigate={handleNavigate}
-      onUpload={(file, onProgress) => uploadFile(currentPath, file, onProgress)}
-      onCreateDirectory={(name) => createDirectory(currentPath, name)}
-      onCreateFile={(name) => createFile(currentPath, name)}
-      onDelete={deleteFile}
-      onRename={renameFile}
-      onDownload={downloadFile}
-      onFetchContent={fetchFileContent}
-      onSaveContent={saveFileContent}
-    />
+    <>
+      {pathError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Default path unavailable</AlertTitle>
+          <AlertDescription>{pathError}</AlertDescription>
+        </Alert>
+      )}
+      <FileBrowser
+        files={files}
+        isLoading={isLoading}
+        isError={isError}
+        currentPath={currentPath}
+        instanceName={instance.name}
+        homePath={homePath}
+        onNavigate={handleNavigate}
+        onUpload={(file, onProgress) =>
+          uploadFile(currentPath, file, onProgress)
+        }
+        onCreateDirectory={(name) => createDirectory(currentPath, name)}
+        onCreateFile={(name) => createFile(currentPath, name)}
+        onDelete={deleteFile}
+        onRename={renameFile}
+        onDownload={downloadFile}
+        onFetchContent={fetchFileContent}
+        onSaveContent={saveFileContent}
+      />
+    </>
   );
 }

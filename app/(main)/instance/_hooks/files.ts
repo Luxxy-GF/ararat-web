@@ -11,6 +11,7 @@ import {
   getFileMetadata as apiFetchFileMetadata,
   createFile as apiCreateFile,
 } from '../_lib/files';
+import { incusEventTarget } from '../../../_context/events';
 
 const directoryFetcher = async (url: string) => {
   const res = await fetch(url);
@@ -39,6 +40,13 @@ export function useFiles(instanceName: string, path: string) {
   const getSWRKey = (p: string) => {
     const norm = p.startsWith('/') ? p : `/${p}`;
     return `/1.0/instances/${instanceName}/files?path=${encodeURIComponent(norm)}`;
+  };
+  const revalidateCurrentPath = () =>
+    mutate(getSWRKey(normalizedPath), undefined, { revalidate: true });
+  const scheduleRevalidate = () => {
+    revalidateCurrentPath();
+    // Some Incus operations emit events slightly before the listing is updated; re-run shortly after.
+    setTimeout(revalidateCurrentPath, 300);
   };
 
   // Fetch file listing
@@ -92,44 +100,108 @@ export function useFiles(instanceName: string, path: string) {
 
   const { socket } = useContext(EventEmitterContext);
 
-  // Listen for lifecycle events directly from the WebSocket and revalidate when files change
+  // Listen for Incus events (via WebSocket and shared EventTarget) to revalidate when files change
   useEffect(() => {
-    if (!socket) return;
-
-    const handleMessage = (event: MessageEvent) => {
+    const handleIncusEvent = (data: any) => {
       try {
-        const data = JSON.parse(event.data) as {
-          type?: string;
-          metadata?: {
+        const { type, metadata } = data || {};
+        if (!type) return;
+
+        if (type === 'lifecycle' && metadata) {
+          const { action, source } = metadata as {
             action?: string;
             source?: string;
-            context?: Record<string, any>;
           };
-        };
+          const sourceText = source || '';
+          const isSameInstance = sourceText.includes(
+            `/1.0/instances/${instanceName}`,
+          );
+          if (!isSameInstance) return;
 
-        if (data.type !== 'lifecycle' || !data.metadata) return;
+          // Prefer matching known actions but don't rely on exact names.
+          const fileActions = new Set([
+            'instance-file-pushed',
+            'instance-file-deleted',
+            'instance-file-retrieved',
+            'instance-file-created',
+          ]);
+          if (action && fileActions.has(action)) {
+            scheduleRevalidate();
+            return;
+          }
 
-        const { action, source, context } = data.metadata;
+          // Fallback: refresh on any lifecycle event for this instance (covers mislabelled actions).
+          scheduleRevalidate();
+          return;
+        }
 
-        const fileActions = [
-          'instance-file-pushed',
-          'instance-file-deleted',
-          'instance-file-retrieved',
-        ];
-        if (!action || !fileActions.includes(action)) return;
+        if (type === 'operation' && metadata) {
+          const resources = (metadata as any).resources as
+            | Record<string, string[]>
+            | undefined;
+          const instanceResources =
+            resources?.instances || resources?.instance || resources?.target;
+          const touchesInstance = Array.isArray(instanceResources)
+            ? instanceResources.some((r) =>
+                r.includes(`/instances/${instanceName}`),
+              )
+            : false;
+          if (touchesInstance) {
+            scheduleRevalidate();
+            return;
+          }
 
-        const sourceMatch = source?.match(/\/1\.0\/instances\/([^\/]+)\/files/);
-        if (!sourceMatch || sourceMatch[1] !== instanceName) return;
-
-        mutate(getSWRKey(normalizedPath));
+          // Some operations report the target instance in metadata context instead of resources.
+          const maybeContext = (metadata as any).context;
+          const ctxInstance =
+            maybeContext?.instance ||
+            maybeContext?.target ||
+            maybeContext?.name ||
+            '';
+          if (
+            typeof ctxInstance === 'string' &&
+            ctxInstance.includes(instanceName)
+          ) {
+            scheduleRevalidate();
+          }
+        }
       } catch (e) {
         console.error('Failed to handle lifecycle message', e);
       }
     };
 
-    socket.addEventListener('message', handleMessage);
+    const socketListener = (event: MessageEvent) => {
+      try {
+        const parsed = JSON.parse(event.data);
+        handleIncusEvent(parsed);
+      } catch (e) {
+        console.error('Failed to parse Incus event', e);
+      }
+    };
+
+    if (socket) {
+      socket.addEventListener('message', socketListener);
+    }
+
+    const eventTargetListener = (event: Event) => {
+      const custom = event as CustomEvent;
+      handleIncusEvent(custom.detail);
+    };
+
+    if (incusEventTarget) {
+      incusEventTarget.addEventListener('incus-event', eventTargetListener);
+    }
+
     return () => {
-      socket.removeEventListener('message', handleMessage);
+      if (socket) {
+        socket.removeEventListener('message', socketListener);
+      }
+      if (incusEventTarget) {
+        incusEventTarget.removeEventListener(
+          'incus-event',
+          eventTargetListener,
+        );
+      }
     };
   }, [socket, instanceName, normalizedPath]);
 
@@ -139,18 +211,22 @@ export function useFiles(instanceName: string, path: string) {
     onProgress?: (progress: number) => void,
   ) => {
     await apiUploadFile(instanceName, currentPath, file, onProgress);
+    await revalidateCurrentPath();
   };
 
   const createFile = async (currentPath: string, fileName: string) => {
     await apiCreateFile(instanceName, currentPath, fileName);
+    await revalidateCurrentPath();
   };
 
   const createDirectory = async (currentPath: string, dirName: string) => {
     await apiCreateDirectory(instanceName, currentPath, dirName);
+    await revalidateCurrentPath();
   };
 
   const deleteFile = async (filePath: string) => {
     await apiDeleteFile(instanceName, filePath);
+    await revalidateCurrentPath();
   };
 
   const renameFile = async (
@@ -187,6 +263,7 @@ export function useFiles(instanceName: string, path: string) {
       // 3. Delete old file
       await apiDeleteFile(instanceName, oldPath);
       onProgress?.(100);
+      await revalidateCurrentPath();
     } catch (e) {
       console.error('Failed to rename file:', e);
       throw e;
@@ -207,6 +284,7 @@ export function useFiles(instanceName: string, path: string) {
     mode?: string,
   ) => {
     await apiSaveFileContent(instanceName, filePath, content, mode);
+    await revalidateCurrentPath();
   };
 
   return {
