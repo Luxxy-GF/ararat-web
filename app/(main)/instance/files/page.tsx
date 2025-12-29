@@ -82,6 +82,7 @@ function Files({ instance }: { instance: any }) {
     createDirectory,
     createFile,
     deleteFile,
+    renameFile,
     downloadFile,
     fetchFileContent,
     saveFileContent,
@@ -98,6 +99,7 @@ function Files({ instance }: { instance: any }) {
       onCreateDirectory={(name) => createDirectory(currentPath, name)}
       onCreateFile={(name) => createFile(currentPath, name)}
       onDelete={deleteFile}
+      onRename={renameFile}
       onDownload={downloadFile}
       onFetchContent={fetchFileContent}
       onSaveContent={saveFileContent}

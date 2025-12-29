@@ -35,10 +35,14 @@ const directoryFetcher = async (url: string) => {
 export function useFiles(instanceName: string, path: string) {
   // Ensure path starts with /
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const getSWRKey = (p: string) => {
+    const norm = p.startsWith('/') ? p : `/${p}`;
+    return `/1.0/instances/${instanceName}/files?path=${encodeURIComponent(norm)}`;
+  };
 
   // Fetch file listing
   const { data, error, isLoading } = useSWR(
-    `/1.0/instances/${instanceName}/files?path=${encodeURIComponent(normalizedPath)}`,
+    getSWRKey(normalizedPath),
     directoryFetcher,
   );
 
@@ -91,32 +95,44 @@ export function useFiles(instanceName: string, path: string) {
     onProgress?: (progress: number) => void,
   ) => {
     await apiUploadFile(instanceName, currentPath, file, onProgress);
-    await mutate(
-      `/1.0/instances/${instanceName}/files?path=${encodeURIComponent(currentPath)}`,
-    );
+    await mutate(getSWRKey(currentPath));
   };
 
   const createFile = async (currentPath: string, fileName: string) => {
     await apiCreateFile(instanceName, currentPath, fileName);
-    await mutate(
-      `/1.0/instances/${instanceName}/files?path=${encodeURIComponent(currentPath)}`,
-    );
+    await mutate(getSWRKey(currentPath));
   };
 
   const createDirectory = async (currentPath: string, dirName: string) => {
     await apiCreateDirectory(instanceName, currentPath, dirName);
-    await mutate(
-      `/1.0/instances/${instanceName}/files?path=${encodeURIComponent(currentPath)}`,
-    );
+    await mutate(getSWRKey(currentPath));
   };
 
   const deleteFile = async (filePath: string) => {
     await apiDeleteFile(instanceName, filePath);
     // Mutate the parent directory
     const parentPath = filePath.substring(0, filePath.lastIndexOf('/')) || '/';
-    await mutate(
-      `/1.0/instances/${instanceName}/files?path=${encodeURIComponent(parentPath)}`,
-    );
+    await mutate(getSWRKey(parentPath));
+  };
+
+  const renameFile = async (oldName: string, newName: string) => {
+    const parentPath = normalizedPath === '/' ? '' : normalizedPath;
+    const oldPath = `${parentPath}/${oldName}`;
+    const newPath = `${parentPath}/${newName}`;
+
+    try {
+      // 1. Read old content
+      const { content, mode } = await apiFetchFileContent(instanceName, oldPath);
+      // 2. Write new content
+      await apiSaveFileContent(instanceName, newPath, content, mode);
+      // 3. Delete old file
+      await apiDeleteFile(instanceName, oldPath);
+      // 4. Revalidate
+      await mutate(getSWRKey(normalizedPath));
+    } catch (e) {
+      console.error('Failed to rename file:', e);
+      throw e;
+    }
   };
 
   const downloadFile = (filePath: string) => {
@@ -143,6 +159,7 @@ export function useFiles(instanceName: string, path: string) {
     createDirectory,
     createFile,
     deleteFile,
+    renameFile,
     downloadFile,
     fetchFileContent,
     saveFileContent,

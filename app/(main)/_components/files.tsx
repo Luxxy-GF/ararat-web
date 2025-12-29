@@ -11,6 +11,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from 'ui-web/components/dropdown-menu';
+
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from 'ui-web/components/context-menu';
 import {
   Dialog,
   DialogContent,
@@ -70,6 +78,7 @@ interface FileBrowserProps {
   onCreateDirectory: (name: string) => Promise<void>;
   onCreateFile: (name: string) => Promise<void>;
   onDelete: (path: string) => Promise<void>;
+  onRename?: (oldName: string, newName: string) => Promise<void>;
   onDownload: (path: string) => void;
   onFetchContent: (path: string) => Promise<{ content: string; mode?: string }>;
   onSaveContent: (
@@ -171,6 +180,7 @@ export function FileBrowser({
   onCreateDirectory,
   onCreateFile,
   onDelete,
+  onRename,
   onDownload,
   onFetchContent,
   onSaveContent,
@@ -179,20 +189,18 @@ export function FileBrowser({
   const [isCreateDirOpen, setIsCreateDirOpen] = React.useState(false);
   const [isCreateFileOpen, setIsCreateFileOpen] = React.useState(false);
   const [isUploadOpen, setIsUploadOpen] = React.useState(false);
+  const [isRenameOpen, setIsRenameOpen] = React.useState(false);
+  const [renameTarget, setRenameTarget] = React.useState<string | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
 
-  // Context Menu State
-  const [contextMenu, setContextMenu] = React.useState<{
-    x: number;
-    y: number;
-    file: FileItem;
-  } | null>(null);
-
+  // Reset editing state when path changes
   React.useEffect(() => {
-    const handleClick = () => setContextMenu(null);
-    window.addEventListener('click', handleClick);
-    return () => window.removeEventListener('click', handleClick);
-  }, []);
+    setEditingFile(null);
+    setFileContent('');
+    setFileMode(undefined);
+  }, [currentPath]);
+
+
 
   // Editor State
   const [editingFile, setEditingFile] = React.useState<string | null>(null);
@@ -286,37 +294,81 @@ export function FileBrowser({
           type === 'directory' || (!type && !name.includes('.'));
 
         return (
-          <div
-            className="flex items-center gap-2"
-            onContextMenu={(e) => {
-              e.preventDefault();
-              setContextMenu({
-                x: e.clientX,
-                y: e.clientY,
-                file: row.original,
-              });
-            }}
-          >
-            {isDirectory ? (
-              <FolderIcon className="h-4 w-4 text-blue-500" />
-            ) : (
-              getFileIcon(name)
-            )}
-            <span
-              className="font-medium cursor-pointer hover:underline"
-              onClick={() => {
-                if (isDirectory) {
-                  onNavigate(
-                    `${currentPath === '/' ? '' : currentPath}/${name}`,
-                  );
-                } else {
-                  handleEdit(name);
-                }
-              }}
-            >
-              {name}
-            </span>
-          </div>
+          <ContextMenu>
+            <ContextMenuTrigger className="w-full">
+              <div className="flex items-center gap-2">
+                {isDirectory ? (
+                  <FolderIcon className="h-4 w-4 text-blue-500" />
+                ) : (
+                  getFileIcon(name)
+                )}
+                <span
+                  className="font-medium cursor-pointer hover:underline"
+                  onClick={() => {
+                    if (isDirectory) {
+                      onNavigate(
+                        `${currentPath === '/' ? '' : currentPath}/${name}`,
+                      );
+                    } else {
+                      handleEdit(name);
+                    }
+                  }}
+                >
+                  {name}
+                </span>
+              </div>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+              {!isDirectory && (
+                <ContextMenuItem onClick={() => handleEdit(name)}>
+                  <PencilIcon className="mr-2 h-4 w-4" />
+                  Edit
+                </ContextMenuItem>
+              )}
+              <ContextMenuItem
+                onClick={() => {
+                  const fullPath = `${currentPath === '/' ? '' : currentPath}/${name}`;
+                  onDownload(fullPath);
+                }}
+              >
+                <DownloadIcon className="mr-2 h-4 w-4" />
+                Download
+              </ContextMenuItem>
+              <ContextMenuItem
+                onClick={() => {
+                  setRenameTarget(name);
+                  setIsRenameOpen(true);
+                }}
+              >
+                <PencilIcon className="mr-2 h-4 w-4" />
+                Rename
+              </ContextMenuItem>
+              <ContextMenuItem
+                onClick={() => {
+                  const fullPath = `${currentPath === '/' ? '' : currentPath}/${name}`;
+                  if (isDirectory) {
+                    onNavigate(fullPath);
+                  } else {
+                    handleEdit(name);
+                  }
+                }}
+              >
+                <FolderIcon className="mr-2 h-4 w-4" />
+                Open
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+              <ContextMenuItem
+                onClick={() => {
+                  const fullPath = `${currentPath === '/' ? '' : currentPath}/${name}`;
+                  onDelete(fullPath).catch((e) => setActionError(e.message));
+                }}
+                className="text-red-600"
+              >
+                <TrashIcon className="mr-2 h-4 w-4" />
+                Delete
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
         );
       },
     },
@@ -365,6 +417,15 @@ export function FileBrowser({
                     Edit
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem
+                  onClick={() => {
+                    setRenameTarget(name);
+                    setIsRenameOpen(true);
+                  }}
+                >
+                  <PencilIcon className="mr-2 h-4 w-4" />
+                  Rename
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onDownload(fullPath)}>
                   <DownloadIcon className="mr-2 h-4 w-4" />
                   Download
@@ -440,6 +501,8 @@ export function FileBrowser({
     await Promise.all(
       files.map(async (file) => {
         try {
+          // Sequential upload or parallel? 
+          // We can just trigger them all.
           await onUpload(file);
         } catch (err: any) {
           errors.push(err?.message || 'Upload failed');
@@ -550,10 +613,26 @@ export function FileBrowser({
               currentPath={currentPath}
               open={isUploadOpen}
               onOpenChange={setIsUploadOpen}
-              onUpload={(file) =>
-                onUpload(file).catch((e) => setActionError(e.message))
+              onUpload={(file, onProgress) =>
+                onUpload(file, onProgress).catch((e) => setActionError(e.message))
               }
             />
+            {renameTarget && (
+              <RenameFileDialog
+                oldName={renameTarget}
+                open={isRenameOpen}
+                onOpenChange={(open) => {
+                  setIsRenameOpen(open);
+                  if (!open) setRenameTarget(null);
+                }}
+                onRename={(newName) => {
+                  if (onRename) {
+                    return onRename(renameTarget, newName).catch((e) => setActionError(e.message));
+                  }
+                  return Promise.reject(new Error("Rename not implemented"));
+                }}
+              />
+            )}
           </div>
         )}
       </div>
@@ -610,113 +689,12 @@ export function FileBrowser({
         )}
       </div>
 
-      {contextMenu && (
-        <div
-          role="menu"
-          className="fixed z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2"
-          style={{ top: contextMenu.y, left: contextMenu.x }}
-        >
-          <div className="flex flex-col">
-            {(() => {
-              const name = contextMenu.file.name;
-              const type = contextMenu.file.type;
-              const isDirectory = type === 'directory' || (!type && !name.includes('.'));
-              const fullPath = `${currentPath === '/' ? '' : currentPath}/${name}`;
 
-              return (
-                <>
-                  {!isDirectory && (
-                    <button
-                      role="menuitem"
-                      tabIndex={0}
-                      className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground"
-                      onClick={() => {
-                        handleEdit(name);
-                        setContextMenu(null);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleEdit(name);
-                          setContextMenu(null);
-                        }
-                      }}
-                    >
-                      <PencilIcon className="mr-2 h-4 w-4" />
-                      Edit
-                    </button>
-                  )}
-                  <button
-                    role="menuitem"
-                    tabIndex={0}
-                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground"
-                    onClick={() => {
-                      onDownload(fullPath);
-                      setContextMenu(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        onDownload(fullPath);
-                        setContextMenu(null);
-                      }
-                    }}
-                  >
-                    <DownloadIcon className="mr-2 h-4 w-4" />
-                    Download
-                  </button>
-                  <button
-                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-                    onClick={() => {
-                      if (isDirectory) {
-                        onNavigate(fullPath);
-                      } else {
-                        handleEdit(name);
-                      }
-                      setContextMenu(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        if (isDirectory) {
-                          onNavigate(fullPath);
-                        } else {
-                          handleEdit(name);
-                        }
-                        setContextMenu(null);
-                      }
-                    }}
-                  >
-                    <FolderIcon className="mr-2 h-4 w-4" />
-                    Open
-                  </button>
-                  <div className="h-px my-1 bg-muted" />
-                  <button
-                    role="menuitem"
-                    tabIndex={0}
-                    className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-red-600 focus:bg-accent focus:text-accent-foreground"
-                    onClick={() => {
-                      onDelete(fullPath).catch((e) => setActionError(e.message));
-                      setContextMenu(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        onDelete(fullPath).catch((e) => setActionError(e.message));
-                        setContextMenu(null);
-                      }
-                    }}
-                  >
-                    <TrashIcon className="mr-2 h-4 w-4" />
-                    Delete
-                  </button>
-                </>
-              );
-            })()}
-          </div>
-        </div>
-      )}
+      <div className="flex flex-col">
+
+      </div>
     </div>
+
   );
 }
 
@@ -784,6 +762,72 @@ function CreateDirectoryDialog({
   );
 }
 
+function RenameFileDialog({
+  oldName,
+  open,
+  onOpenChange,
+  onRename,
+}: {
+  oldName: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onRename: (newName: string) => Promise<void>;
+}) {
+  const [name, setName] = React.useState(oldName);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  // Reset name when dialog opens with a new file
+  React.useEffect(() => {
+    if (open) setName(oldName);
+  }, [open, oldName]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (name === oldName) {
+      onOpenChange(false);
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await onRename(name);
+      onOpenChange(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Rename File</DialogTitle>
+          <DialogDescription>
+            Enter a new name for {oldName}.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="rename-name">New Name</Label>
+            <Input
+              id="rename-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={oldName}
+              required
+            />
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && <Spinner className="mr-2 h-4 w-4" />}
+              Rename
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function UploadFileDialog({
   currentPath,
   open,
@@ -802,8 +846,10 @@ function UploadFileDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) return;
+
     setIsLoading(true);
     setProgress(0);
+
     try {
       await onUpload(file, (p) => setProgress(p));
       onOpenChange(false);
@@ -817,15 +863,17 @@ function UploadFileDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button>
+        <Button variant="outline">
           <UploadIcon className="mr-2 h-4 w-4" />
-          Upload File
+          Upload
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Upload File</DialogTitle>
-          <DialogDescription>Upload a file to {currentPath}.</DialogDescription>
+          <DialogDescription>
+            Upload a file to {currentPath}.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -833,16 +881,22 @@ function UploadFileDialog({
             <Input
               id="file"
               type="file"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              onChange={(e) => {
+                const files = e.target.files;
+                if (files && files.length > 0) {
+                  setFile(files[0]);
+                }
+              }}
               required
             />
           </div>
           {isLoading && (
             <div className="space-y-1">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Uploading...</span>
+                <span>{Math.round(progress)}%</span>
+              </div>
               <Progress value={progress} className="h-2" />
-              <p className="text-xs text-muted-foreground text-right">
-                {Math.round(progress)}%
-              </p>
             </div>
           )}
           <DialogFooter>
@@ -856,6 +910,8 @@ function UploadFileDialog({
     </Dialog>
   );
 }
+
+
 
 function CreateFileDialog({
   currentPath,
