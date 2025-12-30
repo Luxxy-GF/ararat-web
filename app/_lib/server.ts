@@ -45,6 +45,8 @@ function processConfigurableOptions(config: ConfigurableOptions) {
   };
 
   // Helper to process a single option
+  const MATCHED_TYPE_BOTH = 'both' as const;
+
   const processOption = (option: ConfigOption) => {
     const textToCheck = [option.condition, option.shortdesc, option.longdesc]
       .filter(Boolean)
@@ -53,18 +55,27 @@ function processConfigurableOptions(config: ConfigurableOptions) {
 
     // Default to supporting both types
     option.supported_types = ['container', 'virtual-machine'];
-
+    let typeMatchCategory: 'both' | 'container' | 'virtual-machine' = MATCHED_TYPE_BOTH;
     // Check for container-only patterns
     if (
       TYPE_PATTERNS.container.some((pattern) => textToCheck.includes(pattern))
     ) {
       option.supported_types = ['container'];
+      typeMatchCategory = 'container';
     }
     // Check for VM-only patterns
     else if (
       TYPE_PATTERNS.vm.some((pattern) => textToCheck.includes(pattern))
     ) {
       option.supported_types = ['virtual-machine'];
+      typeMatchCategory = 'virtual-machine';
+    }
+    // Warn if no pattern matched and falling back to both
+    if (typeMatchCategory === MATCHED_TYPE_BOTH && process.env.NODE_ENV === 'development') {
+      console.warn(
+        `[processOption] Option ${option.name || option.key || '[unknown key]'} uses the default 'both' instance types due to unmatched pattern:`,
+        textToCheck
+      );
     }
 
     // Determine required types

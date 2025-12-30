@@ -57,6 +57,11 @@ const EventEmitterContext = createContext<EventEmitterContextValue>({
 
 export default EventEmitterContext;
 
+// Initial reconnect delay in milliseconds
+const INITIAL_RECONNECT_DELAY_MS = 3000;
+// Maximum reconnect delay in milliseconds
+const MAX_RECONNECT_DELAY_MS = 30000;
+
 export function EventEmitterProvider({
   children,
 }: {
@@ -99,10 +104,10 @@ export function EventEmitterProvider({
         wsRef.current = null;
         setSocket(null);
 
-        // Reconnect after 3 seconds with exponential backoff
+        // Reconnect with exponential backoff starting from the initial delay
         const reconnectDelay = Math.min(
-          3000 * Math.pow(2, reconnectAttempts),
-          30000,
+          INITIAL_RECONNECT_DELAY_MS * Math.pow(2, reconnectAttempts),
+          MAX_RECONNECT_DELAY_MS,
         );
         reconnectAttempts++;
         reconnectTimeout = window.setTimeout(connect, reconnectDelay);
@@ -133,7 +138,6 @@ export function EventEmitterProvider({
     };
 
     const handleOperationEvent = (op: OperationMetadata) => {
-      // Handle all operation events: status can be Pending, Running, Success, Failure, or Cancelled
       // status: Pending, Running, Success, Failure, Cancelled
 
       const toastId = op.id;
@@ -146,7 +150,7 @@ export function EventEmitterProvider({
         let progressDetails = '';
         if (op.metadata) {
           // Try to extract progress info
-          // Common patterns: metadata: { download_progress: "12%" } or similar
+          // Common patterns: metadata: { download_progress: "12%" } or { percent: 42 }
           if (op.metadata.download_progress) {
             progressDetails = `Downloading: ${op.metadata.download_progress}`;
           } else if (op.metadata.percent) {

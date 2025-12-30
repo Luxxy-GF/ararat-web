@@ -54,7 +54,6 @@ import type { Device } from '@/app/(main)/instances/_lib/instances.d';
 import type { ConfigOption } from '@/app/_lib/server.d';
 import { useResources } from '@/app/(main)/_hooks/resources';
 import { VerticalTabsLayout } from '@/app/_components/layout/vertical-tabs-layout';
-import { useMobile } from 'ui-web/hooks/use-mobile';
 
 // Utility function to validate port specifications (Issue 3)
 function validatePort(portSpec: string): boolean {
@@ -185,8 +184,8 @@ type ValidationResult = {
   errors: ValidationError[];
 };
 
-class DeviceValidator {
-  static validateDeviceName(
+const DeviceValidator = {
+  validateDeviceName(
     name: string,
     existingDevices: Record<string, Device>,
     inheritedDevices: Record<string, Device>,
@@ -214,9 +213,9 @@ class DeviceValidator {
     }
 
     return null;
-  }
+  },
 
-  static validateDiskPath(
+  validateDiskPath(
     path: string,
     deviceType: string,
     existingDevices: Record<string, Device>,
@@ -242,9 +241,9 @@ class DeviceValidator {
     }
 
     return null;
-  }
+  },
 
-  static validatePort(
+  validatePort(
     portSpec: string,
     fieldName: string,
   ): ValidationError | null {
@@ -260,9 +259,9 @@ class DeviceValidator {
     }
 
     return null;
-  }
+  },
 
-  static validateRequiredFields(
+  validateRequiredFields(
     deviceType: string,
     properties: Record<string, string>,
     deviceConfig: any,
@@ -334,9 +333,9 @@ class DeviceValidator {
     }
 
     return errors;
-  }
+  },
 
-  static validateDevice(
+  validateDevice(
     name: string,
     deviceType: string,
     properties: Record<string, string>,
@@ -403,8 +402,8 @@ class DeviceValidator {
       isValid: errors.length === 0,
       errors,
     };
-  }
-}
+  },
+};
 
 const DEVICE_TYPES = [
   {
@@ -611,10 +610,6 @@ function AddDeviceForm({
   );
   // Counter used to force a rerender/reset of certain controlled inputs (e.g. pool combobox)
   const [resetCounter, setResetCounter] = React.useState(0);
-  // Track field-level validation errors (centralized)
-  const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>(
-    {},
-  );
   // Check if a root disk already exists
   const hasRootDiskAlready = React.useMemo(() => {
     const allDevices = { ...inheritedDevices, ...existingDevices };
@@ -651,22 +646,25 @@ function AddDeviceForm({
     return selectedPool?.driver === 'ceph';
   }, [properties.pool, storagePools]);
 
+  // Memoize the selected network lookup to minimize recalculations
+  const selectedNetwork = React.useMemo(() => {
+    if (properties.network && networks) {
+      return networks.find((n) => n.name === properties.network) || null;
+    }
+    return null;
+  }, [properties.network, networks]);
+
   // Get the actual device config key for networks and GPUs
   const deviceConfigKey = React.useMemo(() => {
     if (isNetworkDevice) {
       // If network is set, infer type from the network
-      if (properties.network && networks) {
-        const selectedNetwork = networks.find(
-          (n) => n.name === properties.network,
-        );
-        if (selectedNetwork) {
-          // Map network type to nictype (bridge -> bridged, others stay the same)
-          const nictype =
-            selectedNetwork.type === 'bridge'
-              ? 'bridged'
-              : selectedNetwork.type;
-          return `nic_${nictype}`;
-        }
+      if (selectedNetwork) {
+        // Map network type to nictype (bridge -> bridged, others stay the same)
+        const nictype =
+          selectedNetwork.type === 'bridge'
+            ? 'bridged'
+            : selectedNetwork.type;
+        return `nic_${nictype}`;
       }
 
       // If nictype is set, use that
@@ -689,10 +687,9 @@ function AddDeviceForm({
     deviceType,
     isNetworkDevice,
     isGPUDevice,
-    properties.network,
+    selectedNetwork,
     properties.nictype,
     properties.gputype,
-    networks,
   ]);
 
   // Get configurable options for dynamic network/GPU device config
@@ -845,6 +842,26 @@ function AddDeviceForm({
     fields: Array<{ key: string; config: ConfigOption }>;
   };
 
+  // Memoize the sortCategories function to avoid recreating it on every render.
+  const sortCategories = React.useCallback((
+    map: Map<string, Array<{ key: string; config: ConfigOption }>>,
+  ) => {
+    return Array.from(map.entries())
+      .sort(([a], [b]) =>
+        a === 'General' ? -1 : b === 'General' ? 1 : a.localeCompare(b),
+      )
+      .map(([name, fields]) => ({
+        name,
+        // Store fields with their data; visibility will be checked by shouldShowField
+        fields: fields.sort((a, b) => {
+          // For source category, ensure pool appears first if present
+          if (a.config.fullKey === 'pool') return -1;
+          if (b.config.fullKey === 'pool') return 1;
+          return a.key.localeCompare(b.key);
+        }),
+      }));
+  }, []);
+
   const { requiredCategories, optionalCategories } = React.useMemo(() => {
     if (!effectiveDeviceConfig?.keys)
       return { requiredCategories: [], optionalCategories: [] };
@@ -898,30 +915,13 @@ function AddDeviceForm({
       });
     });
 
-    const sortCategories = (
-      map: Map<string, Array<{ key: string; config: ConfigOption }>>,
-    ) => {
-      return Array.from(map.entries())
-        .sort(([a], [b]) =>
-          a === 'General' ? -1 : b === 'General' ? 1 : a.localeCompare(b),
-        )
-        .map(([name, fields]) => ({
-          name,
-          // Store fields with their data; visibility will be checked by shouldShowField
-          fields: fields.sort((a, b) => {
-            // For source category, ensure pool appears first if present
-            if (a.config.fullKey === 'pool') return -1;
-            if (b.config.fullKey === 'pool') return 1;
-            return a.key.localeCompare(b.key);
-          }),
-        }));
-    };
+    // Moved sortCategories to useCallback above, to improve performance.
 
     return {
       requiredCategories: sortCategories(requiredMap),
       optionalCategories: sortCategories(optionalMap),
     };
-  }, [effectiveDeviceConfig, isRoot, deviceType, isCephPool]);
+  }, [effectiveDeviceConfig, isRoot, deviceType, isCephPool, sortCategories]);
 
   const formatLabel = (key: string) => {
     return key
@@ -1328,7 +1328,6 @@ function AddDeviceForm({
     }
     setName('');
     setProperties(isRoot ? { path: '/' } : {});
-    setFieldErrors({});
     setResetCounter((c) => c + 1);
   };
 
@@ -1475,9 +1474,6 @@ function AddDeviceForm({
     const isBool = config.type === 'bool';
     const hasCondition =
       config.condition && typeof config.condition === 'string';
-    // errorId removed (unused variable)
-    
-    const errorId = `${fieldId}-error`;
 
     // Check if field should be shown using centralized logic
     if (!shouldShowField(fieldKey, config)) {
@@ -1990,7 +1986,6 @@ function AddDeviceForm({
               // Clear local state before delegating cancel
               setName('');
               setProperties(isCreatingRootDisk ? { path: '/' } : {});
-              setFieldErrors({});
               setResetCounter((c) => c + 1);
               onCancelEdit?.();
             }}
@@ -2047,14 +2042,14 @@ export default function Devices({
   const [isCreatingRootDisk, setIsCreatingRootDisk] = React.useState(false);
 
   const { data: configurableOptions } = useConfigurableOptions();
-  const isInternalUpdate = React.useRef(false);
+  const skipSyncFromProps = React.useRef(false);
 
   React.useEffect(() => {
     // Only sync from props if the change came from outside (not from our own updates)
-    if (!isInternalUpdate.current) {
+    if (!skipSyncFromProps.current) {
       setLocalDevices(devices);
     }
-    isInternalUpdate.current = false;
+    skipSyncFromProps.current = false;
   }, [devices]);
 
   // Clear selected device when changing tabs or when device is removed
@@ -2119,7 +2114,7 @@ export default function Devices({
 
   const handleAdd = (name: string, device: Device) => {
     const updated = { ...localDevices, [name]: device };
-    isInternalUpdate.current = true;
+    skipSyncFromProps.current = true;
     setLocalDevices(updated);
     onDevicesChange?.(updated);
     setSelectedDevice(null);
@@ -2135,7 +2130,7 @@ export default function Devices({
     }
 
     updated[newName] = device;
-    isInternalUpdate.current = true;
+    skipSyncFromProps.current = true;
     setLocalDevices(updated);
     onDevicesChange?.(updated);
     setSelectedDevice(null);
@@ -2150,7 +2145,7 @@ export default function Devices({
       return;
     }
     const { [name]: _, ...rest } = localDevices;
-    isInternalUpdate.current = true;
+    skipSyncFromProps.current = true;
     setLocalDevices(rest);
     onDevicesChange?.(rest);
 
@@ -2163,7 +2158,7 @@ export default function Devices({
     // Remove override to revert to inherited version
     if (name in inheritedDevices && name in localDevices) {
       const { [name]: _, ...rest } = localDevices;
-      isInternalUpdate.current = true;
+      skipSyncFromProps.current = true;
       setLocalDevices(rest);
       onDevicesChange?.(rest);
 

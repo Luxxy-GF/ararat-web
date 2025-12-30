@@ -12,54 +12,119 @@ import {
   SquareIcon,
   RotateCcwIcon,
   SnowflakeIcon,
+  LayoutDashboard,
+  Archive,
+  Terminal,
+  Folder,
+  Camera,
+  Cpu,
+  Settings,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from 'ui-web/components/tabs';
 import { OSLogo } from '@/app/_components/OSLogo';
 import { getBaseImage } from './_lib/utils';
 import { performInstanceAction, type InstanceAction } from './_lib/instance';
+import { SiteHeader } from '@/app/(main)/_components/header';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from 'ui-web/components/breadcrumb';
+import Link from 'next/link';
 
 function InstanceLayoutContent({ children }: { children: React.ReactNode }) {
   const { name, instance, isLoading, isError, mutate } = useInstanceContext();
 
-  if (!name) {
-    return (
-      <Alert variant="destructive">
-        <AlertTitle>Missing Parameter</AlertTitle>
-        <AlertDescription>
-          The "name" query parameter is required.
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  const pathname = usePathname();
 
-  if (isLoading && !instance) {
+  const getTabFromPathname = (path: string) => {
+    const pathSegments = path.split('/').filter(Boolean);
+    const rawTab = pathSegments.length > 1 ? pathSegments[1] : 'Dashboard';
+    const label = rawTab.charAt(0).toUpperCase() + rawTab.slice(1);
+    return { rawTab, label };
+  };
+
+  const { label: formattedTab } = getTabFromPathname(pathname);
+
+  const renderContent = () => {
+    if (!name) {
+      return (
+        <div className="p-6">
+          <Alert variant="destructive">
+            <AlertTitle>Missing Parameter</AlertTitle>
+            <AlertDescription>
+              The "name" query parameter is required.
+            </AlertDescription>
+          </Alert>
+        </div>
+      );
+    }
+
+    if (isLoading && !instance) {
+      return (
+        <div className="flex h-full items-center justify-center p-8">
+          <Spinner className="size-8" />
+        </div>
+      );
+    }
+
+    if (isError || !instance) {
+      return (
+        <div className="p-6">
+          <Alert variant="destructive">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+              {isError?.message || 'Instance not found.'}
+            </AlertDescription>
+          </Alert>
+        </div>
+      );
+    }
+
     return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Spinner className="size-8" />
+      <div className="flex flex-col gap-6 p-6">
+        <InstanceHeader instance={instance} onMutate={mutate} />
+
+        <div className="flex flex-col gap-4">
+          <InstanceTabs />
+          <div className="mt-4">{children}</div>
+        </div>
       </div>
     );
-  }
-
-  if (isError || !instance) {
-    return (
-      <Alert variant="destructive">
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          {isError?.message || 'Instance not found.'}
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  };
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <InstanceHeader instance={instance} onMutate={mutate} />
-
-      <div className="flex flex-col gap-4">
-        <InstanceTabs />
-        <div className="mt-4">{children}</div>
-      </div>
-    </div>
+    <>
+      <SiteHeader>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/instances">Instances</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            {name && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href={`/instance?name=${name}`}>{name}</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{formattedTab}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </>
+            )}
+          </BreadcrumbList>
+        </Breadcrumb>
+      </SiteHeader>
+      {renderContent()}
+    </>
   );
 }
 
@@ -92,7 +157,7 @@ function InstanceHeader({
   onMutate,
 }: {
   instance: Instance;
-  onMutate: () => Promise<any>;
+  onMutate: () => Promise<void>;
 }) {
   const [actionInFlight, setActionInFlight] =
     React.useState<InstanceAction | null>(null);
@@ -106,7 +171,7 @@ function InstanceHeader({
       await onMutate();
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Unable to update instance.';
+        err instanceof Error ? err.message : `Unable to ${action} instance.`;
       setActionError(message);
     } finally {
       setActionInFlight(null);
@@ -127,6 +192,7 @@ function InstanceHeader({
     availableActions.push('start');
   }
 
+  const isUnknownStatus = !isRunning && !isStopped && !isFrozen;
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
@@ -140,7 +206,7 @@ function InstanceHeader({
               <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500"></span>
             </span>
           )}
-          {!isRunning && !isStopped && !isFrozen && (
+          {isUnknownStatus && (
             <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
               <span className="relative inline-flex rounded-full h-4 w-4 bg-gray-400"></span>
             </span>
@@ -193,17 +259,16 @@ function InstanceHeader({
 }
 
 const TABS = [
-  { value: 'dashboard', label: 'Dashboard' },
-  { value: 'backups', label: 'Backups' },
-  { value: 'console', label: 'Console' },
-  { value: 'files', label: 'Files' },
-  { value: 'snapshots', label: 'Snapshots' },
-  { value: 'devices', label: 'Devices' },
-  { value: 'configuration', label: 'Configuration' },
+  { value: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { value: 'backups', label: 'Backups', icon: Archive },
+  { value: 'console', label: 'Console', icon: Terminal },
+  { value: 'files', label: 'Files', icon: Folder },
+  { value: 'snapshots', label: 'Snapshots', icon: Camera },
+  { value: 'devices', label: 'Devices', icon: Cpu },
+  { value: 'configuration', label: 'Configuration', icon: Settings },
 ];
 
 function InstanceTabs() {
-  const router = useRouter();
   const pathname = usePathname();
   const { name: instanceName } = useInstanceContext();
 
@@ -211,33 +276,41 @@ function InstanceTabs() {
   // /instance -> dashboard
   // /instance/backups -> backups
   // etc.
-  const currentTab =
-    pathname === '/instance'
-      ? 'dashboard'
-      : pathname.split('/').pop() || 'dashboard';
-
-  const handleTabChange = (value: string) => {
-    if (!instanceName) return;
-
-    const targetPath =
-      value === 'dashboard' ? '/instance' : `/instance/${value}`;
-
-    router.push(`${targetPath}?name=${instanceName}`);
-  };
+  // More robust logic: extract tab from pathname, supporting only known tabs.
+  let currentTab = 'dashboard';
+  if (pathname.startsWith('/instance/')) {
+    // Take the segment after /instance/
+    const segment = pathname.replace(/^\/instance\/?/, '').split('/')[0];
+    // Match only known TABS by value
+    if (TABS.some((tab) => tab.value === segment)) {
+      currentTab = segment;
+    }
+  }
 
   return (
-    <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
-        {TABS.map((tab) => (
-          <TabsTrigger
-            key={tab.value}
-            value={tab.value}
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2"
-          >
-            {tab.label}
-          </TabsTrigger>
-        ))}
-      </TabsList>
+    <Tabs value={currentTab} className="w-full">
+      <div className="w-full overflow-x-auto">
+        <TabsList className="min-w-full inline-flex">
+          {TABS.map((tab) => {
+            const targetPath =
+              tab.value === 'dashboard' ? '/instance' : `/instance/${tab.value}`;
+            
+            return (
+              <TabsTrigger key={tab.value} value={tab.value} asChild>
+                <Link
+                  href={{
+                    pathname: targetPath,
+                    query: instanceName ? { name: instanceName } : undefined,
+                  }}
+                >
+                  <tab.icon aria-hidden="true" className="mr-2 h-4 w-4" />
+                  {tab.label}
+                </Link>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </div>
     </Tabs>
   );
 }

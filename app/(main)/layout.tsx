@@ -1,7 +1,6 @@
 import AppSidebar from '@/app/(main)/sidebar';
 import { ProjectsProvider } from '@/app/(main)/_context/projects';
 import { UserProvider } from '@/app/(main)/_context/user';
-import { SiteHeader } from '@/app/(main)/_components/header';
 import { SidebarInset, SidebarProvider } from 'ui-web/components/sidebar';
 
 export default function DashboardLayout({
@@ -26,10 +25,8 @@ export default function DashboardLayout({
           <>
             <div className="w-full h-full">
               <div className="flex flex-1 flex-col">
-                <SiteHeader />
-
                 <div className="@container/main flex flex-1 flex-col gap-2">
-                  <div className="p-4  lg:px-6">{children}</div>
+                  {children}
                 </div>
               </div>
             </div>
@@ -37,8 +34,7 @@ export default function DashboardLayout({
         ) : (
           <SidebarInset>
             <ProjectsProvider>
-              <SiteHeader />
-              <div className="p-4  lg:px-6">{children}</div>
+              {children}
             </ProjectsProvider>
           </SidebarInset>
         )}
